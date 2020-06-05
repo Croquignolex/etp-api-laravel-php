@@ -43,21 +43,33 @@ class AgentController extends Controller
             'img_cni' => ['nullable', 'image', 'mimes:jpeg,jpg,png,gif|max:10000'],
             'phone' => ['required', 'integer'],
             'id_user' => ['required', 'integer', 'unique:agents,id_user'], //un compte agent correspond oubligatoirement à un utilisateur
-            'reference' => ['nullable', 'string', 'max:255'],
+            'reference' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email'],
             'taux_commission' => ['required', 'Numeric'],
             'pays' => ['required', 'string', 'max:255'],
             'adresse' => ['required', 'string', 'max:255']
         ]);  
         if ($validator->fails()) { 
-                    return response()->json(['error'=>$validator->errors(), 'status'=>401], 401);            
-                }
+            return response()->json(
+                [
+                    'message' => ['error'=>$validator->errors()],
+                    'status' => false,
+                    'data' => null
+                ]
+            );             
+        }
    
 
         
 
         if (!User::Find($request->id_user)) {
-            return response()->json(['error' => 'l\'utilisateur passé n\'existe pas.', 'status'=>204]);
+            return response()->json(
+                [
+                    'message' => 'l\'utilisateur passé n\'existe pas.',
+                    'status' => false,
+                    'data' => null
+                ]
+            );
         }
 
         // Récupérer les données validées
@@ -96,22 +108,22 @@ class AgentController extends Controller
             return response()->json(
                 [
                     'message' => 'agent cree',
-                    'Agent' => $Agent,
-                    'success' => 'true', 
-                    'status'=>200,
-                ],
-                200
+                    'status' => true,
+                    'data' => ['Agent' => $Agent]
+                ]
             );
+
         } else {
             // Renvoyer une erreur
+            
             return response()->json(
                 [
                     'message' => 'erreur lors de la modification',
-                    'status'=>500,
-                    'success' => 'false'
-                ],
-                500
+                    'status' => false,
+                    'data' => null
+                ]
             );
+            
         } 
 
     }
@@ -128,13 +140,25 @@ class AgentController extends Controller
 
 
         //Envoie des information
-        if(Agent::find($id)){
+        if(agent::find($id)){
 
-            return response()->json(['success' => $agent, 'status'=>200]);
+            return response()->json(
+                [
+                    'message' => '',
+                    'status' => true,
+                    'data' => ['Agent' => $agent]
+                ]
+            );
 
         }else{
 
-            return response()->json(['error' => 'cet agent n existe pas', 'status'=>204]);
+            return response()->json(
+                [
+                    'message' => 'cet agent n existe pas',
+                    'status' => false,
+                    'data' => null
+                ]
+            );
         }
          
     }
@@ -152,14 +176,20 @@ class AgentController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'img_cni' => ['nullable', 'image', 'mimes:jpeg,jpg,png,gif|max:10000'],
             'phone' => ['required', 'integer'],
-            'reference' => ['nullable', 'string', 'max:255'],
+            'reference' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email'],
             'taux_commission' => ['required', 'Numeric'],
             'pays' => ['required', 'string', 'max:255'],
             'adresse' => ['required', 'string', 'max:255']
         ]);
         if ($validator->fails()) { 
-                    return response()->json(['error'=>$validator->errors(), 'status'=>401], 401);            
+            return response()->json(
+                [
+                    'message' => ['error'=>$validator->errors()],
+                    'status' => false,
+                    'data' => null
+                ]
+            );             
                 }
 
         // Récupérer les données validées
@@ -196,21 +226,19 @@ class AgentController extends Controller
             return response()->json(
                 [
                     'message' => 'agent modifié',
-                    'agent' => $agent, 
-                    'status'=>200,
-                    'success' => 'true',
-                ],
-                200
+                    'status' => true,
+                    'data' => ['Agent' => $agent]
+                ]
             );
+            
         } else {
             // Renvoyer une erreur
             return response()->json(
                 [
                     'message' => 'erreur lors de la modification', 
-                    'status'=>500,
-                    'success' => 'false'
-                ],
-                500
+                    'status'=>false,
+                    'data' => null
+                ]
             );
         } 
 
@@ -227,9 +255,21 @@ class AgentController extends Controller
 
         if (Agent::where('deleted_at', null)) {
             $agents = Agent::where('deleted_at', null)->get();
-            return response()->json(['success' => $agents, 'status'=>200]);
+            return response()->json(
+                [
+                    'message' => '',
+                    'status' => true,
+                    'data' => ['Agent' => $agents]
+                ]
+            );
          }else{
-            return response()->json(['error' => 'pas d agent a lister', 'status'=>204]); 
+            return response()->json(
+                [
+                    'message' => 'erreur lors de la modification', 
+                    'status'=>false,
+                    'data' => null
+                ]
+            );
          }
         
     } 
@@ -251,25 +291,28 @@ class AgentController extends Controller
                 return response()->json(
                     [
                         'message' => 'agent archivé',
-                        'agent' => $agent, 
-                        'status'=>200,
-                        'success' => 'true',
-                    ],
-                    200
+                        'status' => true,
+                        'data' => null
+                    ]
                 );
             } else {
                 // Renvoyer une erreur
                 return response()->json(
                     [
                         'message' => 'erreur lors de l archivage', 
-                        'status'=>500,
-                        'success' => 'false'
-                    ],
-                    500
+                        'status'=>false,
+                        'data' => null
+                    ]
                 );
             } 
          }else{
-            return response()->json(['error' => 'cet agent n existe pas']); 
+            return response()->json(
+                [
+                    'message' => 'cet agent n existe pas', 
+                    'status'=>false,
+                    'data' => null
+                ]
+            );
          }
         
     }

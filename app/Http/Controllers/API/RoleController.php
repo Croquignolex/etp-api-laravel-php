@@ -39,9 +39,21 @@ class RoleController extends Controller
         $Roles = Role::get('name');
 
         if ($permissions != Null) {
-            return response()->json(['permissions' => $permissions, 'Roles' => $Roles, 'status'=>200], 200);
+            return response()->json(
+                [
+                    'message' => '',
+                    'status' => true,
+                    'data' => ['permissions' => $permissions, 'Roles' => $Roles]
+                ]
+            );
          }else{
-            return response()->json(['error' => 'Aucune permission trouvee', 'status'=>500], 500); 
+            return response()->json(
+                [
+                    'message' => 'Aucune permission trouvee',
+                    'status' => false,
+                    'data' => null
+                ]
+            ); 
          }
          
 
@@ -66,7 +78,13 @@ class RoleController extends Controller
             'permission' => 'required',
         ]);
         if ($validator->fails()) { 
-                    return response()->json(['error'=>$validator->errors(), 'status'=>401], 401);            
+            return response()->json(
+                [
+                    'message' => ['error'=>$validator->errors()],
+                    'status' => false,
+                    'data' => null
+                ]
+            );            
                 }
 
         //si le role est créé
@@ -75,10 +93,24 @@ class RoleController extends Controller
             //Attribuer une permission au role
             $role->givePermissionTo($request->input('permission'));
 
-            return response()->json(['success' => $role, 'status'=>200], 200);
-        }      
+            return response()->json(
+                [
+                    'message' => '',
+                    'status' => true,
+                    'data' => ['role' => $role]
+                ]
+            );
+        }else {
+                return response()->json(
+                [
+                    'message' => 'Erreur de creation du role',
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }     
 
-        return response()->json(['error' => 'Erreur de creation du role', 'status'=>500], 500);
+        
 
     }
 
@@ -109,11 +141,24 @@ class RoleController extends Controller
 
             ->get();
 
-            return response()->json(['Success' => $role, 'rolePermissions' => $rolePermissions, 'permissions' => $permissions, 'status'=>200], 200);
+            
+            return response()->json(
+                [
+                    'message' => '',
+                    'status' => true,
+                    'data' => ['role' => $role, 'rolePermissions' => $rolePermissions, 'permissions' => $permissions]
+                ]
+            );
         }
 
         //On retourne une erreur
-        return response()->json(['error' => 'Aucun role trouvé', 'status'=>204], 204);
+        return response()->json(
+            [
+                'message' => 'Aucun role trouvé',
+                'status' => false,
+                'data' => null
+            ]
+        );
 
     }
 
@@ -135,8 +180,14 @@ class RoleController extends Controller
             'permission' => 'required',
         ]);
         if ($validator->fails()) { 
-                    return response()->json(['error'=>$validator->errors(), 'status'=>401], 401);            
-                }
+            return response()->json(
+                [
+                    'message' => ['error'=>$validator->errors()],
+                    'status' => false,
+                    'data' => null
+                ]
+            );            
+        }
 
         // si le role est trouvé
         if($role = Role::find($id)){
@@ -145,12 +196,23 @@ class RoleController extends Controller
 
             // On attribut la permission
             $role->givePermissionTo($request->input('permission'));
-
-            return response()->json(['Success' => $role, 'status'=>200], 200);
+            return response()->json(
+                [
+                    'message' => '',
+                    'status' => true,
+                    'data' => ['role' => $role]
+                ]
+            ); 
         }
 
         //On retourne une erreur
-        return response()->json(['error' => 'echec de la modification', 'status'=>500], 500);
+        return response()->json(
+            [
+                'message' => 'echec de la modification',
+                'status' => false,
+                'data' => null
+            ]
+        ); 
 
     }
 
@@ -168,11 +230,23 @@ class RoleController extends Controller
 
         // si le role est supprimé
         if(DB::table("roles")->where('id',$id)->delete()){            
-            return response()->json(['Success' => "role supprimé", 'status'=>200], 200);
+            return response()->json(
+                [
+                    'message' => 'Role supprimé',
+                    'status' => true,
+                    'data' => null
+                ]
+            ); 
         }
 
         //On retourne une erreur
-        return response()->json(['error' => 'echec de la suppression', 'status'=>500], 500);
+        return response()->json(
+            [
+                'message' => 'echec de la suppression',
+                'status' => false,
+                'data' => null
+            ]
+        ); 
 
     }
 }
