@@ -35,24 +35,30 @@ class AgentController extends Controller
     { 
 
         // l'utilisateur connecté
-        $id_user = auth()->user()->id;
+        $id_crator = auth()->user()->id;
 
         // Valider données envoyées
         $validator = Validator::make($request->all(), [ 
             'name' => ['required', 'string', 'max:255'],
             'img_cni' => ['nullable', 'image', 'mimes:jpeg,jpg,png,gif|max:10000'],
             'phone' => ['required', 'integer'],
+            'id_user' => ['required', 'integer', 'unique:agents,id_user'], //un compte agent correspond oubligatoirement à un utilisateur
             'reference' => ['nullable', 'string', 'max:255'],
             'email' => ['required', 'string', 'email'],
             'taux_commission' => ['required', 'Numeric'],
             'pays' => ['required', 'string', 'max:255'],
             'adresse' => ['required', 'string', 'max:255']
-        ]);
+        ]);  
         if ($validator->fails()) { 
                     return response()->json(['error'=>$validator->errors(), 'status'=>401], 401);            
                 }
    
 
+        
+
+        if (!User::Find($request->id_user)) {
+            return response()->json(['error' => 'l\'utilisateur passé n\'existe pas.', 'status'=>204]);
+        }
 
         // Récupérer les données validées
         $name = $request->name;
@@ -65,11 +71,13 @@ class AgentController extends Controller
         $email = $request->email;      
         $taux_commission = $request->taux_commission;
         $pays = $request->pays;
+        $id_user = $request->id_user;
         $adresse = $request->adresse;
 
 
         // Nouvel agent
         $Agent = new Agent([
+            'id_creator' => $id_crator,
             'id_user' => $id_user,
             'nom' => $name,
             'img_cni' => $img_cni,
