@@ -10,6 +10,20 @@ use Illuminate\Support\Facades\Validator;
 class FloteController extends Controller
 {
 
+        /**
+
+     * les conditions de lecture des methodes
+
+     */
+
+    function __construct()
+
+    {
+
+         $this->middleware('role:Admin'); 
+
+    }
+
 
     /**
      * //Creer une flote.
@@ -23,8 +37,14 @@ class FloteController extends Controller
             'description' => ['nullable', 'string']
         ]);
         if ($validator->fails()) { 
-                    return response()->json(['error'=>$validator->errors(), 'status'=>401], 401);            
-                }  
+            return response()->json(
+                [
+                    'message' => ['error'=>$validator->errors()],
+                    'status' => false,
+                    'data' => null
+                ]
+            );            
+        }  
 
 
         // Récupérer les données validées
@@ -48,21 +68,18 @@ class FloteController extends Controller
             return response()->json(
                 [
                     'message' => 'Flote créée',
-                    'flote' => $flote,
-                    'success' => 'true', 
-                    'status'=>200,
-                ],
-                200
+                    'status' => true,
+                    'data' => ['flote' => $flote]
+                ]
             );
         } else {
             // Renvoyer une erreur
             return response()->json(
                 [
                     'message' => 'erreur lors de la Creation',
-                    'status'=>500,
-                    'success' => 'false'
-                ],
-                500
+                    'status' => false,
+                    'data' => null
+                ]
             );
         } 
     }
@@ -79,11 +96,23 @@ class FloteController extends Controller
         //Envoie des information
         if(Flote::find($id)){
 
-            return response()->json(['success' => $Flote, 'status'=>200]);
+            return response()->json(
+                [
+                    'message' => '',
+                    'status' => true,
+                    'data' => ['flote' => $Flote]
+                ]
+            );
 
         }else{
 
-            return response()->json(['error' => 'cette flote n existe pas', 'status'=>204]);
+            return response()->json(
+                [
+                    'message' => 'ecette flote n existe pas',
+                    'status' => false,
+                    'data' => null
+                ]
+            );
         }
     }
 
@@ -99,8 +128,14 @@ class FloteController extends Controller
             'description' => ['nullable', 'string']
         ]);
         if ($validator->fails()) { 
-                    return response()->json(['error'=>$validator->errors(), 'status'=>401], 401);            
-                }
+            return response()->json(
+                [
+                    'message' => ['error'=>$validator->errors()],
+                    'status' => false,
+                    'data' => null
+                ]
+            );             
+        }
 
         // Récupérer les données validées
             
@@ -121,22 +156,19 @@ class FloteController extends Controller
             // Renvoyer un message de succès
             return response()->json(
                 [
-                    'message' => 'Flote modifié',
-                    'agent' => $flote, 
-                    'status'=>200,
-                    'success' => 'true',
-                ],
-                200
+                    'message' => '',
+                    'status' => true,
+                    'data' => ['flote' => $flote]
+                ]
             );
         } else {
             // Renvoyer une erreur
             return response()->json(
                 [
-                    'message' => 'erreur lors de la modification', 
-                    'status'=>500,
-                    'success' => 'false'
-                ],
-                500
+                    'message' => 'erreur lors de la modification',
+                    'status' => false,
+                    'data' => null
+                ]
             );
         } 
     }
@@ -148,9 +180,21 @@ class FloteController extends Controller
     {
         if (Flote::where('deleted_at', null)) {
             $flote = Flote::where('deleted_at', null)->get();
-            return response()->json(['success' => $flote, 'status'=>200]);
+            return response()->json(
+                [
+                    'message' => '',
+                    'status' => true,
+                    'data' => ['flote' => $flote]
+                ]
+            );
          }else{
-            return response()->json(['error' => 'pas de flote à lister', 'status'=>204]); 
+            return response()->json(
+                [
+                    'message' => 'pas de flote à lister',
+                    'status' => false,
+                    'data' => null
+                ]
+            );
          }
     }
 
@@ -168,25 +212,28 @@ class FloteController extends Controller
                 return response()->json(
                     [
                         'message' => 'Flote archivée',
-                        'agent' => $flote, 
-                        'status'=>200,
-                        'success' => 'true',
-                    ],
-                    200
+                        'status' => true,
+                        'data' => null
+                    ]
                 );
             } else {
                 // Renvoyer une erreur
                 return response()->json(
                     [
-                        'message' => 'erreur lors de l archivage', 
-                        'status'=>500,
-                        'success' => 'false'
-                    ],
-                    500
+                        'message' => 'erreur lors de l archivage',
+                        'status' => false,
+                        'data' => null
+                    ]
                 );
             } 
          }else{
-            return response()->json(['error' => 'cet agent n existe pas']); 
+            return response()->json(
+                [
+                    'message' => 'cet agent n existe pas',
+                    'status' => false,
+                    'data' => null
+                ]
+            );
          }
     }
 }
