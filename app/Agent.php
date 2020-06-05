@@ -14,8 +14,8 @@ class Agent extends Model
     use SoftDeletes;
 
     protected $dates = ['deleted_at'];
-    protected $fillable = array('nom', 'id_user', 'img_cni', 'phone', 'reference', 'adresse', 'taux_commission', 'email', 'pays');
-    protected $visible = array('nom','id_user', 'img_cni', 'phone', 'reference', 'adresse', 'taux_commission', 'email', 'pays');
+    protected $fillable = array('nom', 'id_creator', 'id_user', 'img_cni', 'phone', 'reference', 'adresse', 'taux_commission', 'email', 'pays');
+    protected $visible = array('nom','id_user', 'id_creator', 'img_cni', 'phone', 'reference', 'adresse', 'taux_commission', 'email', 'pays');
 
     public function vercements()
     {

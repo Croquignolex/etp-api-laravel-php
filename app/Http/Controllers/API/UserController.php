@@ -64,11 +64,10 @@ class UserController extends Controller
 
                 return response()->json(
                     [
-                        'message' => $val->errors(),
-                        'success' => 'false',
-                        'status' => 400
-                    ],
-                    400
+                        'message' => ['error'=>$val->errors()],
+                        'status' => false,
+                        'data' => null
+                    ]
                 );                            
 
             }
@@ -95,23 +94,18 @@ class UserController extends Controller
 
                 return response()->json(
                     [
-                        'access_token' => $token->accessToken,
-                        'user' => $user,
-                        'roles' => $roles,
-                        'token_type' => 'Bearer',
-                        'status' => 200,
-                        'login' => 'true',
-                    ],
-                    200
+                        'message' => '',
+                        'status' => true,
+                        'data' => ['access_token'=>$token->accessToken, 'user' => $user,]
+                    ]
                 );
             } else {
                 return response()->json(
                     [
                         'message' => "Login ou mot de passe incorrect!",
-                        'status' => 401,
-                        'login' => 'false',
-                    ],
-                    401
+                        'status' => false,
+                        'data' => null,
+                    ]
                 );
             }
 
@@ -136,7 +130,13 @@ class UserController extends Controller
             'roles' => 'required', 
         ]);
         if ($validator->fails()) { 
-                    return response()->json(['error'=>$validator->errors(), 'status'=>400], 400);            
+                    return response()->json(
+                        [
+                            'message' => ['error'=>$validator->errors()],
+                            'status' => false,
+                            'data' => null
+                        ]
+                    );             
                 }
 
         $input = $request->all(); 
@@ -144,8 +144,16 @@ class UserController extends Controller
                 $user = User::create($input); 
                 $user->assignRole($request->input('roles'));
                 $success['token'] =  $user->createToken('MyApp')-> accessToken; 
-                $success['name'] =  $user->name;
-        return response()->json(['success'=>$success, 'status'=>200], $this->successStatus); 
+                $success['user'] =  $user;
+                
+                 
+                return response()->json(
+                    [
+                        'message' => '',
+                        'status' => true,
+                        'data' => ['user'=>$success]
+                    ]
+                ); 
     }
 
 
@@ -160,9 +168,21 @@ class UserController extends Controller
         if (Auth::check()) {
             $user = Auth::user(); 
             $userRole = $user->roles->pluck('name','name')->all();
-            return response()->json(['success' => $user, 'userRole' => $userRole, 'status'=>200], $this-> successStatus);
+            return response()->json(
+                [
+                    'message' => '',
+                    'status' => true,
+                    'data' => ['user' => $user, 'userRole' => $userRole]
+                ]
+            );
          }else{
-            return response()->json(['error' => 'impossible de trouver l utilisateur', 'status'=>500]); 
+            return response()->json(
+                [
+                    'message' => 'impossible de trouver l utilisateur connecté',
+                    'status' => false,
+                    'data' => null
+                ]
+            ); 
          }        
  
     } 
@@ -175,7 +195,13 @@ class UserController extends Controller
      */ 
     public function not_login() 
     { 
-        return response()->json(['error' => 'vous n etes pas connecté', 'status'=>401], 401); 
+        return response()->json(
+            [
+                'message' => 'vous n etes pas connecté',
+                'status' => false,
+                'data' => null
+            ]
+        );
     } 
 
 
@@ -188,10 +214,22 @@ class UserController extends Controller
     {
         if (Auth::check()) {
             Auth::user()->AauthAcessToken()->delete();
-            return response()->json(['success' => 'utilisateur deconnecté', 'status'=>200], $this-> successStatus);
-         }else{
-            return response()->json(['error' => 'impossible de se deconnecter si on n est pas connecte', 'status'=>500], 500); 
-         }
+            return response()->json(
+                [
+                    'message' => 'utilisateur deconnecté',
+                    'status' => true,
+                    'data' => null
+                ]
+            );
+        }else{
+            return response()->json(
+                [
+                    'message' => 'impossible de se deconnecter si on n est pas connecte',
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
         
     } 
 
@@ -204,9 +242,21 @@ class UserController extends Controller
     {
         if (Auth::check()) {
             $user = User::where('deleted_at', null)->get();
-            return response()->json(['success' => $user, 'status'=>200], $this-> successStatus);
+            return response()->json(
+                [
+                    'message' => '',
+                    'status' => true,
+                    'data' => ['user' => $user]
+                ]
+            );
          }else{
-            return response()->json(['error' => 'Vous n etes pas connecte', 'status'=>500], 500); 
+            return response()->json(
+                [
+                    'message' => 'Vous n etes pas connecte',
+                    'status' => false,
+                    'data' => null
+                ]
+            );
          }
         
     } 
@@ -226,25 +276,28 @@ class UserController extends Controller
                 return response()->json(
                     [
                         'message' => 'utilisateur archivé',
-                        'user' => $user, 
-                        'status'=>200,
-                        'success' => 'true',
-                    ],
-                    200
+                        'status' => true,
+                        'data' => null
+                    ]
                 );
             } else {
                 // Renvoyer une erreur
                 return response()->json(
                     [
-                        'message' => 'erreur lors de l archivage', 
-                        'status'=>500,
-                        'success' => 'false'
-                    ],
-                    500
+                        'message' => 'erreur de suppression',
+                        'status' => false,
+                        'data' => null
+                    ]
                 );
             } 
          }else{
-            return response()->json(['error' => 'Vous n etes pas connecte', 'status'=>500], 500); 
+            return response()->json(
+                [
+                    'message' => 'Vous n etes pas connecté',
+                    'status' => false,
+                    'data' => null
+                ]
+            ); 
          }
         
     }

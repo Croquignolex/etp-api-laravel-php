@@ -31,8 +31,8 @@ Route::group(['middleware' => 'auth:api'], function(){
 
 
 
-    /*de l'utilisateur
-        GESTION DES UTILISATEURS
+    /*
+     ///////////////////////GESTION DES UTILISATEURS/////////////////////////
     */
 
     //details de l'utilisateur
@@ -57,8 +57,8 @@ Route::group(['middleware' => 'auth:api'], function(){
 
 
 
-    /*de l'utilisateur
-        GESTION DES AGENTS
+    /*
+     /////////////////////GESTION DES AGENTS///////////////////////////
     */
 
     //Creer un Agent
@@ -83,8 +83,8 @@ Route::group(['middleware' => 'auth:api'], function(){
 
 
 
-    /*de l'utilisateur
-        GESTION DES ROLES DES AGENTS
+    /*
+      ///////////////GESTION DES ROLES DES AGENTS///////////////////
     */
     
 
@@ -105,6 +105,33 @@ Route::group(['middleware' => 'auth:api'], function(){
     //supprimer un role
     Route::get('delete_role/{id}', 'API\RoleController@destroy')
     ->where('id', '[0-9]+');
+
+
+
+
+
+    /*
+    //////////////////////GESTION DES FLOTES/////////////////////
+    */
+    
+    //Creer une flote
+    Route::post('store_flote', 'API\FloteController@store');
+
+    //liste des flotes
+    Route::get('flote_list', 'API\FloteController@list');
+
+    //details d'une flote'
+    Route::get('show_flote/{id}', 'API\FloteController@show')
+    ->where('id', '[0-9]+');
+
+    //modification d'une flote
+    Route::post('edit_flote/{id}', 'API\FloteController@update')
+    ->where('id', '[0-9]+');
+
+    //supprimer une flote
+    Route::get('delete_flote/{id}', 'API\FloteController@destroy')
+    ->where('id', '[0-9]+');
+
 
 
 
