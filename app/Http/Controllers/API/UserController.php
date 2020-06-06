@@ -144,7 +144,10 @@ class UserController extends Controller
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['user' => $user, 'userRole' => $userRole]
+                    'data' => [
+                        'user' => $user->setHidden(['id', 'deleted_at']),
+                        'userRole' => $userRole
+                    ]
                 ]
             );
          }else{
