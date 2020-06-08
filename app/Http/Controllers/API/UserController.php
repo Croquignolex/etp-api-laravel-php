@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
+
 class UserController extends Controller
 {
     /**
@@ -431,9 +432,7 @@ class UserController extends Controller
     {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
-            'phone' => 'required|numeric|unique:users,phone',
             'password' => 'required|string|min:6',
-            'c_password' => 'required|same:password',
         ]);
         if ($validator->fails()) { 
 
@@ -447,14 +446,16 @@ class UserController extends Controller
                        
         }
 
-        // Récupérer le numéro de téléphone
-        $telephone = $request->phone;
-
         // Récupérer le mot de passe
         $password = $request->password;
 
         // Récupérer l'utilisateur concerné
-        $user = User::where('phone', $telephone)->first();
+        $user = Auth::user();
+
+        $credentials = [
+            'phone' => $user->email,
+            'password' => $password
+        ];
 
         // Changer le mot de passe de l'utilisateur
         $user->password = Hash::make($password);
