@@ -5,6 +5,8 @@ namespace App\Http\Controllers\API;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller; 
 use App\User; 
+use App\Utiles\ImageFromBase64;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Auth; 
@@ -16,39 +18,10 @@ use Illuminate\Support\Facades\Hash;
 class UserController extends Controller
 {
 
-    public $successStatus = 200;
-
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function index()
-    {
-        //
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
-    {
-        //
-    }
-
-
-
-
     /** 
      * Connection d'un utilisateur 
-     * 
-     * @return \Illuminate\Http\Response 
      */ 
     public function login(Request $request){ 
-
-
 
         // Valider données envoyées
             $rules = [
@@ -72,6 +45,19 @@ class UserController extends Controller
 
             }
 
+
+            // on verifie que l'utilisateur n'est pas bloqué
+                $userAnable = User::where('phone', $request->phone)->first();
+                if ($userAnable == null) {
+                    return response()->json(
+                        [
+                            'message' => 'cet utilisateur est Archivé',
+                            'status' => false,
+                            'data' => null
+                        ]
+                    ); 
+                }
+
             $credentials = [
                 'phone' => $request->phone,
                 'password' => $request->password
@@ -81,9 +67,6 @@ class UserController extends Controller
             if (auth()->attempt($credentials)) {
                 // Créer un token pour l'utilisateur
                 $token = auth()->user()->createToken(config('app.name', 'ETP'));
-
-                // on recupère la liste des roles
-                $roles = Role::pluck('name','name')->all();
 
                 $user = auth()->user();
 
@@ -113,9 +96,8 @@ class UserController extends Controller
     }
 /** 
      * Inscription d'un utilisateur 
-     * 
-     * @return \Illuminate\Http\Response 
      */ 
+
     public function register(Request $request) 
     { 
         $validator = Validator::make($request->all(), [ 
@@ -123,44 +105,93 @@ class UserController extends Controller
             'phone' => 'required|numeric|unique:users,phone', 
             'adresse' => 'nullable',
             'description' => 'nullable',
-            'avatar' => 'nullable',
+            'base_64_image' => 'required|string',
             'email' => 'required|email|unique:users,email', 
             'password' => 'required|string|min:6', 
             'c_password' => 'required|same:password',
             'roles' => 'required', 
         ]);
         if ($validator->fails()) { 
-                    return response()->json(
-                        [
-                            'message' => ['error'=>$validator->errors()],
-                            'status' => false,
-                            'data' => null
-                        ]
-                    );             
-                }
+            return response()->json(
+                [
+                    'message' => ['error'=>$validator->errors()],
+                    'status' => false,
+                    'data' => null
+                ]
+            );             
+        }
+
+        
+        // on verifie si le role est définit
+        $roleExist = Role::where('name', $request->roles)->count();
+        if ($roleExist == 0) {
+            return response()->json(
+                [
+                    'message' => 'ce role n est pas défini',
+                    'status' => false,
+                    'data' => null
+                ]
+            ); 
+        }
+
+
+        // Convert base 64 image to normal image for the server and the data base
+        $server_image_name_path = ImageFromBase64::imageFromBase64AndSave($request->input('base_64_image'),
+            'images/avatars/');
+
+        $avatar = null;
+        if ($request->hasFile('avatar') && $request->file('avatar')->isValid()) {
+            $avatar = $request->avatar->store('images/avatars');
+        }
 
         $input = $request->all(); 
-                $input['password'] = bcrypt($input['password']); 
-                $user = User::create($input); 
-                $user->assignRole($request->input('roles'));
-                $success['token'] =  $user->createToken('MyApp')-> accessToken; 
-                $success['user'] =  $user;
+            $input['password'] = bcrypt($input['password']); 
+            $input['avatar'] = $server_image_name_path;
+            $user = User::create($input); 
+            $user->assignRole($request->input('roles'));
+            $success['token'] =  $user->createToken('MyApp')-> accessToken; 
+            $success['user'] =  $user;
+            
                 
-                 
-                return response()->json(
-                    [
-                        'message' => '',
-                        'status' => true,
-                        'data' => ['user'=>$success]
-                    ]
-                ); 
+            return response()->json(
+                [
+                    'message' => '',
+                    'status' => true,
+                    'data' => ['user'=>$success]
+                ]
+            ); 
     }
-
 
 /** 
      * details d'un utilisateur 
-     * 
-     * @return \Illuminate\Http\Response 
+     */ 
+    public function details_user($id) 
+    { 
+        $userCount = User::Where('id', $id)->count();
+        if ($userCount != 0) {
+            $user = User::find($id);
+            $userRole = $user->roles->pluck('name','name')->all();
+            return response()->json(
+                [
+                    'message' => '',
+                    'status' => true,
+                    'data' => ['user' => $user, 'userRole' => $userRole]
+                ]
+            );
+         }else{
+            return response()->json(
+                [
+                    'message' => 'impossible de trouver l utilisateur spécifié',
+                    'status' => false,
+                    'data' => null
+                ]
+            ); 
+         }        
+ 
+    } 
+
+    /** 
+     * details d'un utilisateur connecté
      */ 
     public function details() 
     { 
@@ -185,13 +216,11 @@ class UserController extends Controller
             ); 
          }        
  
-    } 
+    }
 
 
     /** 
      * si un utilisateur n'est pas connecté 
-     * 
-     * @return \Illuminate\Http\Response 
      */ 
     public function not_login() 
     { 
@@ -207,8 +236,6 @@ class UserController extends Controller
 
     /** 
      * deconnexion d'un utilisateur 
-     * 
-     * @return \Illuminate\Http\Response 
      */ 
     public function logout()
     {
@@ -235,8 +262,6 @@ class UserController extends Controller
 
     /** 
      * liste des utilisateurs
-     * 
-     * @return \Illuminate\Http\Response 
      */ 
     public function list()
     {
@@ -263,8 +288,6 @@ class UserController extends Controller
 
     /** 
      * supprimer un utilisateur
-     * 
-     * @return \Illuminate\Http\Response 
      */ 
     public function delete($id)
     {
@@ -305,8 +328,6 @@ class UserController extends Controller
 
     /** 
      * modification d'un utilisateur 
-     * 
-     * @return \Illuminate\Http\Response 
      */ 
     public function edit_user(Request $request, $id) 
     { 
@@ -314,14 +335,20 @@ class UserController extends Controller
         //voir si l'utilisateur à modifier existe
         if(!User::Find($id)){
 
-            return response()->json(['error'=>'utilisateur non trouvé', 'status'=>204], 204);
+            // Renvoyer un message de notification
+            return response()->json(
+                [
+                    'message' => 'utilisateur non trouvé',
+                    'status' => false,
+                    'data' => null
+                ]
+            );
             
         }
         
         // Valider données envoyées
         $validator = Validator::make($request->all(), [ 
             'name' => ['required', 'string', 'max:255'],
-            'avatar' => ['nullable', 'image', 'mimes:jpeg,jpg,png,gif|max:10000'],
             'statut' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:255'],
             'email' => ['required', 'string', 'email'],
@@ -331,27 +358,38 @@ class UserController extends Controller
 
         ]);
         if ($validator->fails()) { 
-                    return response()->json(['error'=>$validator->errors(), 'status'=>400], 400);            
-                }
+            return response()->json(
+                [
+                    'message' => ['error'=>$validator->errors()],
+                    'status' => false,
+                    'data' => null
+                ]
+            );            
+        }
+
+        // on verifie si le role est définit
+        $roleExist = Role::where('name', $request->roles)->count();
+        if ($roleExist == 0) {
+            return response()->json(
+                [
+                    'message' => 'ce role n est pas défini',
+                    'status' => false,
+                    'data' => null
+                ]
+            ); 
+        }
 
         // Récupérer les données validées
         $name = $request->name;
         $description = $request->description;
         $email = $request->email;
         $adresse = $request->adresse;
-        $avatar = null;
-        if ($request->hasFile('avatar') && $request->file('avatar')->isValid()) {
-            $avatar = $request->avatar->store('images/avatars');
-        }
         $status = $request->status;
         $phone = $request->phone;
 
         // Modifier le profil de l'utilisateur
         $user = User::Find($id);
         $user->name = $name;
-        if ($avatar != null) {
-            $user->avatar = $avatar;
-        }
         $user->statut = $status;
         $user->phone = $phone;
 
@@ -364,25 +402,24 @@ class UserController extends Controller
 
             DB::table('model_has_roles')->where('model_id',$id)->delete();
             $user->assignRole($request->input('roles'));
-            // Renvoyer un message de succès
+
+            // Renvoyer un message de succès          
             return response()->json(
                 [
                     'message' => 'profil modifié',
-                    'user' => $user,
-                    'success' => 'true', 
-                    'status'=>200,
-                ],
-                200
+                    'status' => true,
+                    'data' => ['user'=>$user]
+                ]
             );
         } else {
+
             // Renvoyer une erreur
             return response()->json(
                 [
-                    'message' => 'erreur lors de la modification', 
-                    'status'=>500,
-                    'success' => 'false'
-                ],
-                500
+                    'message' => 'erreur lors de la modification',
+                    'status' => false,
+                    'data' => null
+                ]
             );
         } 
     } 
@@ -390,9 +427,6 @@ class UserController extends Controller
 
     /**
      * Réinitialisation du mot de passe
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\RedirectResponse
      */
     public function reset(Request $request)
     {
@@ -404,7 +438,15 @@ class UserController extends Controller
             'c_password' => 'required|same:password', 
         ]);
         if ($validator->fails()) { 
-            return response()->json(['error'=>$validator->errors(), 'status'=>400], 400);            
+
+            return response()->json(
+                [
+                    'message' => ['error'=>$validator->errors()],
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+                       
         }
 
 
@@ -427,82 +469,157 @@ class UserController extends Controller
             return response()->json(
                 [
                     'message' => 'Mot de passe réinitialisé avec succès',
-                    'user' => $user,
-                    'success' => 'true', 
-                    'status'=>200,
-                ],
-                200
+                    'status' => true,
+                    'data' => ['user'=>$user]
+                ]
             );
         } else {
             // Renvoyer une erreur
             return response()->json(
                 [
-                    'message' => 'Echec de réinitialisation du mot de passe', 
-                    'status'=>500,
-                    'success' => 'false',
-                ],
-                500
+                    'message' => 'Echec de réinitialisation du mot de passe',
+                    'status' => false,
+                    'data' => null
+                ]
             );
         }
     }
 
-
-
-
-
     /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @param Base64ImageRequest $request
+     * @return JsonResponse
      */
-    public function store(Request $request)
+    public function update_picture(Request $request)
     {
-        //
+
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [ 
+            'base_64_image' => 'required|string', 
+        ]);
+        
+        if ($validator->fails()) { 
+
+            return response()->json(
+                [
+                    'message' => ['error'=>$validator->errors()],
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+                       
+        }
+        
+        // Get current user
+        $user =  Auth::user();
+        $user_avatar_path_name =  $user->avatar;
+
+        //Delete old file before storing new file
+        if(Storage::exists($user_avatar_path_name) && $user_avatar_path_name != 'users/default.png')
+            Storage::delete($user_avatar_path_name);
+
+
+        // Convert base 64 image to normal image for the server and the data base
+        $server_image_name_path = ImageFromBase64::imageFromBase64AndSave($request->input('base_64_image'),
+            'images/avatars/');
+
+        // Changer le mot de passe de l'utilisateur
+        $user->avatar = $server_image_name_path;
+
+        // Save image name in database      
+        if ($user->save()) {
+            return response()->json(
+                [
+                    'message' => 'Photo de profil mise à jour avec succès',
+                    'status' => true,
+                    'data' => ['user'=>$user]
+                ]
+            );
+        }else {
+            return response()->json(
+                [
+                    'message' => 'erreur de modification de l avatar',
+                    'status' => true,
+                    'data' => ['user'=>$user]
+                ]
+            );
+        }
+        
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function show($id)
-    {
-        //
-    }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
-    {
-        //
-    }
+    /** 
+     * modification d'un utilisateur 
+     */ 
+    public function edit_role_user(Request $request, $id) 
+    { 
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, $id)
-    {
-        //
-    }
+        //voir si l'utilisateur à modifier existe
+        if(!User::Find($id)){
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy($id)
-    {
-        //
-    }
+            // Renvoyer un message de notification
+            return response()->json(
+                [
+                    'message' => 'utilisateur non trouvé',
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+            
+        }
+        
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [ 
+
+            'roles' => ['required']
+
+        ]);
+        if ($validator->fails()) { 
+            return response()->json(
+                [
+                    'message' => ['error'=>$validator->errors()],
+                    'status' => false,
+                    'data' => null
+                ]
+            );            
+        }
+
+        // on verifie si le role est définit
+        $roleExist = Role::where('name', $request->roles)->count();
+        if ($roleExist == 0) {
+            return response()->json(
+                [
+                    'message' => 'ce role n est pas défini',
+                    'status' => false,
+                    'data' => null
+                ]
+            ); 
+        }
+
+ 
+        DB::table('model_has_roles')->where('model_id',$id)->delete();
+        $user = User::Find($id);
+
+        if ($user->assignRole($request->input('roles'))) {            
+
+            // Renvoyer un message de succès          
+            return response()->json(
+                [
+                    'message' => 'Role modifié',
+                    'status' => true,
+                    'data' => ['user'=>$user]
+                ]
+            );
+        } else {
+
+            // Renvoyer une erreur
+            return response()->json(
+                [
+                    'message' => 'erreur lors de la modification',
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        } 
+    } 
+
 }

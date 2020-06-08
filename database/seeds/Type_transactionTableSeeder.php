@@ -26,7 +26,7 @@ class Type_transactionTableSeeder extends Seeder {
 
 		// 'deappro'
 		Type_transaction::create(array(
-				'nom' => 'Desapprovisionnement'
+				'nom' => 'reglement'
 			));
 
 		// 'destock'
@@ -38,6 +38,11 @@ class Type_transactionTableSeeder extends Seeder {
 		Type_transaction::create(array(
 				'nom' => 'Retour flote'
 			));
+
+			// 'recouvrement'
+		Type_transaction::create(array(
+			'nom' => 'Retour flote'
+		));
 
 		// 'abonn'
 		Type_transaction::create(array(

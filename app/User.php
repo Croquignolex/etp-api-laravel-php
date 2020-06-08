@@ -33,7 +33,7 @@ class User extends Authenticatable
     ];
 	
 	protected $dates = ['deleted_at'];
-    protected $visible = array('id','name','status','avatar', 'password', 'phone', 'adresse', 'description','deleted_at', 'email');
+    protected $visible = array('id','name','status','avatar', 'password', 'phone', 'adresse', 'deleted_at', 'description','deleted_at', 'email');
 
     /**
      * The attributes that should be hidden for arrays.
