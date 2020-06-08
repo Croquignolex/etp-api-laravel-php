@@ -20,17 +20,10 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 //si l'utilisateur n'est pas connecté
 Route::get('not_login', 'API\UserController@not_login')->name('not_login');
 
-
 Route::post('login', 'API\UserController@login');
 Route::post('register', 'API\UserController@register');
 
-
-
 Route::group(['middleware' => 'auth:api'], function(){
-
-
-
-
     /*
      ///////////////////////GESTION DES UTILISATEURS/////////////////////////
     */
@@ -74,17 +67,7 @@ Route::group(['middleware' => 'auth:api'], function(){
             Route::post('edit_avatar', 'API\UserController@update_picture');
 
 
-
-
-    
-
-    
-
-    
-    
-    
-
-    
+ 
 
     
 

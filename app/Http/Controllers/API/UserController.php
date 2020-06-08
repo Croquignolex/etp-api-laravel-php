@@ -2,48 +2,48 @@
 
 namespace App\Http\Controllers\API;
 
+use App\User;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller; 
-use App\User; 
 use App\Utiles\ImageFromBase64;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
-use Illuminate\Support\Facades\Auth; 
-use Illuminate\Support\Facades\Validator; 
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-
-
+use Illuminate\Support\Facades\Validator;
 
 class UserController extends Controller
 {
-
-    /** 
-     * Connection d'un utilisateur 
-     */ 
-    public function login(Request $request){ 
-
+    /**
+     * Connection d'un utilisateur
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function login(Request $request)
+    {
         // Valider données envoyées
-            $rules = [
-                'password' => ['required', 'string', 'min:6'],
-                'phone' => ['required', 'integer']
-            ];
+        $rules = [
+            'password' => ['required', 'string', 'min:6'],
+            'phone' => ['required', 'integer']
+        ];
 
-            $input = ['password' => $request->password, 'phone' => $request->phone];
+        $input = ['password' => $request->password, 'phone' => $request->phone];
 
-            if(!Validator::make($input, $rules)->passes()){
+        if(!Validator::make($input, $rules)->passes()){
 
-                $val = Validator::make($input, $rules);
+            $val = Validator::make($input, $rules);
 
-                return response()->json(
-                    [
-                        'message' => ['error'=>$val->errors()],
-                        'status' => false,
-                        'data' => null
-                    ]
-                );                            
-
-            }
+            return response()->json(
+                [
+                    'message' => ['error'=>$val->errors()],
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
 
 
             // on verifie que l'utilisateur n'est pas bloqué
@@ -64,52 +64,56 @@ class UserController extends Controller
             ];
 
         //si la connexion est bonne
-            if (auth()->attempt($credentials)) {
-                // Créer un token pour l'utilisateur
-                $token = auth()->user()->createToken(config('app.name', 'ETP'));
+        if (auth()->attempt($credentials)) {
+            // Créer un token pour l'utilisateur
+            $token = auth()->user()->createToken(config('app.name', 'ETP'));
 
                 $user = auth()->user();
 
-                // Définir quand le token va s'expirer
-                /*$token->token->expires_at = Carbon::now()->addHour();
+            // Définir quand le token va s'expirer
+            /*$token->token->expires_at = Carbon::now()->addHour();
 
-                $token->token->save();*/
+            $token->token->save();*/
 
-                return response()->json(
-                    [
-                        'message' => '',
-                        'status' => true,
-                        'data' => ['access_token'=>$token->accessToken, 'user' => $user,]
+            return response()->json(
+                [
+                    'message' => '',
+                    'status' => true,
+                    'data' => [
+                        'access_token' =>$token->accessToken,
+                        'user' => $user->setHidden(['id', 'deleted_at'])
                     ]
-                );
-            } else {
-                return response()->json(
-                    [
-                        'message' => "Login ou mot de passe incorrect!",
-                        'status' => false,
-                        'data' => null,
-                    ]
-                );
-            }
-
-
+                ]
+            );
+        } else {
+            return response()->json(
+                [
+                    'message' => "Login ou mot de passe incorrect!",
+                    'status' => false,
+                    'data' => null,
+                ]
+            );
+        }
     }
-/** 
-     * Inscription d'un utilisateur 
-     */ 
 
-    public function register(Request $request) 
-    { 
-        $validator = Validator::make($request->all(), [ 
+    /**
+     * Inscription d'un utilisateur
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function register(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
             'name' => 'required',
-            'phone' => 'required|numeric|unique:users,phone', 
+            'phone' => 'required|numeric|unique:users,phone',
             'adresse' => 'nullable',
             'description' => 'nullable',
             'base_64_image' => 'required|string',
             'email' => 'required|email|unique:users,email', 
             'password' => 'required|string|min:6', 
             'c_password' => 'required|same:password',
-            'roles' => 'required', 
+            'roles' => 'required',
         ]);
         if ($validator->fails()) { 
             return response()->json(
@@ -190,20 +194,24 @@ class UserController extends Controller
  
     } 
 
-    /** 
+    /**
      * details d'un utilisateur connecté
-     */ 
-    public function details() 
-    { 
-
+     *
+     * @return JsonResponse
+     */
+    public function details()
+    {
         if (Auth::check()) {
-            $user = Auth::user(); 
+            $user = Auth::user();
             $userRole = $user->roles->pluck('name','name')->all();
             return response()->json(
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['user' => $user, 'userRole' => $userRole]
+                    'data' => [
+                        'user' => $user->setHidden(['id', 'deleted_at']),
+                        'userRole' => $userRole
+                    ]
                 ]
             );
          }else{
@@ -213,17 +221,17 @@ class UserController extends Controller
                     'status' => false,
                     'data' => null
                 ]
-            ); 
-         }        
- 
+            );
+         }
     }
 
-
-    /** 
-     * si un utilisateur n'est pas connecté 
-     */ 
-    public function not_login() 
-    { 
+    /**
+     * si un utilisateur n'est pas connecté
+     *
+     * @return JsonResponse
+     */
+    public function not_login()
+    {
         return response()->json(
             [
                 'message' => 'vous n etes pas connecté',
@@ -231,12 +239,13 @@ class UserController extends Controller
                 'data' => null
             ]
         );
-    } 
+    }
 
-
-    /** 
-     * deconnexion d'un utilisateur 
-     */ 
+    /**
+     * deconnexion d'un utilisateur
+     *
+     * @return JsonResponse
+     */
     public function logout()
     {
         if (Auth::check()) {
@@ -257,12 +266,13 @@ class UserController extends Controller
                 ]
             );
         }
-        
-    } 
+    }
 
-    /** 
+    /**
      * liste des utilisateurs
-     */ 
+     *
+     * @return JsonResponse
+     */
     public function list()
     {
         if (Auth::check()) {
@@ -283,12 +293,14 @@ class UserController extends Controller
                 ]
             );
          }
-        
-    } 
+    }
 
-    /** 
+    /**
      * supprimer un utilisateur
-     */ 
+     *
+     * @param $id
+     * @return JsonResponse
+     */
     public function delete($id)
     {
         if (Auth::check()) {
@@ -312,7 +324,7 @@ class UserController extends Controller
                         'data' => null
                     ]
                 );
-            } 
+            }
          }else{
             return response()->json(
                 [
@@ -320,9 +332,8 @@ class UserController extends Controller
                     'status' => false,
                     'data' => null
                 ]
-            ); 
+            );
          }
-        
     }
 
 
@@ -345,16 +356,16 @@ class UserController extends Controller
             );
             
         }
-        
+
         // Valider données envoyées
-        $validator = Validator::make($request->all(), [ 
+        $validator = Validator::make($request->all(), [
             'name' => ['required', 'string', 'max:255'],
             'statut' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:255'],
             'email' => ['required', 'string', 'email'],
             'adresse' => ['required', 'string', 'max:255'],
             'roles' => ['required'],
-            'phone' => ['required', 'numeric', 'max:255'] 
+            'phone' => ['required', 'numeric', 'max:255']
 
         ]);
         if ($validator->fails()) { 
@@ -397,9 +408,7 @@ class UserController extends Controller
         $user->email = $email;
         $user->adresse = $adresse;
 
-
         if ($user->save()) {
-
             DB::table('model_has_roles')->where('model_id',$id)->delete();
             $user->assignRole($request->input('roles'));
 
@@ -421,21 +430,22 @@ class UserController extends Controller
                     'data' => null
                 ]
             );
-        } 
-    } 
-
+        }
+    }
 
     /**
      * Réinitialisation du mot de passe
+     *
+     * @param Request $request
+     * @return JsonResponse
      */
     public function reset(Request $request)
     {
-
         // Valider données envoyées
-        $validator = Validator::make($request->all(), [ 
-            'phone' => 'required|numeric|unique:users,phone', 
-            'password' => 'required|string|min:6', 
-            'c_password' => 'required|same:password', 
+        $validator = Validator::make($request->all(), [
+            'phone' => 'required|numeric|unique:users,phone',
+            'password' => 'required|string|min:6',
+            'c_password' => 'required|same:password',
         ]);
         if ($validator->fails()) { 
 
@@ -448,8 +458,6 @@ class UserController extends Controller
             );
                        
         }
-
-
 
         // Récupérer le numéro de téléphone
         $telephone = $request->phone;
@@ -464,7 +472,6 @@ class UserController extends Controller
         $user->password = Hash::make($password);
 
         if ($user->save()) {
-
             // Renvoyer un message de succès
             return response()->json(
                 [
