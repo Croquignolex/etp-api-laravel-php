@@ -378,17 +378,7 @@ class UserController extends Controller
             );            
         }
 
-        // on verifie si le role est définit
-        $roleExist = Role::where('name', $request->roles)->count();
-        if ($roleExist == 0) {
-            return response()->json(
-                [
-                    'message' => 'ce role n est pas défini',
-                    'status' => false,
-                    'data' => null
-                ]
-            ); 
-        }
+        
 
         // Récupérer les données validées
         $name = $request->name;
@@ -409,8 +399,6 @@ class UserController extends Controller
         $user->adresse = $adresse;
 
         if ($user->save()) {
-            DB::table('model_has_roles')->where('model_id',$id)->delete();
-            $user->assignRole($request->input('roles'));
 
             // Renvoyer un message de succès          
             return response()->json(
