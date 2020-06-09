@@ -61,7 +61,7 @@ Route::group(['middleware' => 'auth:api'], function(){
             Route::post('edit_password', 'API\UserController@reset');
 
             //deconnexion de l'utilisateur
-            Route::get('logout', 'API\UserController@logout');
+            Route::post('logout', 'API\UserController@logout');
 
             //Changer mon avatar
             Route::post('edit_avatar', 'API\UserController@update_picture');
