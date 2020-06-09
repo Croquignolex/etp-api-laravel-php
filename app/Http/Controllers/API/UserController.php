@@ -110,6 +110,7 @@ class UserController extends Controller
             'phone' => 'required|numeric|unique:users,phone',
             'adresse' => 'nullable',
             'description' => 'nullable',
+            'poste' => ['nullable', 'string', 'max:255'],
             'base_64_image' => 'required|string',
             'email' => 'required|email|unique:users,email', 
             'password' => 'required|string|min:6', 
@@ -282,7 +283,7 @@ class UserController extends Controller
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['user' => $user]
+                    'data' => ['users' => $user]
                 ]
             );
          }else{
@@ -363,6 +364,7 @@ class UserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'statut' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:255'],
+            'poste' => ['nullable', 'string', 'max:255'],
             'email' => ['required', 'string', 'email'],
             'adresse' => ['required', 'string', 'max:255'],
             'roles' => ['required'],
@@ -387,6 +389,7 @@ class UserController extends Controller
         $email = $request->email;
         $adresse = $request->adresse;
         $status = $request->status;
+        $poste = $request->poste;
         $phone = $request->phone;
 
         // Modifier le profil de l'utilisateur
@@ -394,6 +397,7 @@ class UserController extends Controller
         $user->name = $name;
         $user->statut = $status;
         $user->phone = $phone;
+        $user->poste = $poste;
 
         $user->description = $description;
         $user->email = $email;
