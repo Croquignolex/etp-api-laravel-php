@@ -432,7 +432,8 @@ class UserController extends Controller
     {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
-            'password' => 'required|string|min:6',
+            'current_pass' => 'required|string',
+            'new_pass' => 'required|string|min:6',
         ]);
         if ($validator->fails()) { 
 
@@ -446,19 +447,32 @@ class UserController extends Controller
                        
         }
 
-        // Récupérer le mot de passe
-        $password = $request->password;
-
         // Récupérer l'utilisateur concerné
         $user = Auth::user();
 
-        $credentials = [
-            'phone' => $user->email,
-            'password' => $password
-        ];
+        if (!Hash::check($request->current_pass, $user->password)) {
+
+            // Mot de passe courant incorrect
+            return response()->json(
+                [
+                    'message' => 'Mot de passe courant incorrect',
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+
+        $pass_data = array(
+            'current_pass' => $request->current_pass,
+            'new_pass' => $request->new_pass,
+        );
+
+
+        // crypter le nouveau mot de passe
+        $pass_data['new_pass'] = bcrypt($pass_data['new_pass']);        
 
         // Changer le mot de passe de l'utilisateur
-        $user->password = Hash::make($password);
+        $user->password = $pass_data['new_pass'];
 
         if ($user->save()) {
             // Renvoyer un message de succès
