@@ -114,7 +114,6 @@ class UserController extends Controller
             'base_64_image' => 'required|string',
             'email' => 'required|email|unique:users,email', 
             'password' => 'required|string|min:6', 
-            'c_password' => 'required|same:password',
             'roles' => 'required',
         ]);
         if ($validator->fails()) { 
@@ -144,11 +143,6 @@ class UserController extends Controller
         // Convert base 64 image to normal image for the server and the data base
         $server_image_name_path = ImageFromBase64::imageFromBase64AndSave($request->input('base_64_image'),
             'images/avatars/');
-
-        $avatar = null;
-        if ($request->hasFile('avatar') && $request->file('avatar')->isValid()) {
-            $avatar = $request->avatar->store('images/avatars');
-        }
 
         $input = $request->all(); 
             $input['password'] = bcrypt($input['password']); 
