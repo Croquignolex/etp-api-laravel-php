@@ -82,7 +82,7 @@ class UserController extends Controller
                     'status' => true,
                     'data' => [
                         'access_token' =>$token->accessToken,
-                        'user' => $user->setHidden(['id', 'deleted_at'])
+                        'user' => $user->setHidden(['deleted_at'])
                     ]
                 ]
             );
@@ -114,7 +114,6 @@ class UserController extends Controller
             'base_64_image' => 'required|string',
             'email' => 'required|email|unique:users,email', 
             'password' => 'required|string|min:6', 
-            'c_password' => 'required|same:password',
             'roles' => 'required',
         ]);
         if ($validator->fails()) { 
@@ -144,11 +143,6 @@ class UserController extends Controller
         // Convert base 64 image to normal image for the server and the data base
         $server_image_name_path = ImageFromBase64::imageFromBase64AndSave($request->input('base_64_image'),
             'images/avatars/');
-
-        $avatar = null;
-        if ($request->hasFile('avatar') && $request->file('avatar')->isValid()) {
-            $avatar = $request->avatar->store('images/avatars');
-        }
 
         $input = $request->all(); 
             $input['password'] = bcrypt($input['password']); 
@@ -211,7 +205,7 @@ class UserController extends Controller
                     'message' => '',
                     'status' => true,
                     'data' => [
-                        'user' => $user->setHidden(['id', 'deleted_at']),
+                        'user' => $user->setHidden(['deleted_at']),
                         'userRole' => $userRole
                     ]
                 ]
@@ -278,14 +272,30 @@ class UserController extends Controller
     public function list()
     {
         if (Auth::check()) {
-            $user = User::where('deleted_at', null)->get();
-            return response()->json(
-                [
-                    'message' => '',
-                    'status' => true,
-                    'data' => ['users' => $user]
-                ]
-            );
+                //$users = User::where('deleted_at', null)->get();
+
+
+            /*$util = User::join('model_has_roles', 'model_has_roles.model_id', 'users.id')
+            ->join('roles', 'roles.id', 'model_has_roles.role_id')
+            ->select(
+                'users.name', 'users.poste', 'users.email', 'users.phone', 'users.adresse','users.created_at','users.statut','users.avatar', 'roles.name as role'
+            )
+            ->get();*/
+
+            $users = User::where('deleted_at', null)->get();
+            $returenedUers = [];
+            foreach($users as $user) {
+
+                $returenedUers[] = ['user' => $user, 'role' => $user->roles->pluck('name','name')->all()];
+
+            }         
+                return response()->json(
+                    [
+                        'message' => '',
+                        'status' => true,
+                        'data' => ['users' => $returenedUers]
+                    ]
+                );
          }else{
             return response()->json(
                 [
@@ -305,6 +315,16 @@ class UserController extends Controller
      */
     public function delete($id)
     {
+        if (Auth::user()->id == $id) {
+            // Renvoyer une erreur
+            return response()->json(
+                [
+                    'message' => 'impossible de supprimer votre compte',
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
         if (Auth::check()) {
             $user = User::find($id);
             $user->deleted_at = now();

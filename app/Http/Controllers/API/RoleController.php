@@ -43,7 +43,7 @@ class RoleController extends Controller
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['permissions' => $permissions, 'Roles' => $Roles]
+                    'data' => ['permissions' => $permissions, 'roles' => $Roles]
                 ]
             );
          }else{
