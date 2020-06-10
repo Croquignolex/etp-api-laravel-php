@@ -382,13 +382,13 @@ class UserController extends Controller
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
             'name' => ['required', 'string', 'max:255'],
-            'statut' => ['required', 'string', 'max:255'],
+            // 'statut' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:255'],
             'poste' => ['nullable', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email'],
+            // 'email' => ['required', 'string', 'email'],
             'adresse' => ['required', 'string', 'max:255'],
-            'roles' => ['required'],
-            'phone' => ['required', 'numeric', 'max:255']
+            // 'roles' => ['required'],
+            // 'phone' => ['required', 'numeric', 'max:255']
 
         ]);
         if ($validator->fails()) { 
@@ -406,21 +406,21 @@ class UserController extends Controller
         // Récupérer les données validées
         $name = $request->name;
         $description = $request->description;
-        $email = $request->email;
+        // $email = $request->email;
         $adresse = $request->adresse;
-        $status = $request->status;
+        // $status = $request->status;
         $poste = $request->poste;
-        $phone = $request->phone;
+        // $phone = $request->phone;
 
         // Modifier le profil de l'utilisateur
         $user = User::Find($id);
         $user->name = $name;
-        $user->statut = $status;
-        $user->phone = $phone;
+        // $user->statut = $status;
+        // $user->phone = $phone;
         $user->poste = $poste;
 
         $user->description = $description;
-        $user->email = $email;
+        // $user->email = $email;
         $user->adresse = $adresse;
 
         if ($user->save()) {
@@ -604,7 +604,7 @@ class UserController extends Controller
         // Valider données envoyées
         $validator = Validator::make($request->all(), [ 
 
-            'roles' => ['required']
+            'role' => ['required']
 
         ]);
         if ($validator->fails()) { 
@@ -618,7 +618,7 @@ class UserController extends Controller
         }
 
         // on verifie si le role est définit
-        $roleExist = Role::where('name', $request->roles)->count();
+        $roleExist = Role::where('name', $request->role)->count();
         if ($roleExist == 0) {
             return response()->json(
                 [
@@ -633,7 +633,7 @@ class UserController extends Controller
         DB::table('model_has_roles')->where('model_id',$id)->delete();
         $user = User::Find($id);
 
-        if ($user->assignRole($request->input('roles'))) {            
+        if ($user->assignRole($request->input('role'))) {            
 
             // Renvoyer un message de succès          
             return response()->json(
