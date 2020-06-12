@@ -20,8 +20,8 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 //si l'utilisateur n'est pas connecté
 Route::get('not_login', 'API\UserController@not_login')->name('not_login');
 
+//l'utilisateur se connecte
 Route::post('login', 'API\UserController@login');
-Route::post('register', 'API\UserController@register');
 
 Route::group(['middleware' => 'auth:api'], function(){
     /*
@@ -47,6 +47,13 @@ Route::group(['middleware' => 'auth:api'], function(){
 
             //Changer le role d'un utilisateur
             Route::post('edit_role_user/{id}', 'API\UserController@edit_role_user')
+            ->where('id', '[0-9]+');
+
+            //Creation d'un utilisateur
+            Route::post('register', 'API\UserController@register');
+
+            //Approuver ou desapprouver un utilisateur
+            Route::get('edit_user_status/{id}', 'API\UserController@edit_user_status')
             ->where('id', '[0-9]+');
         
 
