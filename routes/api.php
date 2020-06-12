@@ -38,7 +38,7 @@ Route::group(['middleware' => 'auth:api'], function(){
             Route::get('list', 'API\UserController@list');
 
             //supprimer l'utilisateur
-            Route::get('delete/{id}', 'API\UserController@delete')
+            Route::post('delete/{id}', 'API\UserController@delete')
             ->where('id', '[0-9]+');
 
             //details d'un utilisateur
