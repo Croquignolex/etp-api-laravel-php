@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\User;
 use Illuminate\Http\Request;
 use App\Utiles\ImageFromBase64;
+use App\Enums\Statut;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -47,7 +48,28 @@ class UserController extends Controller
         }
 
 
-            // on verifie que l'utilisateur n'est pas bloqué
+            // on verifie que l'utilisateur n'est ni Archivé ni desactivé
+                $userAnable = User::where('phone', $request->phone)->first();
+
+                if ($userAnable == null) {
+                    return response()->json(
+                        [
+                            'message' => 'cet utilisateur est Archivé',
+                            'status' => false,
+                            'data' => null
+                        ]
+                    ); 
+                }elseif ($userAnable->statut == Statut::DECLINE) {
+                    return response()->json(
+                        [
+                            'message' => 'cet utilisateur est desactivé',
+                            'status' => false,
+                            'data' => null
+                        ]
+                    );                    
+                }
+
+                // on verifie que l'utilisateur n'est pas Archivé
                 $userAnable = User::where('phone', $request->phone)->first();
                 if ($userAnable == null) {
                     return response()->json(
@@ -138,8 +160,7 @@ class UserController extends Controller
                 ]
             ); 
         }
-
-
+        
         // Convert base 64 image to normal image for the server and the data base
         $server_image_name_path = ImageFromBase64::imageFromBase64AndSave($request->input('base_64_image'),
             'images/avatars/');
@@ -147,6 +168,7 @@ class UserController extends Controller
         $input = $request->all(); 
             $input['password'] = bcrypt($input['password']); 
             $input['avatar'] = $server_image_name_path;
+            $input['add_by'] = Auth::user()->id;
             $user = User::create($input); 
             $user->assignRole($request->input('roles'));
             $success['token'] =  $user->createToken('MyApp')-> accessToken; 
@@ -187,6 +209,63 @@ class UserController extends Controller
                 ]
             ); 
          }        
+ 
+    } 
+
+
+    /** 
+     * //Approuver ou desapprouver un utilisateur
+     */ 
+    public function edit_user_status($id) 
+    { 
+        $user = User::Find($id);
+        $user_status = $user->statut;
+
+        if ($user == null) {
+
+            // Renvoyer un message d'erreur          
+            return response()->json(
+                [
+                    'message' => 'lutilisateur introuvable',
+                    'status' => true,
+                    'data' => null
+                ]
+            );
+
+        }elseif ($user_status == Statut::DECLINE) {
+
+            // Approuver
+            $user->statut = Statut::APPROUVE;
+
+            
+        }else{
+
+            // desapprouver
+            $user->statut = Statut::DECLINE;
+        }
+  
+         
+        if ($user->save()) {
+
+            // Renvoyer un message de succès          
+            return response()->json(
+                [
+                    'message' => 'Statut changé',
+                    'status' => true,
+                    'data' => ['user'=>$user]
+                ]
+            );
+        } else {
+
+            // Renvoyer une erreur
+            return response()->json(
+                [
+                    'message' => 'erreur lors de la modification du statut',
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
  
     } 
 
