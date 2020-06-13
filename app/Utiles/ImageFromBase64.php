@@ -27,7 +27,7 @@ abstract class ImageFromBase64
 
         // Store file in server path
         $server_image_name_path = $storage_path . $server_image_name;        
-        Storage::put($server_image_name_path, $normal_image_file);
+        Storage::put('public/' . $server_image_name_path, $normal_image_file);
 
         // Return serve path
         return $server_image_name_path;
