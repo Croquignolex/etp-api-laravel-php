@@ -16,11 +16,11 @@ class PermissionTableSeeder extends Seeder
 
        $permissions = [
 
-           'superviseur',
+           'Superviseur',
 
-           'gerant',
+           'Gerant',
 
-           'recouvreur',
+           'Recouvreur',
 
            'Agent'
 
