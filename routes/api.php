@@ -53,7 +53,7 @@ Route::group(['middleware' => 'auth:api'], function(){
             Route::post('register', 'API\UserController@register');
 
             //Approuver ou desapprouver un utilisateur
-            Route::get('edit_user_status/{id}', 'API\UserController@edit_user_status')
+            Route::post('edit_user_status/{id}', 'API\UserController@edit_user_status')
             ->where('id', '[0-9]+');
         
 

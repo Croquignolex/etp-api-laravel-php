@@ -133,7 +133,7 @@ class UserController extends Controller
             'adresse' => 'nullable',
             'description' => 'nullable',
             'poste' => ['nullable', 'string', 'max:255'],
-            'base_64_image' => 'required|string',
+            //'base_64_image' => 'required|string',
             'email' => 'required|email|unique:users,email', 
             'password' => 'required|string|min:6', 
             'roles' => 'required',
@@ -162,12 +162,12 @@ class UserController extends Controller
         }
         
         // Convert base 64 image to normal image for the server and the data base
-        $server_image_name_path = ImageFromBase64::imageFromBase64AndSave($request->input('base_64_image'),
-            'images/avatars/');
+        //$server_image_name_path = ImageFromBase64::imageFromBase64AndSave($request->input('base_64_image'),
+            //'images/avatars/');
 
         $input = $request->all(); 
             $input['password'] = bcrypt($input['password']); 
-            $input['avatar'] = $server_image_name_path;
+            //$input['avatar'] = $server_image_name_path;
             $input['add_by'] = Auth::user()->id;
             $user = User::create($input); 
             $user->assignRole($request->input('roles'));
