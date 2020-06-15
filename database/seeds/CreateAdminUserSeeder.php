@@ -38,7 +38,7 @@ class CreateAdminUserSeeder extends Seeder
         $role2 = Role::create(['name' => 'Superviseur']);
         $role3 = Role::create(['name' => 'Gerant']);
         $role4 = Role::create(['name' => 'Recouvreur']);
-        $role5 = Role::create(['name' => 'Agent']);
+        $role5 = Role::create(['name' => 'Agent']); 
       
 
         //recuperer toutes les premissions
