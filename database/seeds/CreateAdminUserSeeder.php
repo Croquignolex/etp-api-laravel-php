@@ -35,10 +35,10 @@ class CreateAdminUserSeeder extends Seeder
   
             //creer les roles
         $role = Role::create(['name' => 'Admin']);
-        $role2 = Role::create(['name' => 'superviseur']);
-        $role3 = Role::create(['name' => 'gerant']);
-        $role4 = Role::create(['name' => 'recouvreur']);
-        $role5 = Role::create(['name' => 'Agent']);
+        $role2 = Role::create(['name' => 'Superviseur']);
+        $role3 = Role::create(['name' => 'Gerant']);
+        $role4 = Role::create(['name' => 'Recouvreur']);
+        $role5 = Role::create(['name' => 'Agent']); 
       
 
         //recuperer toutes les premissions
@@ -48,9 +48,9 @@ class CreateAdminUserSeeder extends Seeder
         $role->syncPermissions($permissions); 
         
         //donner des permissions au autres roles
-        $role2->givePermissionTo('superviseur');
-        $role3->givePermissionTo('gerant');
-        $role4->givePermissionTo('recouvreur');
+        $role2->givePermissionTo('Superviseur');
+        $role3->givePermissionTo('Gerant');
+        $role4->givePermissionTo('Recouvreur');
         $role5->givePermissionTo('Agent');
 
         //Attribuer le role à l'utilisateur
