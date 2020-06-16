@@ -16,11 +16,9 @@ class FloteController extends Controller
 
      */
 
-    function __construct()
+    function __construct(){
 
-    {
-
-         $this->middleware('role:Admin'); 
+        $this->middleware('permission:Superviseur');
 
     }
 

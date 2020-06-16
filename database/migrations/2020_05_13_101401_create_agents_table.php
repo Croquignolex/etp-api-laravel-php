@@ -9,14 +9,13 @@ class CreateAgentsTable extends Migration {
 	{
 		Schema::create('agents', function(Blueprint $table) {
 			$table->increments('id');
-			$table->string('nom')->nullable();
+			$table->integer('id_creator')->unsigned()->nullable()->index();
+			$table->integer('id_user')->unsigned()->nullable()->index();
 			$table->string('img_cni')->nullable();
-			$table->string('phone')->nullable();
 			$table->string('reference')->nullable();
-			$table->string('adresse')->nullable();
 			$table->decimal('taux_commission')->nullable();
-			$table->string('email')->nullable();
-			$table->string('pays')->nullable();
+			$table->string('ville')->nullable();
+			$table->string('pays')->nullable();			
 			$table->softDeletes();
 			$table->timestamps();
 		});

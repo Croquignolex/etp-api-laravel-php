@@ -18,10 +18,10 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 });
 
 //si l'utilisateur n'est pas connecté
-Route::get('not_login', 'API\UserController@not_login')->name('not_login');
+Route::get('not_login', 'API\LoginController@not_login')->name('not_login');
 
 //l'utilisateur se connecte
-Route::post('login', 'API\UserController@login');
+Route::post('login', 'API\LoginController@login');
 
 Route::group(['middleware' => 'auth:api'], function(){
     /*
@@ -62,16 +62,16 @@ Route::group(['middleware' => 'auth:api'], function(){
         /////////////////User sur lui meme
 
             //details de l'utilisateur
-            Route::get('details', 'API\UserController@details');
+            Route::get('details', 'API\LoginController@details');
 
             //modifier password
-            Route::post('edit_password', 'API\UserController@reset');
+            Route::post('edit_password', 'API\LoginController@reset');
 
             //deconnexion de l'utilisateur
-            Route::post('logout', 'API\UserController@logout');
+            Route::post('logout', 'API\LoginController@logout');
 
             //Changer mon avatar
-            Route::post('edit_avatar', 'API\UserController@update_picture');
+            Route::post('edit_avatar', 'API\LoginController@update_picture');
 
 
  
@@ -90,6 +90,9 @@ Route::group(['middleware' => 'auth:api'], function(){
         //details d'un Agent
         Route::get('show_agent/{id}', 'API\AgentController@show')
         ->where('id', '[0-9]+');
+
+        //Changer la CNI
+        Route::post('edit_cni', 'API\LoginController@edit_cni');
 
         //modification d'un Agent
         Route::post('edit_agent/{id}', 'API\AgentController@edit')

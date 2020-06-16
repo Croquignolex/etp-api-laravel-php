@@ -14,8 +14,8 @@ class Flote extends Model
     use SoftDeletes;
 
     protected $dates = ['deleted_at'];
-    protected $fillable = array('nom', 'reference', 'description');
-    protected $visible = array('nom', 'reference', 'description');
+    protected $fillable = array('nom', 'reference', 'solde', 'description');
+    protected $visible = array('nom', 'reference', 'solde', 'description');
 
     public function transactions()
     {

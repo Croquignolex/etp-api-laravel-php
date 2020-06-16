@@ -32,6 +32,34 @@ class CreateAdminUserSeeder extends Seeder
 
         ]);
 
+        $user2 = User::create([
+
+        	'name' => 'Agent1', 
+
+            'email' => 'agent1@gmail.com',
+            
+            'phone' => '555555555', 
+
+            'adresse' => 'Douala, Ndokotti',
+
+        	'password' => bcrypt('123456')
+
+        ]);
+
+        $user3 = User::create([
+
+        	'name' => 'agent2', 
+
+            'email' => 'agent2@gmail.com',
+            
+            'phone' => '699999999', 
+
+            'adresse' => 'Douala, Ndokotti',
+
+        	'password' => bcrypt('123456')
+
+        ]);
+
   
             //creer les roles
         $role = Role::create(['name' => 'Admin']);
@@ -55,6 +83,12 @@ class CreateAdminUserSeeder extends Seeder
 
         //Attribuer le role à l'utilisateur
         $user->assignRole([$role->id]);
+
+        //Attribuer le role à l'agent1
+        $user2->assignRole([$role5->id]);
+
+        //Attribuer le role à l'agent2
+        $user3->assignRole([$role5->id]);
 
     }
 }
