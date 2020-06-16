@@ -177,12 +177,12 @@ class FloteController extends Controller
     public function list()
     {
         if (Flote::where('deleted_at', null)) {
-            $flote = Flote::where('deleted_at', null)->get();
+            $flotes = Flote::where('deleted_at', null)->get();
             return response()->json(
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['flote' => $flote]
+                    'data' => ['flotes' => $flotes]
                 ]
             );
          }else{
