@@ -1,12 +1,15 @@
 <?php
 
 namespace App\Http\Controllers\API;
-
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use App\Agent;
 use App\User;
+use App\Utiles\ImageFromBase64;
+use App\Enums\Statut;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 
 class AgentController extends Controller
 {
@@ -22,7 +25,7 @@ class AgentController extends Controller
 
     {
 
-         $this->middleware('role:Admin'); 
+        $this->middleware('permission:Superviseur');
 
     }
 
@@ -34,21 +37,29 @@ class AgentController extends Controller
     public function store(Request $request)
     { 
 
-        // l'utilisateur connecté
-        $id_crator = auth()->user()->id;
-
         // Valider données envoyées
         $validator = Validator::make($request->all(), [ 
-            'name' => ['required', 'string', 'max:255'],
-            'img_cni' => ['nullable', 'image', 'mimes:jpeg,jpg,png,gif|max:10000'],
-            'phone' => ['required', 'integer'],
-            'id_user' => ['required', 'integer', 'unique:agents,id_user'], //un compte agent correspond oubligatoirement à un utilisateur
-            'reference' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email'],
-            'taux_commission' => ['required', 'Numeric'],
-            'pays' => ['required', 'string', 'max:255'],
-            'adresse' => ['required', 'string', 'max:255']
+
+            //user informations
+                'name' => 'required',
+                'phone' => 'required|numeric|unique:users,phone',
+                'adresse' => 'nullable',
+                'description' => 'nullable',
+                'poste' => ['nullable', 'string', 'max:255'],
+                'email' => 'required|email|unique:users,email', 
+                'password' => 'required|string|min:6', 
+
+            //Agent informations
+                'base_64_image' => 'nullable|string',
+                'reference' => ['nullable', 'string', 'max:255'],
+                'taux_commission' => ['required', 'Numeric'],
+                'ville' => ['required', 'string', 'max:255'],
+                'pays' => ['required', 'string', 'max:255']    
+
         ]);  
+
+        
+
         if ($validator->fails()) { 
             return response()->json(
                 [
@@ -57,74 +68,109 @@ class AgentController extends Controller
                     'data' => null
                 ]
             );             
-        }
-   
+        }  
 
         
-
-        if (!User::Find($request->id_user)) {
-            return response()->json(
-                [
-                    'message' => 'l\'utilisateur passé n\'existe pas.',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
-        }
-
         // Récupérer les données validées
-        $name = $request->name;
-        $img_cni = null;
-        if ($request->hasFile('img_cni') && $request->file('img_cni')->isValid()) {
-            $img_cni = $request->img_cni->store('images/agents');
-        }
-        $phone = $request->phone;
-        $reference = $request->reference;
-        $email = $request->email;      
-        $taux_commission = $request->taux_commission;
-        $pays = $request->pays;
-        $id_user = $request->id_user;
-        $adresse = $request->adresse;
+            // users
+                $name = $request->name;
+                $phone = $request->phone;
+                $adresse = $request->adresse;
+                $description = $request->description;      
+                $poste = $request->poste;
+                $email = $request->email;
+                $password = bcrypt($request->password);                
+                $roles = 'Agent';
+
+                
+
+            // Agent                
+                $reference = $request->reference;
+                $taux_commission = $request->taux_commission;
+                $ville = $request->ville;      
+                $pays = $request->pays; 
+                $img_cni = null;              
+
+                if (isset($request->base_64_image)) {
+                    $img_cni = $request->base_64_image;
+                    // Convert base 64 image to normal image for the server and the data base
+                    $server_image_name_path = ImageFromBase64::imageFromBase64AndSave($request->input('base_64_image'), 
+                    'images/avatars/');
+                    $img_cni = $server_image_name_path;
+                }        
 
 
-        // Nouvel agent
-        $Agent = new Agent([
-            'id_creator' => $id_crator,
-            'id_user' => $id_user,
-            'nom' => $name,
-            'img_cni' => $img_cni,
-            'phone' => $phone,
-            'reference' => $reference,
-            'email' => $email,
-            'taux_commission' =>  $taux_commission,
-            'pays' => $pays,
-            'adresse' => $adresse
-        ]);
-
-        // creation de l'agent
-        if ($Agent->save()) {
-
-            // Renvoyer un message de succès
-            return response()->json(
-                [
-                    'message' => 'agent cree',
-                    'status' => true,
-                    'data' => ['Agent' => $Agent]
-                ]
-            );
-
-        } else {
-            // Renvoyer une erreur
+        //l'utilisateur connecté
+            $add_by_id = Auth::user()->id;
             
+        // Nouvel utilisateur
+            $user = new User([
+                'add_by' => $add_by_id,
+                'poste' => $poste,
+                'name' => $name,
+                'email' => $email,
+                'password' => $password,
+                'phone' => $phone,
+                'adresse' => $adresse,
+                'description' => $description
+            ]);
+
+        if ($user->save()) {
+
+            $user->assignRole($roles);
+            $user = User::find($user->id);
+            //info user à renvoyer
+                $success['token'] =  $user->createToken('MyApp')-> accessToken;
+                $success['user'] =  $user;
+
+            // Nouvel Agent
+                $agent = new Agent([
+                    'id_creator' => $add_by_id,
+                    'id_user' => $user->id,
+                    'img_cni' => $img_cni,
+                    'reference' => $reference,
+                    'taux_commission' => $taux_commission,
+                    'ville' => $ville,
+                    'pays' => $pays
+                ]);
+                
+                
+                if ($agent->save()) {
+
+                    $success['agent'] =  $agent;
+
+                    // Renvoyer un message de succès
+                    return response()->json(
+                        [
+                            'message' => 'agent cree',
+                            'status' => true,
+                            'data' => ['success' => $success]
+                        ]
+                    );
+
+                } else {
+                    // Renvoyer une erreur
+                    
+                    return response()->json(
+                        [
+                            'message' => 'erreur lors de la creation',
+                            'status' => false,
+                            'data' => null
+                        ]
+                    );
+                    
+                } 
+
+        }else {
+            // Renvoyer un message de erreur
             return response()->json(
                 [
-                    'message' => 'erreur lors de la modification',
+                    'message' => 'Problème lors de la creation de l utilisateur correspondant',
                     'status' => false,
                     'data' => null
                 ]
             );
-            
-        } 
+        }
 
     }
 
@@ -141,12 +187,12 @@ class AgentController extends Controller
 
         //Envoie des information
         if(agent::find($id)){
-
+            $user = User::find($agent->id_user);
             return response()->json(
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['Agent' => $agent]
+                    'data' => ['agent' => $agent, 'user' => $user]
                 ]
             );
 
@@ -172,15 +218,11 @@ class AgentController extends Controller
     {
         
         // Valider données envoyées
-        $validator = Validator::make($request->all(), [ 
-            'name' => ['required', 'string', 'max:255'],
-            'img_cni' => ['nullable', 'image', 'mimes:jpeg,jpg,png,gif|max:10000'],
-            'phone' => ['required', 'integer'],
-            'reference' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email'],
+        $validator = Validator::make($request->all(), [
+            'reference' => ['nullable', 'string', 'max:255'],
             'taux_commission' => ['required', 'Numeric'],
-            'pays' => ['required', 'string', 'max:255'],
-            'adresse' => ['required', 'string', 'max:255']
+            'ville' => ['required', 'string', 'max:255'],
+            'pays' => ['required', 'string', 'max:255'] 
         ]);
         if ($validator->fails()) { 
             return response()->json(
@@ -192,33 +234,21 @@ class AgentController extends Controller
             );             
                 }
 
-        // Récupérer les données validées
-        $name = $request->name;
-        $img_cni = null;
-        if ($request->hasFile('img_cni') && $request->file('img_cni')->isValid()) {
-            $img_cni = $request->img_cni->store('images/agents');
-        }
-        $phone = $request->phone;
+        // Récupérer les données validées             
         $reference = $request->reference;
-        $email = $request->email;      
         $taux_commission = $request->taux_commission;
-        $pays = $request->pays;
-        $adresse = $request->adresse;
+        $ville = $request->ville;      
+        $pays = $request->pays; 
+        
 
         // rechercher l'agent
         $agent = Agent::find($id);
 
         // Modifier le profil de l'utilisateur
-        $agent->nom = $name;
-        if ($img_cni != null) {
-            $agent->img_cni = $img_cni;
-        }
-        $agent->phone = $phone;
         $agent->reference = $reference;
-        $agent->email = $email;
         $agent->taux_commission = $taux_commission;
+        $agent->ville = $ville;
         $agent->pays = $pays;
-        $agent->adresse = $adresse;
 
 
         if ($agent->save()) {
@@ -255,11 +285,18 @@ class AgentController extends Controller
 
         if (Agent::where('deleted_at', null)) {
             $agents = Agent::where('deleted_at', null)->get();
+
+            foreach($agents as $agent) {
+
+                $returenedAgents[] = ['agent' => $agent, 'user' => User::find($agent->id_user)];
+
+            } 
+
             return response()->json(
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['Agent' => $agents]
+                    'data' => ['agents' => $returenedAgents]
                 ]
             );
          }else{
@@ -286,6 +323,10 @@ class AgentController extends Controller
             $agent = Agent::find($id);
             $agent->deleted_at = now();
             if ($agent->save()) {
+
+                $user = User::find($agent->id_user);
+                $user->deleted_at = now();
+                $user->save();
 
                 // Renvoyer un message de succès
                 return response()->json(
@@ -314,6 +355,67 @@ class AgentController extends Controller
                 ]
             );
          }
+        
+    }
+
+    /**
+     * @param Base64ImageRequest $request
+     * @return JsonResponse
+     */
+    public function edit_cni(Request $request, $id)
+    {
+
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [ 
+            'base_64_image' => 'required|string', 
+        ]);
+        
+        if ($validator->fails()) { 
+
+            return response()->json(
+                [
+                    'message' => ['error'=>$validator->errors()],
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+                       
+        }
+        
+        // Get current user
+        $agent = Agent::find($id);
+        $agent_img_cni_path_name =  $agent->img_cni;
+
+        //Delete old file before storing new file
+        if(Storage::exists($agent_img_cni_path_name) && $agent_img_cni_path_name != 'users/default.png')
+            Storage::delete($agent_img_cni_path_name);
+
+
+        // Convert base 64 image to normal image for the server and the data base
+        $server_image_name_path = ImageFromBase64::imageFromBase64AndSave($request->input('base_64_image'),
+            'images/avatars/');
+
+        // Changer l' avatar de l'utilisateur
+        $agent->img_cni = $server_image_name_path;
+
+        // Save image name in database      
+        if ($agent->save()) {
+            return response()->json(
+                [
+                    'message' => 'Photo de profil mise à jour avec succès',
+                    'status' => true,
+                    'data' => ['user'=>$agent]
+                ]
+            );
+        }else {
+            return response()->json(
+                [
+                    'message' => 'erreur de modification de l avatar',
+                    'status' => true,
+                    'data' => ['user'=>$agent]
+                ]
+            );
+        }
         
     }
 

@@ -12,6 +12,7 @@ class CreateFlotesTable extends Migration {
 			$table->string('nom')->nullable();
 			$table->string('reference')->nullable();
 			$table->string('description')->nullable();
+			$table->decimal('solde')->nullable()->default(0);
 			$table->softDeletes();
 			$table->timestamps();
 		});

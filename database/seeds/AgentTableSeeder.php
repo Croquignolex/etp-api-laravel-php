@@ -11,20 +11,24 @@ class AgentTableSeeder extends Seeder {
 
 		// 'agent'
 		Agent::create(array(
-				'nom' => 'stivo',
-				'phone' => '690444983',
-				'adresse' => 'Ndogbong',
-				'taux_commission' => 20,
-				'pays' => 'Camer'
+			'id_creator' => '1',
+			'id_user' => '3',
+			'img_cni' => null,
+			'reference' => 'd6070',
+			'taux_commission' => 50,
+			'ville' => 'Douala',
+			'pays' => 'Cameroun'
 			));
 
 		// 'agent_2'
 		Agent::create(array(
-				'nom' => 'jyress',
-				'phone' => '695365567',
-				'adresse' => 'Ndokotti',
-				'taux_commission' => 30,
-				'pays' => 'Benin'
+			'id_creator' => '1',
+			'id_user' => '2',
+			'img_cni' => null,
+			'reference' => 'd6020',
+			'taux_commission' => 30,
+			'ville' => 'Douala',
+			'pays' => 'Cameroun'
 			));
 	}
 }
