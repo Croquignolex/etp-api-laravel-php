@@ -259,7 +259,7 @@ class AgentController extends Controller
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['Agent' => $agents]
+                    'data' => ['agents' => $agents]
                 ]
             );
          }else{
