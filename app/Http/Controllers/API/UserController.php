@@ -307,7 +307,7 @@ class UserController extends Controller
             'description' => ['nullable', 'string', 'max:255'],
             'poste' => ['nullable', 'string', 'max:255'],
             // 'email' => ['required', 'string', 'email'],
-            'adresse' => ['required', 'string', 'max:255'],
+            'adresse' => ['nullable', 'string', 'max:255'],
             // 'roles' => ['required'],
             // 'phone' => ['required', 'numeric', 'max:255']
 
