@@ -296,11 +296,7 @@ class AgentController extends Controller
                 [
                     'message' => '',
                     'status' => true,
-<<<<<<< HEAD
                     'data' => ['agents' => $returenedAgents]
-=======
-                    'data' => ['agents' => $agents]
->>>>>>> ef5db96cc249ef6b7d48406023687693c0630200
                 ]
             );
          }else{
