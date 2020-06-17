@@ -31,7 +31,7 @@ class FloteController extends Controller
         // Valider données envoyées
         $validator = Validator::make($request->all(), [ 
             'name' => ['required', 'string', 'max:255'],
-            'reference' => ['required', 'string', 'max:255'],
+            'reference' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string']
         ]);
         if ($validator->fails()) { 
@@ -122,7 +122,7 @@ class FloteController extends Controller
         // Valider données envoyées
         $validator = Validator::make($request->all(), [ 
             'name' => ['required', 'string', 'max:255'],
-            'reference' => ['required', 'string', 'max:255'],
+            'reference' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string']
         ]);
         if ($validator->fails()) { 

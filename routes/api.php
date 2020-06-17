@@ -155,7 +155,7 @@ Route::group(['middleware' => 'auth:api'], function(){
         ->where('id', '[0-9]+');
 
         //supprimer une flote
-        Route::get('delete_flote/{id}', 'API\FloteController@destroy')
+        Route::post('delete_flote/{id}', 'API\FloteController@destroy')
         ->where('id', '[0-9]+');
 
 });

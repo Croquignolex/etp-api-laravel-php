@@ -15,7 +15,7 @@ class RoleController extends Controller
 
     public function __construct(){
 
-        $this->middleware('permission:superviseur');
+        $this->middleware('permission:Superviseur');
         
     }
 

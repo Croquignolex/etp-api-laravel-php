@@ -15,7 +15,7 @@ class Flote extends Model
 
     protected $dates = ['deleted_at'];
     protected $fillable = array('id', 'nom', 'reference', 'solde', 'description');
-    protected $visible = array('id', 'nom', 'reference', 'solde', 'description');
+    protected $visible = array('id', 'nom', 'reference', 'solde', 'description', 'created_at');
 
     public function transactions()
     {
