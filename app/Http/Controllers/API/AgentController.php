@@ -51,10 +51,14 @@ class AgentController extends Controller
 
             //Agent informations
                 'base_64_image' => 'nullable|string',
+                'base_64_image_back' => 'nullable|string',
                 'reference' => ['nullable', 'string', 'max:255'],
                 'taux_commission' => ['required', 'Numeric'],
                 'ville' => ['required', 'string', 'max:255'],
-                'pays' => ['required', 'string', 'max:255']    
+                'pays' => ['required', 'string', 'max:255'],
+                'point_de_vente' => ['required', 'string', 'max:255'],
+                'puce_name' => ['required', 'string', 'max:255'],
+                'puce_number' => ['required', 'string', 'max:255']    
 
         ]);  
 
@@ -89,14 +93,25 @@ class AgentController extends Controller
                 $taux_commission = $request->taux_commission;
                 $ville = $request->ville;      
                 $pays = $request->pays; 
-                $img_cni = null;              
+                $point_de_vente = $request->point_de_vente;
+                $puce_name = $request->puce_name;
+                $puce_number = $request->puce_number;
+                $img_cni = null; 
+                $img_cni_back = null;             
 
                 if (isset($request->base_64_image)) {
                     $img_cni = $request->base_64_image;
                     // Convert base 64 image to normal image for the server and the data base
-                    $server_image_name_path = ImageFromBase64::imageFromBase64AndSave($request->input('base_64_image'), 
+                    $server_image_name_path1 = ImageFromBase64::imageFromBase64AndSave($request->input('base_64_image'), 
                     'images/avatars/');
-                    $img_cni = $server_image_name_path;
+                    $img_cni = $server_image_name_path1;
+                } 
+                if (isset($request->base_64_image_back)) {
+                    $img_cni_back = $request->base_64_image_back;
+                    // Convert base 64 image to normal image for the server and the data base
+                    $server_image_name_path2 = ImageFromBase64::imageFromBase64AndSave($request->input('base_64_image_back'), 
+                    'images/avatars/');
+                    $img_cni_back = $server_image_name_path2;
                 }        
 
 
@@ -128,9 +143,13 @@ class AgentController extends Controller
                     'id_creator' => $add_by_id,
                     'id_user' => $user->id,
                     'img_cni' => $img_cni,
+                    'img_cni_back' => $img_cni_back,
                     'reference' => $reference,
                     'taux_commission' => $taux_commission,
                     'ville' => $ville,
+                    'point_de_vente' => $point_de_vente,
+                    'puce_name' => $puce_name,
+                    'puce_number' => $puce_number,
                     'pays' => $pays
                 ]);
                 
@@ -222,7 +241,10 @@ class AgentController extends Controller
             'reference' => ['nullable', 'string', 'max:255'],
             'taux_commission' => ['required', 'Numeric'],
             'ville' => ['required', 'string', 'max:255'],
-            'pays' => ['required', 'string', 'max:255'] 
+            'pays' => ['required', 'string', 'max:255'],
+            'point_de_vente' => ['required', 'string', 'max:255'],
+            'puce_name' => ['required', 'string', 'max:255'],
+            'puce_number' => ['required', 'string', 'max:255'] 
         ]);
         if ($validator->fails()) { 
             return response()->json(
@@ -239,6 +261,9 @@ class AgentController extends Controller
         $taux_commission = $request->taux_commission;
         $ville = $request->ville;      
         $pays = $request->pays; 
+        $point_de_vente = $request->point_de_vente;
+        $puce_name = $request->puce_name;
+        $puce_number = $request->puce_number;
         
 
         // rechercher l'agent
@@ -249,6 +274,12 @@ class AgentController extends Controller
         $agent->taux_commission = $taux_commission;
         $agent->ville = $ville;
         $agent->pays = $pays;
+        $agent->point_de_vente = $point_de_vente;
+        $agent->puce_name = $puce_name;
+        $agent->puce_number = $puce_number;
+
+
+
 
 
         if ($agent->save()) {
@@ -368,7 +399,8 @@ class AgentController extends Controller
 
         // Valider données envoyées
         $validator = Validator::make($request->all(), [ 
-            'base_64_image' => 'required|string', 
+            'base_64_image' => 'required|string',
+            'base_64_image_back' => 'nullable|string', 
         ]);
         
         if ($validator->fails()) { 
@@ -385,25 +417,36 @@ class AgentController extends Controller
         
         // Get current user
         $agent = Agent::find($id);
+
+
         $agent_img_cni_path_name =  $agent->img_cni;
+        $agent_img_cni_path_name2 =  $agent->img_cni_back;
 
         //Delete old file before storing new file
         if(Storage::exists($agent_img_cni_path_name) && $agent_img_cni_path_name != 'users/default.png')
             Storage::delete($agent_img_cni_path_name);
+
+            //Delete old file before storing new file
+        if(Storage::exists($agent_img_cni_path_name2) && $agent_img_cni_path_name2 != 'users/default.png')
+        Storage::delete($agent_img_cni_path_name2);
 
 
         // Convert base 64 image to normal image for the server and the data base
         $server_image_name_path = ImageFromBase64::imageFromBase64AndSave($request->input('base_64_image'),
             'images/avatars/');
 
+        $server_image_name_path2 = ImageFromBase64::imageFromBase64AndSave($request->input('base_64_image_back'),
+            'images/avatars/');
+
         // Changer l' avatar de l'utilisateur
         $agent->img_cni = $server_image_name_path;
+        $agent->img_cni_back = $server_image_name_path2;
 
         // Save image name in database      
         if ($agent->save()) {
             return response()->json(
                 [
-                    'message' => 'Photo de profil mise à jour avec succès',
+                    'message' => 'CNI mise à jour avec succes',
                     'status' => true,
                     'data' => ['user'=>$agent]
                 ]
@@ -411,7 +454,7 @@ class AgentController extends Controller
         }else {
             return response()->json(
                 [
-                    'message' => 'erreur de modification de l avatar',
+                    'message' => 'erreur de modification de CNI',
                     'status' => true,
                     'data' => ['user'=>$agent]
                 ]
