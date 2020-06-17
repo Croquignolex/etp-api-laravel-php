@@ -15,7 +15,7 @@ class Agent extends Model
 
     protected $dates = ['deleted_at'];
     protected $fillable = array('img_cni', 'reference', 'taux_commission', 'ville', 'pays', 'id_creator', 'id_user');
-    protected $visible = array('img_cni', 'reference', 'taux_commission', 'ville', 'pays', 'id_creator', 'id_user');
+    protected $visible = array('created_at', 'img_cni', 'reference', 'taux_commission', 'ville', 'pays', 'id_creator', 'id_user');
 
     public function vercements()
     {

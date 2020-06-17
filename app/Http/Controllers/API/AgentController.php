@@ -285,6 +285,7 @@ class AgentController extends Controller
 
         if (Agent::where('deleted_at', null)) {
             $agents = Agent::where('deleted_at', null)->get();
+			$returenedAgents = [];
 
             foreach($agents as $agent) {
 
