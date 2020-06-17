@@ -16,13 +16,13 @@ class PermissionTableSeeder extends Seeder
 
        $permissions = [
 
-           'Superviseur',
+        App\Enums\Roles::AGENT,
 
-           'Gerant',
+        App\Enums\Roles::GESTION_FLOTTE,
 
-           'Recouvreur',
+        App\Enums\Roles::RECOUVREUR,
 
-           'Agent'
+        App\Enums\Roles::SUPERVISEUR
 
         ];
 

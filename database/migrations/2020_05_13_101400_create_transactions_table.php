@@ -9,6 +9,7 @@ class CreateTransactionsTable extends Migration {
 	{
 		Schema::create('transactions', function(Blueprint $table) {
 			$table->increments('id');
+			$table->integer('id_transaction')->unsigned()->nullable()->index();
 			$table->integer('id_user')->unsigned()->nullable()->index();
 			$table->integer('id_versement')->unsigned()->nullable()->index();
 			$table->integer('id_type_transaction')->unsigned()->nullable()->index();
