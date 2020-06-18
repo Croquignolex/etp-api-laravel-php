@@ -104,10 +104,20 @@ class CreateAdminUserSeeder extends Seeder
         $role->syncPermissions($permissions); 
         
         //donner des permissions au autres roles
-        $role2->givePermissionTo(App\Enums\Roles::AGENT);
-        $role3->givePermissionTo(App\Enums\Roles::GESTION_FLOTTE);
+            //à l'agent
+                $role2->givePermissionTo(App\Enums\Roles::AGENT);
+            //au gestionnaire de flotte
+                $role3->givePermissionTo(App\Enums\Roles::GESTION_FLOTTE);
+                $role3->givePermissionTo(App\Enums\Roles::AGENT);
+            //au supperviseur
+                $role5->givePermissionTo(App\Enums\Roles::SUPERVISEUR);
+                $role5->givePermissionTo(App\Enums\Roles::GESTION_FLOTTE);
+                $role5->givePermissionTo(App\Enums\Roles::AGENT);
+
+
+
         $role4->givePermissionTo(App\Enums\Roles::RECOUVREUR);
-        $role5->givePermissionTo(App\Enums\Roles::SUPERVISEUR);
+        
 
         //Attribuer le role à l'utilisateur
         $user->assignRole([$role->id]);

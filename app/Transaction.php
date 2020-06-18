@@ -15,7 +15,7 @@ class Transaction extends Model
 
     protected $dates = ['deleted_at'];
     protected $fillable = array('id_user', 'id_transaction', 'id_versement', 'id_type_transaction', 'id_flote', 'montant', 'reste', 'statut', 'user_destination', 'user_source');
-    protected $visible = array('id_user', 'id_transaction', 'id_versement', 'id_type_transaction', 'id_flote', 'montant', 'reste', 'statut', 'user_destination', 'user_source');
+    protected $visible = array('id_user', 'id_versement', 'id_type_transaction', 'id_flote', 'montant', 'reste', 'statut', 'user_destination', 'user_source');
 
     public function commission()
     {
