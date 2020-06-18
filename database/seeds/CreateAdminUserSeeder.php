@@ -34,11 +34,11 @@ class CreateAdminUserSeeder extends Seeder
 
         $user2 = User::create([
 
-        	'name' => 'Agent1', 
+        	'name' => 'AGENT', 
 
-            'email' => 'agent1@gmail.com',
+            'email' => 'agent@gmail.com',
             
-            'phone' => '555555555', 
+            'phone' => '222222222', 
 
             'adresse' => 'Douala, Ndokotti',
 
@@ -48,11 +48,39 @@ class CreateAdminUserSeeder extends Seeder
 
         $user3 = User::create([
 
-        	'name' => 'agent2', 
+        	'name' => 'GESTION_FLOTTE', 
 
-            'email' => 'agent2@gmail.com',
+            'email' => 'flotte@gmail.com',
             
-            'phone' => '699999999', 
+            'phone' => '333333333', 
+
+            'adresse' => 'Douala, Ndokotti',
+
+        	'password' => bcrypt('123456')
+
+        ]);
+
+        $user4 = User::create([
+
+        	'name' => 'RECOUVREUR', 
+
+            'email' => 'recouvreur@gmail.com',
+            
+            'phone' => '444444444', 
+
+            'adresse' => 'Douala, Ndokotti',
+
+        	'password' => bcrypt('123456')
+
+        ]);
+
+        $user5 = User::create([
+
+        	'name' => 'SUPERVISEUR', 
+
+            'email' => 'supperviseur@gmail.com',
+            
+            'phone' => '555555555', 
 
             'adresse' => 'Douala, Ndokotti',
 
@@ -62,11 +90,11 @@ class CreateAdminUserSeeder extends Seeder
 
   
             //creer les roles
-        $role = Role::create(['name' => 'Admin']);
-        $role2 = Role::create(['name' => 'Superviseur']);
-        $role3 = Role::create(['name' => 'Gerant']);
-        $role4 = Role::create(['name' => 'Recouvreur']);
-        $role5 = Role::create(['name' => 'Agent']); 
+        $role = Role::create(['name' => App\Enums\Roles::ADMIN]);
+        $role2 = Role::create(['name' => App\Enums\Roles::AGENT]);
+        $role3 = Role::create(['name' => App\Enums\Roles::GESTION_FLOTTE]);
+        $role4 = Role::create(['name' => App\Enums\Roles::RECOUVREUR]);
+        $role5 = Role::create(['name' => App\Enums\Roles::SUPERVISEUR]); 
       
 
         //recuperer toutes les premissions
@@ -76,19 +104,35 @@ class CreateAdminUserSeeder extends Seeder
         $role->syncPermissions($permissions); 
         
         //donner des permissions au autres roles
-        $role2->givePermissionTo('Superviseur');
-        $role3->givePermissionTo('Gerant');
-        $role4->givePermissionTo('Recouvreur');
-        $role5->givePermissionTo('Agent');
+            //à l'agent
+                $role2->givePermissionTo(App\Enums\Roles::AGENT);
+            //au gestionnaire de flotte
+                $role3->givePermissionTo(App\Enums\Roles::GESTION_FLOTTE);
+                $role3->givePermissionTo(App\Enums\Roles::AGENT);
+            //au supperviseur
+                $role5->givePermissionTo(App\Enums\Roles::SUPERVISEUR);
+                $role5->givePermissionTo(App\Enums\Roles::GESTION_FLOTTE);
+                $role5->givePermissionTo(App\Enums\Roles::AGENT);
+
+
+
+        $role4->givePermissionTo(App\Enums\Roles::RECOUVREUR);
+        
 
         //Attribuer le role à l'utilisateur
         $user->assignRole([$role->id]);
 
         //Attribuer le role à l'agent1
-        $user2->assignRole([$role5->id]);
+        $user2->assignRole([$role2->id]);
 
         //Attribuer le role à l'agent2
-        $user3->assignRole([$role5->id]);
+        $user3->assignRole([$role3->id]);
+
+        //Attribuer le role à l'agent1
+        $user4->assignRole([$role4->id]);
+
+        //Attribuer le role à l'agent2
+        $user5->assignRole([$role5->id]);
 
     }
 }

@@ -4,13 +4,14 @@ namespace App\Enums;
 
 use ReflectionClass;
 
-class Roles
+class Transations
 {
-    const ADMIN = 'Admin';
-    const AGENT = 'Agent';
-    const GESTION_FLOTTE = 'Gestionnaire_flotte';
-    const RECOUVREUR = 'Recouvreur';
-    const SUPERVISEUR = 'Superviseur';
+    const DEMANDE_FLOTTE = 'Demande de flotte';
+    const DEMANDE_DESTOCK = 'Demande de déstockage';
+    const APPROVISIONNEMENT = 'Approvisionnement';
+    const DESTOCKAGE = 'Déstockage';
+    const RECOUVREMENT = 'Recouvrement';
+    const RETOUR_FLOTTE = 'Retour flotte';
 
     
 

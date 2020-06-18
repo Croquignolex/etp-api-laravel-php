@@ -10,48 +10,34 @@ class Type_transactionTableSeeder extends Seeder {
 		//DB::table('type_transactions')->delete();
 
 		// 'depot'
-		Type_transaction::create(array(
-				'nom' => 'Depot'
+		Type_transaction::create(array( 
+				'nom' => App\Enums\Transations::DEMANDE_FLOTTE
 			));
 
 		// 'retrait'
 		Type_transaction::create(array(
-				'nom' => 'Retrait'
+			'nom' => App\Enums\Transations::DEMANDE_DESTOCK
 			));
 
 		// 'approvi'
 		Type_transaction::create(array(
-				'nom' => 'Approvisionnement'
+			'nom' => App\Enums\Transations::APPROVISIONNEMENT
 			));
 
 		// 'deappro'
 		Type_transaction::create(array(
-				'nom' => 'reglement'
+			'nom' => App\Enums\Transations::DESTOCKAGE
 			));
 
 		// 'destock'
 		Type_transaction::create(array(
-				'nom' => 'Destockage'
+			'nom' => App\Enums\Transations::RECOUVREMENT
 			));
 
-		// 'retour_flote'
+		// 'DEMANDE_FLOTTE'
 		Type_transaction::create(array(
-				'nom' => 'Retour flote'
+			'nom' => App\Enums\Transations::RETOUR_FLOTTE
 			));
 
-			// 'recouvrement'
-		Type_transaction::create(array(
-			'nom' => 'Retour flote'
-		));
-
-		// 'abonn'
-		Type_transaction::create(array(
-				'nom' => 'Abonnement'
-			));
-
-		// 'reabonn'
-		Type_transaction::create(array(
-				'nom' => 'Reabonnement'
-			));
 	}
 }
