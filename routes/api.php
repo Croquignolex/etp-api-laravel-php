@@ -63,6 +63,9 @@ Route::group(['middleware' => 'auth:api'], function(){
 
             //details de l'utilisateur
             Route::get('details', 'API\LoginController@details');
+			
+			//details de l'utilisateur
+            Route::post('update_profile', 'API\LoginController@edit_profile');
 
             //modifier password
             Route::post('edit_password', 'API\LoginController@reset');
@@ -92,7 +95,7 @@ Route::group(['middleware' => 'auth:api'], function(){
         ->where('id', '[0-9]+');
 
         //Changer la CNI
-        Route::post('edit_cni', 'API\LoginController@edit_cni');
+        Route::post('edit_cni/{id}', 'API\AgentController@edit_cni');
 
         //modification d'un Agent
         Route::post('edit_agent/{id}', 'API\AgentController@edit')
