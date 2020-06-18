@@ -316,6 +316,7 @@ class AgentController extends Controller
 
         if (Agent::where('deleted_at', null)) {
             $agents = Agent::where('deleted_at', null)->get();
+			$returenedAgents = [];
 
             foreach($agents as $agent) {
 
@@ -420,6 +421,8 @@ class AgentController extends Controller
 
         $agent_img_cni_path_name =  $agent->img_cni;
         $agent_img_cni_path_name2 =  $agent->img_cni_back;
+		
+		$img_cni_back = null;  
 
         //Delete old file before storing new file
         if(Storage::exists($agent_img_cni_path_name) && $agent_img_cni_path_name != 'users/default.png')
@@ -428,18 +431,23 @@ class AgentController extends Controller
             //Delete old file before storing new file
         if(Storage::exists($agent_img_cni_path_name2) && $agent_img_cni_path_name2 != 'users/default.png')
         Storage::delete($agent_img_cni_path_name2);
-
-
+	
+		if (isset($request->base_64_image_back)) {
+			$img_cni_back = $request->base_64_image_back;
+			// Convert base 64 image to normal image for the server and the data base
+			$server_image_name_path2 = ImageFromBase64::imageFromBase64AndSave($request->input('base_64_image_back'),
+            'images/avatars/');
+			$img_cni_back = $server_image_name_path2;
+		}
+ 
         // Convert base 64 image to normal image for the server and the data base
         $server_image_name_path = ImageFromBase64::imageFromBase64AndSave($request->input('base_64_image'),
             'images/avatars/');
 
-        $server_image_name_path2 = ImageFromBase64::imageFromBase64AndSave($request->input('base_64_image_back'),
-            'images/avatars/');
-
+        
         // Changer l' avatar de l'utilisateur
         $agent->img_cni = $server_image_name_path;
-        $agent->img_cni_back = $server_image_name_path2;
+        $agent->img_cni_back = $img_cni_back;
 
         // Save image name in database      
         if ($agent->save()) {

@@ -336,5 +336,74 @@ class LoginController extends Controller
         
     }
 
+/** 
+     * modification d'un utilisateur 
+     */ 
+    public function edit_profile(Request $request) 
+    {   
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [
+            'name' => ['required', 'string', 'max:255'],
+            // 'statut' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:255'],
+            'poste' => ['nullable', 'string', 'max:255'],
+            // 'email' => ['required', 'string', 'email'],
+            'adresse' => ['nullable', 'string', 'max:255'],
+            // 'roles' => ['required'],
+            // 'phone' => ['required', 'numeric', 'max:255']
 
+        ]);
+        if ($validator->fails()) { 
+            return response()->json(
+                [
+                    'message' => ['error'=>$validator->errors()],
+                    'status' => false,
+                    'data' => null
+                ]
+            );            
+        }
+
+          
+        // Récupérer les données validées
+        $name = $request->name;
+        $description = $request->description;
+        // $email = $request->email;
+        $adresse = $request->adresse;
+        // $status = $request->status;
+        $poste = $request->poste;
+        // $phone = $request->phone;
+
+        // Get current user
+        $user =  Auth::user();
+        $user->name = $name;
+        // $user->statut = $status;
+        // $user->phone = $phone;
+        $user->poste = $poste;
+
+        $user->description = $description;
+        // $user->email = $email;
+        $user->adresse = $adresse;
+
+        if ($user->save()) {
+
+            // Renvoyer un message de succès          
+            return response()->json(
+                [
+                    'message' => 'profil modifié',
+                    'status' => true,
+                    'data' => ['user'=>$user]
+                ]
+            );
+        } else {
+
+            // Renvoyer une erreur
+            return response()->json(
+                [
+                    'message' => 'erreur lors de la modification',
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+    }
 }
