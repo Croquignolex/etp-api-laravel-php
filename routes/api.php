@@ -28,7 +28,7 @@ Route::group(['middleware' => 'auth:api'], function(){
      ///////////////////////GESTION DES UTILISATEURS/////////////////////////
     */
 
-        /////////////////User sur un user
+        /////////////////User sur un user 
 
             //Modification de l'utilisateur
             Route::post('edit_user/{id}', 'API\UserController@edit_user')
@@ -184,6 +184,14 @@ Route::group(['middleware' => 'auth:api'], function(){
 
         //supprimer une puce
         Route::post('delete_puce/{id}', 'API\PuceController@destroy')
+        ->where('id', '[0-9]+');
+
+        //lister les puces d'une flotte 
+        Route::post('list_puce_flotte/{id}', 'API\PuceController@list_puce_flotte')
+        ->where('id', '[0-9]+');
+
+        //lister les puces d'un Agent
+        Route::post('list_puce_agent/{id}', 'API\PuceController@list_puce_agent')
         ->where('id', '[0-9]+');
 
 

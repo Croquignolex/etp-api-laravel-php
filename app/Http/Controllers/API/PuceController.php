@@ -215,6 +215,61 @@ class PuceController extends Controller
     }
 
     /**
+     * //lister les puces
+     */
+    public function list_puce_agent($id)
+    {
+        $puce = Puce::where('id_agent', $id)->get();
+        if ($puce->count() != 0) {
+            
+            return response()->json(
+                [
+                    'message' => '',
+                    'status' => true,
+                    'data' => ['puces' => $puce]
+                ]
+            );
+         }else{
+            return response()->json(
+                [
+                    'message' => 'pas de puce à lister',
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+         }
+    }
+
+    /**
+     * //lister les puces
+     */
+    public function list_puce_flotte($id)
+    {
+        $puce = Puce::where('id_flotte', $id)
+        ->get();
+
+        if ($puce->count() != 0) {
+            $puce = Puce::where('id_flotte', $id)
+            ->get();
+            return response()->json(
+                [
+                    'message' => '',
+                    'status' => true,
+                    'data' => ['puces' => $puce]
+                ]
+            );
+         }else{
+            return response()->json(
+                [
+                    'message' => 'pas de puce à lister',
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+         }
+    }
+
+    /**
      * //supprimer une puce
      */
     public function destroy($id)
