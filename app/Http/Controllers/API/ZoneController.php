@@ -2,15 +2,23 @@
 
 namespace App\Http\Controllers\API;
 
+
+namespace App\Http\Controllers\API;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
-use App\Flote;
+use App\Agent;
+use App\Zone;
+use App\Utiles\ImageFromBase64;
 use Illuminate\Support\Facades\Validator;
+use App\Http\Controllers\Controller;
+use App\User;
+use Illuminate\Support\Facades\Auth;
 
-class FloteController extends Controller
+class ZoneController extends Controller
 {
-
-        /**
+    
+    
+            /**
 
      * les conditions de lecture des methodes
 
@@ -24,13 +32,14 @@ class FloteController extends Controller
  
 
     /**
-     * //Creer une flote.
+     * //Creer une zone.
      */
     public function store(Request $request)
     {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [ 
             'name' => ['required', 'string', 'max:255'],
+            'reference' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string']
         ]);
         if ($validator->fails()) { 
@@ -47,24 +56,26 @@ class FloteController extends Controller
         // Récupérer les données validées
              
         $name = $request->name;
+        $reference = $request->reference;
         $description = $request->description;
 
 
-        // Nouvel Flote
-        $flote = new Flote([
+        // Nouvelle zone
+        $zone = new Zone ([
             'nom' => $name,
+            'reference' => $reference,
             'description' => $description
         ]);
 
-        // creation de La flote
-        if ($flote->save()) {
+        // creation de La zone
+        if ($zone->save()) {
 
             // Renvoyer un message de succès
             return response()->json(
                 [
-                    'message' => 'Flote créée',
+                    'message' => 'zone créée',
                     'status' => true,
-                    'data' => ['flote' => $flote]
+                    'data' => ['zone' => $zone]
                 ]
             );
         } else {
@@ -80,22 +91,22 @@ class FloteController extends Controller
     }
 
     /**
-     * //details d'une flote'
+     * //details d'une zone'
      */
     public function show($id)
     {
-        //on recherche la flote en question
-        $Flote = Flote::find($id);
+        //on recherche la zone en question
+        $zone = Zone::find($id);
 
 
         //Envoie des information
-        if(Flote::find($id)){
+        if(Zone::find($id)){
 
             return response()->json(
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['flote' => $Flote]
+                    'data' => ['zone' => $zone]
                 ]
             );
 
@@ -103,7 +114,7 @@ class FloteController extends Controller
 
             return response()->json(
                 [
-                    'message' => 'ecette flote n existe pas',
+                    'message' => 'ecette zone n existe pas',
                     'status' => false,
                     'data' => null
                 ]
@@ -111,14 +122,65 @@ class FloteController extends Controller
         }
     }
 
+
     /**
-     * modification d'une flote
+     * //Attribuer une zonne à un utilisateur'
+     */
+    public function give_zone(Request $request)
+    {
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [ 
+            'id_user' => ['required', 'Numeric'],
+            'id_zone' => ['required', 'Numeric']
+        ]);
+        if ($validator->fails()) { 
+            return response()->json(
+                [
+                    'message' => ['error'=>$validator->errors()],
+                    'status' => false,
+                    'data' => null
+                ]
+            );            
+        } 
+
+        //on recherche l'utilisateur'
+        $user = User::find($request->id_user);
+        $user->id_zone = $request->id_zone;
+
+        //Envoie des information
+        if($user->save()){
+
+            return response()->json(
+                [
+                    'message' => '',
+                    'status' => true,
+                    'data' => ['user' => $user]
+                ]
+            );
+
+        }else{
+
+            return response()->json(
+                [
+                    'message' => 'ecette zone n existe pas',
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+    }
+
+
+
+    /**
+     * modification d'une zone
      */
     public function update(Request $request, $id)
     {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [ 
             'name' => ['required', 'string', 'max:255'],
+            'reference' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string']
         ]);
         if ($validator->fails()) { 
@@ -134,23 +196,25 @@ class FloteController extends Controller
         // Récupérer les données validées
             
         $name = $request->name;
+        $reference = $request->reference;
         $description = $request->description;
 
-        // rechercher la flote
-        $flote = Flote::find($id);
+        // rechercher la zone
+        $zone = Zone::find($id);
 
-        // Modifier la flote
-        $flote->nom = $name;
-        $flote->description = $description;
+        // Modifier la zone
+        $zone->nom = $name;
+        $zone->reference = $reference;
+        $zone->description = $description;
 
 
-        if ($flote->save()) {
+        if ($zone->save()) {
             // Renvoyer un message de succès
             return response()->json(
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['flote' => $flote]
+                    'data' => ['zone' => $zone]
                 ]
             );
         } else {
@@ -166,23 +230,23 @@ class FloteController extends Controller
     }
 
     /**
-     * //lister les flotes
+     * //lister les zone
      */
     public function list()
     {
-        if (Flote::where('deleted_at', null)) {
-            $flotes = Flote::where('deleted_at', null)->get();
+        if (Zone::where('deleted_at', null)) {
+            $zones = Zone::where('deleted_at', null)->get();
             return response()->json(
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['flotes' => $flotes]
+                    'data' => ['zones' => $zones]
                 ]
             );
          }else{
             return response()->json(
                 [
-                    'message' => 'pas de flote à lister',
+                    'message' => 'pas de zone à lister',
                     'status' => false,
                     'data' => null
                 ]
@@ -191,19 +255,19 @@ class FloteController extends Controller
     }
 
     /**
-     * //supprimer une flote
+     * //supprimer une zone
      */
     public function destroy($id)
     {
-        if (Flote::find($id)) {
-            $flote = Flote::find($id);
-            $flote->deleted_at = now();
-            if ($flote->save()) {
+        if (Zone::find($id)) {
+            $zone = Zone::find($id);
+            $zone->deleted_at = now();
+            if ($zone->save()) {
 
                 // Renvoyer un message de succès
                 return response()->json(
                     [
-                        'message' => 'Flote archivée',
+                        'message' => 'zone archivée',
                         'status' => true,
                         'data' => null
                     ]
@@ -221,7 +285,7 @@ class FloteController extends Controller
          }else{
             return response()->json(
                 [
-                    'message' => 'cet Flote n existe pas',
+                    'message' => 'cette zone n existe pas',
                     'status' => false,
                     'data' => null
                 ]

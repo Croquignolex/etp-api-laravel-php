@@ -14,10 +14,10 @@ class Flote extends Model
     use SoftDeletes;
 
     protected $dates = ['deleted_at'];
-    protected $fillable = array('id', 'nom', 'reference', 'solde', 'description');
-    protected $visible = array('id', 'nom', 'reference', 'solde', 'description', 'created_at');
+    protected $fillable = array('id', 'nom', 'description');
+    protected $visible = array('id', 'nom', 'description', 'created_at');
 
-    public function transactions()
+    public function Puce()
     {
         return $this->hasMany('App\Transaction', 'id_flote');
     }

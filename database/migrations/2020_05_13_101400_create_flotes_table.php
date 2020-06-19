@@ -10,11 +10,9 @@ class CreateFlotesTable extends Migration {
 		Schema::create('flotes', function(Blueprint $table) {
 			$table->increments('id');
 			$table->string('nom')->nullable();
-			$table->string('reference')->nullable();
 			$table->string('description')->nullable();
-			$table->decimal('solde')->nullable()->default(0);
 			$table->softDeletes();
-			$table->timestamps();
+			$table->timestamps(); 
 		});
 	}
 

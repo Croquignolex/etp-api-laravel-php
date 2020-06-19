@@ -132,10 +132,10 @@ Route::group(['middleware' => 'auth:api'], function(){
         ->where('id', '[0-9]+');
 
         //supprimer un role
-        Route::get('delete_role/{id}', 'API\RoleController@destroy')
+        Route::post('delete_role/{id}', 'API\RoleController@destroy')
         ->where('id', '[0-9]+');
 
-
+ 
 
 
 
@@ -164,6 +164,29 @@ Route::group(['middleware' => 'auth:api'], function(){
 
 
 
+            /*
+    //////////////////////GESTION DES PUCE /////////////////////
+    */
+    
+        //Creer une puce
+        Route::post('store_puce', 'API\PuceController@store');
+
+        //liste des puce
+        Route::get('puce_list', 'API\PuceController@list');
+
+        //details d'une puce'
+        Route::get('show_puce/{id}', 'API\PuceController@show')
+        ->where('id', '[0-9]+');
+
+        //modification d'une puce
+        Route::post('edit_puce/{id}', 'API\PuceController@update')
+        ->where('id', '[0-9]+');
+
+        //supprimer une puce
+        Route::post('delete_puce/{id}', 'API\PuceController@destroy')
+        ->where('id', '[0-9]+');
+
+
         /*
     //////////////////////Demande de Flotte/////////////////////
     */
@@ -182,6 +205,7 @@ Route::group(['middleware' => 'auth:api'], function(){
         ->where('id', '[0-9]+');
 
 
+
         /*
     //////////////////////Demande de destockage/////////////////////
     */
@@ -197,6 +221,32 @@ Route::group(['middleware' => 'auth:api'], function(){
 
         //Details d'une demande de destockage
         Route::get('detail_demandes_destockage/{id}', 'API\DemandedestockageController@show')
+        ->where('id', '[0-9]+'); 
+
+
+    /*
+    //////////////////////GESTION DES ZONES DE RECOUVREMENT /////////////////////
+    */
+    
+        //Creer une zone
+        Route::post('store_zone', 'API\ZoneController@store');
+
+        //liste des zone
+        Route::get('zone_list', 'API\ZoneController@list');
+
+        //details d'une zone'
+        Route::get('show_zone/{id}', 'API\ZoneController@show')
         ->where('id', '[0-9]+');
+
+        //modification d'une zone
+        Route::post('edit_zone/{id}', 'API\ZoneController@update')
+        ->where('id', '[0-9]+');
+
+        //supprimer une zone
+        Route::post('delete_zone/{id}', 'API\ZoneController@destroy')
+        ->where('id', '[0-9]+');
+
+        //Attribuer une zonne à un utilisateur
+        Route::post('give_zone', 'API\ZoneController@give_zone');
 
 });
