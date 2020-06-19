@@ -14,8 +14,8 @@ class Transaction extends Model
     use SoftDeletes;
 
     protected $dates = ['deleted_at'];
-    protected $fillable = array('id_user', 'id_transaction', 'id_versement', 'id_type_transaction', 'id_flote', 'montant', 'reste', 'statut', 'user_destination', 'user_source');
-    protected $visible = array('id_user', 'id_versement', 'id_type_transaction', 'id_flote', 'montant', 'reste', 'statut', 'user_destination', 'user_source');
+    protected $fillable = array('id_user', 'id_transaction', 'id_versement', 'id_type_transaction', 'id_puce', 'montant', 'reste', 'statut', 'user_destination', 'user_source');
+    protected $visible = array('id_user', 'id_versement', 'id_type_transaction', 'id_puce', 'montant', 'reste', 'statut', 'user_destination', 'user_source');
 
     public function commission()
     {
@@ -37,9 +37,9 @@ class Transaction extends Model
         return $this->belongsTo('App\Type_transaction', 'id_type_transaction');
     }
 
-    public function flote()
+    public function puce()
     {
-        return $this->belongsTo('App\Flote', 'id_flote');
+        return $this->belongsTo('App\Puce', 'id_puce');
     }
 
 }

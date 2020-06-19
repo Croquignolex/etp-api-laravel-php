@@ -8,7 +8,7 @@ use App\Enums\Statut;
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
-
+use App\Zone;
 use App\Utiles\ImageFromBase64;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -52,35 +52,30 @@ class LoginController extends Controller
             // on verifie que l'utilisateur n'est ni Archivé ni desactivé
                 $userAnable = User::where('phone', $request->phone)->first();
 
-                if ($userAnable == null) {
-                    return response()->json(
-                        [
-                            'message' => 'cet utilisateur est Archivé',
-                            'status' => false,
-                            'data' => null
-                        ]
-                    ); 
-                }elseif ($userAnable->statut == Statut::DECLINE) {
-                    return response()->json(
-                        [
-                            'message' => 'cet utilisateur est desactivé',
-                            'status' => false,
-                            'data' => null
-                        ]
-                    );                    
+                if ($userAnable != null) {
+
+                    if ($userAnable->deleted_at != null) {
+                        return response()->json(
+                            [
+                                'message' => 'cet utilisateur est Archivé',
+                                'status' => false,
+                                'data' => null
+                            ]
+                        );
+                    } 
+                    
+                    if ($userAnable->statut == Statut::DECLINE) {
+                        return response()->json(
+                            [
+                                'message' => 'cet utilisateur est Archivé',
+                                'status' => false,
+                                'data' => null
+                            ]
+                        );
+                    } 
+                    
                 }
 
-                // on verifie que l'utilisateur n'est pas Archivé
-                $userAnable = User::where('phone', $request->phone)->first();
-                if ($userAnable == null) {
-                    return response()->json(
-                        [
-                            'message' => 'cet utilisateur est Archivé',
-                            'status' => false,
-                            'data' => null
-                        ]
-                    ); 
-                }
 
             $credentials = [
                 'phone' => $request->phone,
@@ -183,6 +178,7 @@ class LoginController extends Controller
                     'status' => true,
                     'data' => [
                         'user' => $user->setHidden(['deleted_at']),
+                        'zone' => Zone::Find($user->id_zone),
                         'userRole' => $userRole
                     ]
                 ]

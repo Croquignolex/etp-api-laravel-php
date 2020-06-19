@@ -13,7 +13,7 @@ class CreateTransactionsTable extends Migration {
 			$table->integer('id_user')->unsigned()->nullable()->index();
 			$table->integer('id_versement')->unsigned()->nullable()->index();
 			$table->integer('id_type_transaction')->unsigned()->nullable()->index();
-			$table->integer('id_flote')->unsigned()->nullable()->index();
+			$table->integer('id_puce')->unsigned()->nullable()->index();
 			$table->integer('montant')->unsigned()->default('0');
 			$table->integer('reste')->unsigned()->nullable()->default('0');
 			$table->string('statut')->nullable();

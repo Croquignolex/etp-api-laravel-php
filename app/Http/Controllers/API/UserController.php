@@ -11,6 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
 use App\Http\Controllers\Controller;
+use App\Zone;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -45,6 +46,7 @@ class UserController extends Controller
             'name' => 'required',
             'phone' => 'required|numeric|unique:users,phone',
             'adresse' => 'nullable',
+            'id_zone' => ['nullable', 'Numeric'],
             'description' => 'nullable',
             'poste' => ['nullable', 'string', 'max:255'],
             //'base_64_image' => 'required|string',
@@ -74,19 +76,33 @@ class UserController extends Controller
                 ]
             ); 
         }
+
+        // on verifie si la zone est définie
+        if ($request->id_zone != null) {
+            if (!Zone::Find($request->id_zone)) {
+                return response()->json(
+                    [
+                        'message' => 'cette zonne n est pas défini',
+                        'status' => false,
+                        'data' => null
+                    ]
+                ); 
+            }
+        }
+        
         
         // Convert base 64 image to normal image for the server and the data base
         //$server_image_name_path = ImageFromBase64::imageFromBase64AndSave($request->input('base_64_image'),
             //'images/avatars/');
 
         $input = $request->all(); 
-            $input['password'] = bcrypt($input['password']); 
-            //$input['avatar'] = $server_image_name_path;
-            $input['add_by'] = Auth::user()->id;
-            $user = User::create($input); 
-            $user->assignRole($request->input('roles'));
-            $success['token'] =  $user->createToken('MyApp')-> accessToken; 
-            $success['user'] =  $user;
+        $input['password'] = bcrypt($input['password']); 
+        //$input['avatar'] = $server_image_name_path;
+        $input['add_by'] = Auth::user()->id;
+        $user = User::create($input); 
+        $user->assignRole($request->input('roles'));
+        $success['token'] =  $user->createToken('MyApp')-> accessToken; 
+        $success['user'] =  $user;
             
                 
             return response()->json(
@@ -111,7 +127,7 @@ class UserController extends Controller
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['user' => $user, 'userRole' => $userRole]
+                    'data' => ['user' => $user, 'userRole' => $userRole, 'zone' => Zone::Find($user->id_zone)]
                 ]
             );
          }else{
@@ -193,21 +209,12 @@ class UserController extends Controller
     public function list()
     {
         if (Auth::check()) {
-                //$users = User::where('deleted_at', null)->get();
-
-
-            /*$util = User::join('model_has_roles', 'model_has_roles.model_id', 'users.id')
-            ->join('roles', 'roles.id', 'model_has_roles.role_id')
-            ->select(
-                'users.name', 'users.poste', 'users.email', 'users.phone', 'users.adresse','users.created_at','users.statut','users.avatar', 'roles.name as role'
-            )
-            ->get();*/
-
+                
             $users = User::where('deleted_at', null)->get();
             $returenedUers = [];
             foreach($users as $user) {
-
-                $returenedUers[] = ['user' => $user, 'role' => $user->roles->pluck('name','name')->all()];
+                $zone = Zone::Find($user->id_zone);
+                $returenedUers[] = ['user' => $user, 'role' => $user->roles->pluck('name','name')->all(), 'zone' => $zone];
 
             }         
                 return response()->json(

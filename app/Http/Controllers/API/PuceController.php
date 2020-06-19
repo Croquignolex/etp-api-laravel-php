@@ -4,35 +4,39 @@ namespace App\Http\Controllers\API;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use App\Flote;
+use App\Puce;
 use Illuminate\Support\Facades\Validator;
 
-class FloteController extends Controller
+class PuceController extends Controller
 {
-
-        /**
+    /**
 
      * les conditions de lecture des methodes
 
      */
 
-    function __construct(){
+     function __construct(){
 
         $this->middleware('permission:Superviseur');
 
     }
- 
+
 
     /**
-     * //Creer une flote.
+     * //Creer une puce.
      */
     public function store(Request $request)
     {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [ 
-            'name' => ['required', 'string', 'max:255'],
+            'numero' => ['required', 'string', 'max:255', 'unique:puces,numero'],
+            'reference' => ['nullable', 'string', 'max:255'],
+            'id_flotte' => ['required', 'Numeric'],
+            'id_agent' => ['required', 'Numeric'],
+            'nom' => ['required', 'string'],
             'description' => ['nullable', 'string']
         ]);
+
         if ($validator->fails()) { 
             return response()->json(
                 [
@@ -46,25 +50,34 @@ class FloteController extends Controller
 
         // Récupérer les données validées
              
-        $name = $request->name;
+        $numero = $request->numero;
+        $reference = $request->reference;
+        $id_flotte = $request->id_flotte;
+        $id_agent = $request->id_agent;
+        $nom = $request->nom;
         $description = $request->description;
 
 
-        // Nouvel Flote
-        $flote = new Flote([
-            'nom' => $name,
+
+        // Nouvelle puce
+        $puce = new Puce([
+            'numero' => $numero,
+            'nom' => $nom,
+            'reference' => $reference,
+            'id_flotte' => $id_flotte,
+            'id_agent' => $id_agent,
             'description' => $description
         ]);
 
-        // creation de La flote
-        if ($flote->save()) {
+        // creation de La puce
+        if ($puce->save()) {
 
             // Renvoyer un message de succès
             return response()->json(
                 [
-                    'message' => 'Flote créée',
+                    'message' => 'puce créée',
                     'status' => true,
-                    'data' => ['flote' => $flote]
+                    'data' => ['puce' => $puce]
                 ]
             );
         } else {
@@ -80,22 +93,22 @@ class FloteController extends Controller
     }
 
     /**
-     * //details d'une flote'
+     * //details d'une puce'
      */
     public function show($id)
     {
-        //on recherche la flote en question
-        $Flote = Flote::find($id);
+        //on recherche la puce en question
+        $puce = Puce::find($id);
 
 
         //Envoie des information
-        if(Flote::find($id)){
+        if(puce::find($id)){
 
             return response()->json(
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['flote' => $Flote]
+                    'data' => ['puce' => $puce]
                 ]
             );
 
@@ -103,7 +116,7 @@ class FloteController extends Controller
 
             return response()->json(
                 [
-                    'message' => 'ecette flote n existe pas',
+                    'message' => 'ecette puce n existe pas',
                     'status' => false,
                     'data' => null
                 ]
@@ -112,13 +125,16 @@ class FloteController extends Controller
     }
 
     /**
-     * modification d'une flote
+     * modification d'une puce
      */
     public function update(Request $request, $id)
     {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [ 
-            'name' => ['required', 'string', 'max:255'],
+            'reference' => ['nullable', 'string', 'max:255'],
+            'id_flotte' => ['required', 'Numeric'],
+            'id_agent' => ['required', 'Numeric'],
+            'nom' => ['required', 'string'],
             'description' => ['nullable', 'string']
         ]);
         if ($validator->fails()) { 
@@ -133,24 +149,32 @@ class FloteController extends Controller
 
         // Récupérer les données validées
             
-        $name = $request->name;
+        $numero = $request->numero;
+        $nom = $request->nom;
+        $reference = $request->reference;
+        $id_flotte = $request->id_flotte;
+        $id_agent = $request->id_agent;
         $description = $request->description;
 
-        // rechercher la flote
-        $flote = Flote::find($id);
+        // rechercher l'agent
+        $puce = Puce::find($id);
 
-        // Modifier la flote
-        $flote->nom = $name;
-        $flote->description = $description;
+        // Modifier la puce
+        $puce->numero = $numero;
+        $puce->nom = $nom;
+        $puce->reference = $reference;
+        $puce->id_flotte = $id_flotte;
+        $puce->id_agent = $id_agent;
+        $puce->description = $description;
 
 
-        if ($flote->save()) {
+        if ($puce->save()) {
             // Renvoyer un message de succès
             return response()->json(
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['flote' => $flote]
+                    'data' => ['puce' => $puce]
                 ]
             );
         } else {
@@ -166,23 +190,23 @@ class FloteController extends Controller
     }
 
     /**
-     * //lister les flotes
+     * //lister les puces
      */
     public function list()
     {
-        if (Flote::where('deleted_at', null)) {
-            $flotes = Flote::where('deleted_at', null)->get();
+        if (Puce::where('deleted_at', null)) {
+            $puce = Puce::where('deleted_at', null)->get();
             return response()->json(
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['flotes' => $flotes]
+                    'data' => ['puces' => $puce]
                 ]
             );
          }else{
             return response()->json(
                 [
-                    'message' => 'pas de flote à lister',
+                    'message' => 'pas de puce à lister',
                     'status' => false,
                     'data' => null
                 ]
@@ -191,19 +215,19 @@ class FloteController extends Controller
     }
 
     /**
-     * //supprimer une flote
+     * //supprimer une puce
      */
     public function destroy($id)
     {
-        if (Flote::find($id)) {
-            $flote = Flote::find($id);
-            $flote->deleted_at = now();
-            if ($flote->save()) {
+        if (Puce::find($id)) {
+            $puce = puce::find($id);
+            $puce->deleted_at = now();
+            if ($puce->save()) {
 
                 // Renvoyer un message de succès
                 return response()->json(
                     [
-                        'message' => 'Flote archivée',
+                        'message' => 'Puce archivée',
                         'status' => true,
                         'data' => null
                     ]
@@ -221,7 +245,7 @@ class FloteController extends Controller
          }else{
             return response()->json(
                 [
-                    'message' => 'cet Flote n existe pas',
+                    'message' => 'cet agent n existe pas',
                     'status' => false,
                     'data' => null
                 ]

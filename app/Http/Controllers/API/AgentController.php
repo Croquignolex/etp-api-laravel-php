@@ -4,9 +4,9 @@ namespace App\Http\Controllers\API;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use App\Agent;
+use App\Zone;
 use App\User;
 use App\Utiles\ImageFromBase64;
-use App\Enums\Statut;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
@@ -48,6 +48,7 @@ class AgentController extends Controller
                 'poste' => ['nullable', 'string', 'max:255'],
                 'email' => 'required|email|unique:users,email', 
                 'password' => 'required|string|min:6', 
+                'id_zone' => ['nullable', 'Numeric'],
 
             //Agent informations
                 'base_64_image' => 'nullable|string',
@@ -56,9 +57,7 @@ class AgentController extends Controller
                 'taux_commission' => ['required', 'Numeric'],
                 'ville' => ['required', 'string', 'max:255'],
                 'pays' => ['required', 'string', 'max:255'],
-                'point_de_vente' => ['required', 'string', 'max:255'],
-                'puce_name' => ['required', 'string', 'max:255'],
-                'puce_number' => ['required', 'string', 'max:255']    
+                'point_de_vente' => ['required', 'string', 'max:255']   
 
         ]);  
 
@@ -85,6 +84,7 @@ class AgentController extends Controller
                 $email = $request->email;
                 $password = bcrypt($request->password);                
                 $roles = 'Agent';
+                $id_zone = $request->id_zone;
 
                 
 
@@ -127,6 +127,7 @@ class AgentController extends Controller
                 'password' => $password,
                 'phone' => $phone,
                 'adresse' => $adresse,
+                'id_zone' => $id_zone,
                 'description' => $description
             ]);
 
@@ -211,7 +212,7 @@ class AgentController extends Controller
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['agent' => $agent, 'user' => $user]
+                    'data' => ['agent' => $agent, 'user' => $user, 'zone' => Zone::Find($user->id_zone)]
                 ]
             );
 
@@ -242,9 +243,7 @@ class AgentController extends Controller
             'taux_commission' => ['required', 'Numeric'],
             'ville' => ['required', 'string', 'max:255'],
             'pays' => ['required', 'string', 'max:255'],
-            'point_de_vente' => ['required', 'string', 'max:255'],
-            'puce_name' => ['required', 'string', 'max:255'],
-            'puce_number' => ['required', 'string', 'max:255'] 
+            'point_de_vente' => ['required', 'string', 'max:255']
         ]);
         if ($validator->fails()) { 
             return response()->json(
@@ -262,8 +261,6 @@ class AgentController extends Controller
         $ville = $request->ville;      
         $pays = $request->pays; 
         $point_de_vente = $request->point_de_vente;
-        $puce_name = $request->puce_name;
-        $puce_number = $request->puce_number;
         
 
         // rechercher l'agent
@@ -275,9 +272,6 @@ class AgentController extends Controller
         $agent->ville = $ville;
         $agent->pays = $pays;
         $agent->point_de_vente = $point_de_vente;
-        $agent->puce_name = $puce_name;
-        $agent->puce_number = $puce_number;
-
 
 
 
@@ -316,11 +310,15 @@ class AgentController extends Controller
 
         if (Agent::where('deleted_at', null)) {
             $agents = Agent::where('deleted_at', null)->get();
-			$returenedAgents = [];
+            $returenedAgents = [];
+            
+
 
             foreach($agents as $agent) {
 
-                $returenedAgents[] = ['agent' => $agent, 'user' => User::find($agent->id_user)];
+                $user = User::find($agent->id_user);
+                $zone = Zone::Find($user->id_zone);
+                $returenedAgents[] = ['agent' => $agent, 'user' => $user, 'zone' => $zone];
 
             } 
 

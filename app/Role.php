@@ -11,6 +11,6 @@ class Role extends spatie_role
      */
     public function users()
     {
-       dd('les utilisateurs de ce role');
+       //
     }
 }
