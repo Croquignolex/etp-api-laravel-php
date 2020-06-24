@@ -46,7 +46,7 @@ class UserController extends Controller
             'name' => 'required',
             'phone' => 'required|numeric|unique:users,phone',
             'adresse' => 'nullable',
-            'id_zone' => ['nullable', 'Numeric'],
+            'id_zone' => ['nullable', 'array'], 
             'description' => 'nullable',
             'poste' => ['nullable', 'string', 'max:255'],
             //'base_64_image' => 'required|string',
@@ -64,7 +64,7 @@ class UserController extends Controller
             );             
         }
 
-        
+        //dd($request);
         // on verifie si le role est définit
         $roleExist = Role::where('name', $request->roles)->count();
         if ($roleExist == 0) {
@@ -77,20 +77,25 @@ class UserController extends Controller
             ); 
         }
 
-        // on verifie si la zone est définie
-        if ($request->id_zone != null) {
-            if (!Zone::Find($request->id_zone)) {
-                return response()->json(
-                    [
-                        'message' => 'cette zonne n est pas défini',
-                        'status' => false,
-                        'data' => null
-                    ]
-                ); 
+        if (isset($request->id_zone)) {
+            foreach ($request->id_zone as $zone) {
+                // on verifie si la zone est définie
+                
+                    if (!Zone::Find($zone)) {
+                        return response()->json(
+                            [
+                                'message' => 'une zone au moins parmi les zones entrée n est défini',
+                                'status' => false,
+                                'data' => null
+                            ]
+                        ); 
+                    }
+                
             }
         }
         
         
+
         // Convert base 64 image to normal image for the server and the data base
         //$server_image_name_path = ImageFromBase64::imageFromBase64AndSave($request->input('base_64_image'),
             //'images/avatars/');
@@ -99,6 +104,7 @@ class UserController extends Controller
         $input['password'] = bcrypt($input['password']); 
         //$input['avatar'] = $server_image_name_path;
         $input['add_by'] = Auth::user()->id;
+        $input['id_zone'] = json_encode($request->id_zone);
         $user = User::create($input); 
         $user->assignRole($request->input('roles'));
         $success['token'] =  $user->createToken('MyApp')-> accessToken; 
@@ -122,12 +128,20 @@ class UserController extends Controller
         $userCount = User::Where('id', $id)->count();
         if ($userCount != 0) {
             $user = User::find($id);
+            $zones = json_decode($user->id_zone);
+            $zones_list = [];
+            
+            if ($zones != null) {
+                foreach ($zones as $zone) {
+                    $zones_list[] = Zone::Find($zone);
+                }
+            }
             $userRole = $user->roles->pluck('name','name')->all();
             return response()->json(
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['user' => $user, 'userRole' => $userRole, 'zone' => Zone::Find($user->id_zone)]
+                    'data' => ['user' => $user, 'userRole' => $userRole, 'zones_list' => $zones_list]
                 ]
             );
          }else{
@@ -213,8 +227,17 @@ class UserController extends Controller
             $users = User::where('deleted_at', null)->get();
             $returenedUers = [];
             foreach($users as $user) {
-                $zone = Zone::Find($user->id_zone);
-                $returenedUers[] = ['user' => $user, 'role' => $user->roles->pluck('name','name')->all(), 'zone' => $zone];
+
+                $zones = json_decode($user->id_zone);
+                $zones_list = [];
+                
+                if ($zones != null) {
+                    foreach ($zones as $zone) {
+                        $zones_list[] = Zone::Find($zone);
+                    }
+                }
+
+                $returenedUers[] = ['user' => $user, 'role' => $user->roles->pluck('name','name')->all(), 'zone' => $zones_list];
 
             }         
                 return response()->json(
@@ -376,7 +399,7 @@ class UserController extends Controller
 
 
     /** 
-     * modification d'un utilisateur 
+     * modification du role d'un utilisateur 
      */ 
     public function edit_role_user(Request $request, $id) 
     { 

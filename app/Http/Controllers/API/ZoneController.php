@@ -40,6 +40,7 @@ class ZoneController extends Controller
         $validator = Validator::make($request->all(), [ 
             'name' => ['required', 'string', 'max:255'],
             'reference' => ['nullable', 'string', 'max:255'],
+            'map' => ['nullable', 'string'],
             'description' => ['nullable', 'string']
         ]);
         if ($validator->fails()) { 
@@ -57,6 +58,7 @@ class ZoneController extends Controller
              
         $name = $request->name;
         $reference = $request->reference;
+        $map = $request->map;
         $description = $request->description;
 
 
@@ -64,6 +66,7 @@ class ZoneController extends Controller
         $zone = new Zone ([
             'nom' => $name,
             'reference' => $reference,
+            'map' => $map,
             'description' => $description
         ]);
 
@@ -131,7 +134,7 @@ class ZoneController extends Controller
         // Valider données envoyées
         $validator = Validator::make($request->all(), [ 
             'id_user' => ['required', 'Numeric'],
-            'id_zone' => ['required', 'Numeric']
+            'id_zone' => ['nullable', 'array']
         ]);
         if ($validator->fails()) { 
             return response()->json(
@@ -143,9 +146,26 @@ class ZoneController extends Controller
             );            
         } 
 
+        if (isset($request->id_zone)) {
+            foreach ($request->id_zone as $zone) {
+                // on verifie si la zone est définie
+                
+                    if (!Zone::Find($zone)) {
+                        return response()->json(
+                            [
+                                'message' => 'une zone au moins parmi les zones entrée n est défini',
+                                'status' => false,
+                                'data' => null
+                            ]
+                        ); 
+                    }
+                
+            }
+        }
+
         //on recherche l'utilisateur'
         $user = User::find($request->id_user);
-        $user->id_zone = $request->id_zone;
+        $user->id_zone = json_encode($request->id_zone);
 
         //Envoie des information
         if($user->save()){
@@ -181,6 +201,7 @@ class ZoneController extends Controller
         $validator = Validator::make($request->all(), [ 
             'name' => ['required', 'string', 'max:255'],
             'reference' => ['nullable', 'string', 'max:255'],
+            'map' => ['nullable', 'string'],
             'description' => ['nullable', 'string']
         ]);
         if ($validator->fails()) { 
@@ -197,6 +218,7 @@ class ZoneController extends Controller
             
         $name = $request->name;
         $reference = $request->reference;
+        $map = $request->map;
         $description = $request->description;
 
         // rechercher la zone
@@ -205,6 +227,7 @@ class ZoneController extends Controller
         // Modifier la zone
         $zone->nom = $name;
         $zone->reference = $reference;
+        $zone->map = $map;
         $zone->description = $description;
 
 

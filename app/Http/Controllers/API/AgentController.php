@@ -48,7 +48,7 @@ class AgentController extends Controller
                 'poste' => ['nullable', 'string', 'max:255'],
                 'email' => 'required|email|unique:users,email', 
                 'password' => 'required|string|min:6', 
-                'id_zone' => ['nullable', 'Numeric'],
+                'id_zone' => ['nullable', 'array'],
 
             //Agent informations
                 'base_64_image' => 'nullable|string',
@@ -73,6 +73,24 @@ class AgentController extends Controller
             );             
         }  
 
+
+        if (isset($request->id_zone)) {
+            foreach ($request->id_zone as $zone) {
+                // on verifie si la zone est définie
+                
+                    if (!Zone::Find($zone)) {
+                        return response()->json(
+                            [
+                                'message' => 'une zone au moins parmi les zones entrée n est défini',
+                                'status' => false,
+                                'data' => null
+                            ]
+                        ); 
+                    }
+                
+            }
+        }
+
         
         // Récupérer les données validées
             // users
@@ -84,7 +102,7 @@ class AgentController extends Controller
                 $email = $request->email;
                 $password = bcrypt($request->password);                
                 $roles = 'Agent';
-                $id_zone = $request->id_zone;
+                $id_zone = json_encode($request->id_zone);
 
                 
 

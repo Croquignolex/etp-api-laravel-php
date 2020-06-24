@@ -13,8 +13,8 @@ class Zone extends Model
     use SoftDeletes;
 
     protected $dates = ['deleted_at'];
-    protected $fillable = array('id', 'nom', 'reference', 'description');
-    protected $visible = array('id', 'nom', 'reference', 'description', 'created_at');
+    protected $fillable = array('id', 'nom', 'map', 'reference', 'description');
+    protected $visible = array('id', 'nom', 'map', 'reference', 'description', 'created_at');
 
 }
 
