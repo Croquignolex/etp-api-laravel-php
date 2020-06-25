@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Flote;
+use App\Puce;
 use Illuminate\Support\Facades\Validator;
 
 class FloteController extends Controller
@@ -85,9 +86,17 @@ class FloteController extends Controller
     public function show($id)
     {
         //on recherche la flote en question
-        $Flote = Flote::find($id);
-
-
+        $flote = Flote::find($id);
+		  
+		$puces = json_decode($flote->id_flote);
+		$puces_list = [];
+		
+		if ($puces != null) {
+			foreach ($puces as $puce) {
+				$puces_list[] = Puce::Find($puce);
+			}
+		}
+  
         //Envoie des information
         if(Flote::find($id)){
 
@@ -95,7 +104,7 @@ class FloteController extends Controller
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['flote' => $Flote]
+                    'data' => ['flote' => $flote, 'puces' => $puces_list]
                 ]
             );
 
@@ -172,11 +181,26 @@ class FloteController extends Controller
     {
         if (Flote::where('deleted_at', null)) {
             $flotes = Flote::where('deleted_at', null)->get();
+			$returenedFlote = [];
+            foreach($flotes as $flote) {
+
+                $puces = json_decode($flote->id_flote);
+                $puces_list = [];
+                
+                if ($puces != null) {
+                    foreach ($puces as $puce) {
+                        $puces_list[] = Puce::Find($puce);
+                    }
+                }
+
+                $returenedFlote[] = ['flote' => $flote, 'puces' => $puces_list];
+            }         
+			
             return response()->json(
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['flotes' => $flotes]
+                    'data' => ['flotes' => $returenedFlote]
                 ]
             );
          }else{
