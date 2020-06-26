@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use App\Agent;
 use App\Zone;
+use App\Enums\Roles;
 use App\Utiles\ImageFromBase64;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Controller;
@@ -100,7 +101,25 @@ class ZoneController extends Controller
     {
         //on recherche la zone en question
         $zone = Zone::find($id);
-
+		
+		$agents = [];
+		$recouvreurs = [];
+		
+		$users = User::all(); 
+		 foreach($users as $user) 
+		 {
+			 $userRole = $user->roles->pluck('name','name')->all();
+			 if($userRole === Roles::AGENT) 
+			 {
+				  $user_zones = json_decode($user->id_zone);
+				  if(array_search($zone->id, $user_zones)) $agents[] = $user;
+			 }
+			 else if($userRole === Roles::RECOUVREUR)
+			 {
+				 $user_zones = json_decode($user->id_zone);
+				 if(array_search($zone->id, $user_zones)) $recouvreurs[] = $user;
+			 }
+		 }
 
         //Envoie des information
         if(Zone::find($id)){
@@ -109,7 +128,7 @@ class ZoneController extends Controller
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['zone' => $zone]
+                    'data' => ['zone' => $zone, 'agents' => $agents, 'recouvreurs' => $recouvreurs]
                 ]
             );
 
@@ -259,11 +278,38 @@ class ZoneController extends Controller
     {
         if (Zone::where('deleted_at', null)) {
             $zones = Zone::where('deleted_at', null)->get();
+		
+			$returenedZone = [];
+            foreach($zones as $zone) 
+			{
+				$agents = [];
+				$recouvreurs = [];
+				
+                $users = User::all(); 
+				 foreach($users as $user) 
+				 {
+					 $userRole = $user->roles->pluck('name','name')->all();
+					 if($userRole === Roles::AGENT) 
+					 {
+						  $user_zones = json_decode($user->id_zone);
+						  if(array_search($zone->id, $user_zones)) $agents[] = $user;
+					 }
+					 else if($userRole === Roles::RECOUVREUR)
+					 {
+						 $user_zones = json_decode($user->id_zone);
+						 if(array_search($zone->id, $user_zones)) $recouvreurs[] = $user;
+					 }
+				 }
+
+                $returenedZone[] = ['zone' => $zone, 'agents' => count($agents), 'recouvreurs' => count($recouvreurs)];
+            }    
+			
+			
             return response()->json(
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['zones' => $zones]
+                    'data' => ['zones' => $returenedZone]
                 ]
             );
          }else{
