@@ -8,7 +8,7 @@ class Roles
 {
     const ADMIN = 'Admin';
     const AGENT = 'Agent';
-    const GESTION_FLOTTE = 'Gestionnaire_flotte';
+    const GESTION_FLOTTE = 'Gestionnaire de flotte';
     const RECOUVREUR = 'Recouvreur';
     const SUPERVISEUR = 'Superviseur';
 
