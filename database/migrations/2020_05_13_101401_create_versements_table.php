@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
 class CreateVersementsTable extends Migration {
 
@@ -14,9 +15,10 @@ class CreateVersementsTable extends Migration {
 			$table->integer('id_flote')->unsigned()->nullable()->index();
 			$table->integer('montant')->nullable();
 			$table->text('note');
-			$table->integer('reste_sur_versement')->nullable();
+			$table->integer('reste_du_versement')->nullable();
 			$table->timestamps();
 			$table->softDeletes();
+
 		});
 	}
 

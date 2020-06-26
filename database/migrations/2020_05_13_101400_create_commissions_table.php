@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
 class CreateCommissionsTable extends Migration {
 
@@ -9,10 +10,12 @@ class CreateCommissionsTable extends Migration {
 	{
 		Schema::create('commissions', function(Blueprint $table) {
 			$table->increments('id');
-			$table->integer('id_transaction')->unsigned()->nullable()->index();
+			$table->integer('id_transaction')->unsigned()->nullable();
 			$table->integer('montant')->nullable();
+			$table->string('statut')->nullable();
 			$table->timestamps();
 			$table->softDeletes();
+			
 		});
 	}
 

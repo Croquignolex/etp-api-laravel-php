@@ -15,6 +15,7 @@ class AddIdZoneToUsersTable extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->longText('id_zone')->nullable()->after('id')->default(null);
+
         });
     }
 

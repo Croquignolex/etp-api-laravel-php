@@ -16,11 +16,6 @@ class Puce extends Model
     protected $fillable = array('id', 'nom', 'id_flotte', 'id_agent', 'reference', 'numero', 'solde', 'description');
     protected $visible = array('id', 'nom', 'id_flotte', 'id_agent', 'numero', 'reference', 'solde', 'description', 'created_at');
 
-    public function transactions()
-    {
-        return $this->hasMany('App\Transaction', 'id_puce');
-    }
-
 
     public function flote()
     {

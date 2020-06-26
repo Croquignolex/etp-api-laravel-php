@@ -2,31 +2,33 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
-class CreateTransactionsTable extends Migration {
+class CreateRecouvrementsTable extends Migration {
 
 	public function up()
 	{
-		Schema::create('transactions', function(Blueprint $table) {
+		Schema::create('recouvrements', function(Blueprint $table) {
 			$table->increments('id');
-			$table->integer('id_transaction')->unsigned()->nullable()->index();
 			$table->integer('id_user')->unsigned()->nullable()->index();
 			$table->integer('id_versement')->unsigned()->nullable()->index();
-			$table->integer('id_type_transaction')->unsigned()->nullable()->index();
-			$table->integer('id_puce')->unsigned()->nullable()->index();
+			$table->integer('id_transaction')->unsigned()->nullable()->index();
 			$table->integer('montant')->unsigned()->default('0');
 			$table->integer('reste')->unsigned()->nullable()->default('0');
+			$table->string('type_transaction')->nullable();
+			$table->string('reference')->nullable();
 			$table->string('statut')->nullable();
 			$table->integer('user_destination')->unsigned()->nullable()->index();
 			$table->integer('user_source')->unsigned()->nullable()->index();
 			$table->timestamps();
 			$table->softDeletes();
 			
+			
 		});
 	}
 
 	public function down()
 	{
-		Schema::drop('transactions');
+		Schema::drop('recouvrements');
 	}
 }

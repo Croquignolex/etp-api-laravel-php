@@ -2,14 +2,14 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Schema;
 
 class CreateForeignKeys extends Migration {
 
 	public function up()
 	{
 		Schema::table('commissions', function(Blueprint $table) {
-			$table->foreign('id_transaction')->references('id')->on('transactions')
+			$table->foreign('id_transaction')->references('id')->on('approvisionnements')
 						->onDelete('set null')
 						->onUpdate('no action');
 		});
@@ -18,7 +18,7 @@ class CreateForeignKeys extends Migration {
 	public function down()
 	{
 		Schema::table('commissions', function(Blueprint $table) {
-			$table->dropForeign('commissions_id_transaction_foreign');
+			$table->dropForeign('commissions_id_approvisionnement_foreign');
 		});
 	}
 }
