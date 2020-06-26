@@ -17,9 +17,9 @@ class Flote extends Model
     protected $fillable = array('id', 'nom', 'description');
     protected $visible = array('id', 'nom', 'description', 'created_at');
 
-    public function Puce()
+    public function puce()
     {
-        return $this->hasMany('App\Transaction', 'id_flote');
+        return $this->hasMany('App\Puce', 'id_flote');
     }
 
 }

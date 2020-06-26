@@ -17,14 +17,4 @@ class Versement_transaction extends Model
     protected $fillable = array('id_transaction', 'id_versement');
     protected $visible = array('id_transaction', 'id_versement');
 
-    public function transaction()
-    {
-        return $this->belongsTo('App\Transaction', 'id_transaction');
-    }
-
-    public function vercement()
-    {
-        return $this->belongsTo('App\Versement', 'id_versement');
-    }
-
 }

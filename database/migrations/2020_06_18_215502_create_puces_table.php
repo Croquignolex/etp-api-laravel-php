@@ -15,7 +15,7 @@ class CreatePucesTable extends Migration
     {
         Schema::create('puces', function (Blueprint $table) {
 
-            $table->bigIncrements('id');
+            $table->increments('id');
             $table->integer('id_flotte')->unsigned()->nullable()->index();
             $table->integer('id_agent')->unsigned()->nullable()->index();
 			$table->string('nom')->nullable();
@@ -24,7 +24,8 @@ class CreatePucesTable extends Migration
 			$table->string('description')->nullable();
 			$table->decimal('solde')->nullable()->default(0);
 			$table->softDeletes();
-			$table->timestamps();
+            $table->timestamps();
+            
         });
     }
 

@@ -17,14 +17,10 @@ class Agent extends Model
     protected $fillable = array('img_cni','img_cni_back', 'point_de_vente', 'reference', 'taux_commission', 'ville', 'pays', 'id_creator', 'id_user');
     protected $visible = array('id', 'created_at', 'img_cni','img_cni_back', 'point_de_vente', 'reference', 'taux_commission', 'ville', 'pays', 'id_creator', 'id_user');
 
-    public function vercements()
-    {
-        return $this->hasMany('App\Versement', 'id_agent');
-    }
 
-    public function Puce()
+    public function puce()
     {
-        return $this->hasMany('App\Transaction', 'id_agent');
+        return $this->hasMany('App\Puce', 'id_agent');
     }
 
 }

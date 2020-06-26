@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
 class CreateAgentsTable extends Migration {
 
@@ -17,7 +18,9 @@ class CreateAgentsTable extends Migration {
 			$table->string('ville')->nullable();
 			$table->string('pays')->nullable();			
 			$table->softDeletes();
-			$table->timestamps();
+			$table->timestamps();			
+
+			
 		});
 	}
 
