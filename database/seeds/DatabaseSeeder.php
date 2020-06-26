@@ -15,8 +15,12 @@ class DatabaseSeeder extends Seeder
         // $this->call(UsersTableSeeder::class);
 		Model::unguard();
 
-		$this->call('Type_transactionTableSeeder');
-		$this->command->info('Type_transaction table seeded!');
+		$this->call('PermissionTableSeeder');
+		$this->command->info('Permission table seeded!');
+
+		$this->call('CreateAdminUserSeeder');
+		$this->command->info('Admin table seeded!');
+
 
 		$this->call('FloteTableSeeder');
 		$this->command->info('Flote table seeded!');
@@ -29,5 +33,7 @@ class DatabaseSeeder extends Seeder
 
 		$this->call('Motif_operationTableSeeder');
 		$this->command->info('Motif_operation table seeded!');
+
+		
     }
 }

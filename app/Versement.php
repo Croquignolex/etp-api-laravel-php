@@ -14,18 +14,9 @@ class Versement extends Model
     use SoftDeletes;
 
     protected $dates = ['deleted_at'];
-    protected $fillable = array('id_caisse', 'id_agent', 'id_flote', 'montant', 'note', 'reste_sur_versement');
-    protected $visible = array('id_caisse', 'id_agent', 'id_flote', 'montant', 'note', 'reste_sur_versement');
+    protected $fillable = array('id_caisse', 'id_agent', 'id_flote', 'montant', 'note', 'reste_du_versement');
+    protected $visible = array('id_caisse', 'id_agent', 'id_flote', 'montant', 'note', 'reste_du_versement');
 
-    public function transactions()
-    {
-        return $this->hasMany('Versement_transaction', 'id_versement');
-    }
-
-    public function agent()
-    {
-        return $this->belongsTo('App\Agent', 'id_agent');
-    }
 
     public function operation()
     {

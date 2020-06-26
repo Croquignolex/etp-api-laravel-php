@@ -14,12 +14,12 @@ class Commission extends Model
     use SoftDeletes;
 
     protected $dates = ['deleted_at'];
-    protected $fillable = array('id_transaction', 'montant');
-    protected $visible = array('id_transaction', 'montant');
+    protected $fillable = array('id_transaction', 'montant', 'statut');
+    protected $visible = array('id_transaction', 'montant', 'statut');
 
     public function transaction()
     {
-        return $this->belongsTo('App\Transaction', 'id_transaction');
+        return $this->belongsTo('App\Approvisionnement', 'id_transaction');
     }
 
 }
