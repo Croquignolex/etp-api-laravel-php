@@ -15,15 +15,14 @@ class DatabaseSeeder extends Seeder
         // $this->call(UsersTableSeeder::class);
 		Model::unguard();
 
+		$this->call('FloteTableSeeder');
+		$this->command->info('Flote table seeded!');
+
 		$this->call('PermissionTableSeeder');
 		$this->command->info('Permission table seeded!');
 
 		$this->call('CreateAdminUserSeeder');
 		$this->command->info('Admin table seeded!');
-
-
-		$this->call('FloteTableSeeder');
-		$this->command->info('Flote table seeded!');
 
 		$this->call('CaisseTableSeeder');
 		$this->command->info('Caisse table seeded!');

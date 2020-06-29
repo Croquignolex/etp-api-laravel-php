@@ -198,19 +198,23 @@ Route::group(['middleware' => 'auth:api'], function(){
         /*
     //////////////////////Demande de Flotte/////////////////////
     */
-    
-        //Creer une demande de flote
-        Route::post('demande_flote', 'API\DemandeflotteController@store');
 
-        //Lister les demandes de flote
-        Route::get('list_demandes_flote', 'API\DemandeflotteController@list_all');
 
-        //Lister mes demandes de flote
-        Route::get('list_mes_demandes_flote', 'API\DemandeflotteController@list');
+        //par un Agent
+            //Creer une demande de flote
+            Route::post('demande_flote', 'API\DemandeflotteController@store');
 
-        //Details d'une demande de flote
-        Route::get('detail_demandes_flote/{id}', 'API\DemandeflotteController@show')
-        ->where('id', '[0-9]+');
+            //Lister les demandes de flote
+            Route::get('list_demandes_flote', 'API\DemandeflotteController@list_all');
+
+            //Lister mes demandes de flote
+            Route::get('list_mes_demandes_flote', 'API\DemandeflotteController@list');
+
+            //Details d'une demande de flote
+            Route::get('detail_demandes_flote/{id}', 'API\DemandeflotteController@show')
+            ->where('id', '[0-9]+');
+
+        //pour un Agent
 
 
 
@@ -218,18 +222,19 @@ Route::group(['middleware' => 'auth:api'], function(){
     //////////////////////Demande de destockage/////////////////////
     */
     
-        //Creer une demande de destockage
-        Route::post('demande_destockage', 'API\DemandedestockageController@store');
+        //par un Agent
+            //Creer une demande de destockage
+            Route::post('demande_destockage', 'API\DemandedestockageController@store');
 
-        //Lister les demandes de destockage
-        Route::get('list_demandes_destockages_flote', 'API\DemandedestockageController@list_all');
+            //Lister les demandes de destockage
+            Route::get('list_demandes_destockages_flote', 'API\DemandedestockageController@list_all');
 
-        //Lister mes demandes de destockage
-        Route::get('list_mes_demandes_destockages', 'API\DemandedestockageController@list');
+            //Lister mes demandes de destockage
+            Route::get('list_mes_demandes_destockages', 'API\DemandedestockageController@list');
 
-        //Details d'une demande de destockage
-        Route::get('detail_demandes_destockage/{id}', 'API\DemandedestockageController@show')
-        ->where('id', '[0-9]+'); 
+            //Details d'une demande de destockage
+            Route::get('detail_demandes_destockage/{id}', 'API\DemandedestockageController@show')
+            ->where('id', '[0-9]+'); 
 
 
     /*

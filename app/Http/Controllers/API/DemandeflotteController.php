@@ -3,19 +3,18 @@
 namespace App\Http\Controllers\API;
 
 use App\Agent;
+use App\Demande_flote;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 
 use App\User;
-use App\Type_transaction;
 use Illuminate\Support\Facades\Validator;
 use App\Flote;
-use App\Transaction;
+use App\Puce;
 use Illuminate\Support\Facades\Auth;
 
 class DemandeflotteController extends Controller
 {
-
 
     /**
 
@@ -37,7 +36,7 @@ class DemandeflotteController extends Controller
         // Valider données envoyées
         $validator = Validator::make($request->all(), [ 
             'montant' => ['required', 'Numeric'],
-            'id_flote' => ['required', 'Numeric']
+            'id_flote' => ['required', 'Numeric'] //sous forme de select qui affiche juste les deux puces MTN et ORANGE créé par seed
         ]);
         if ($validator->fails()) { 
             return response()->json(
@@ -49,56 +48,51 @@ class DemandeflotteController extends Controller
             );            
         }  
 
-        //recuperer l'utilisateur connecté
+        //recuperer l'utilisateur connecté (c'est lui l'agent)
         $user = Auth::user();
 
         //recuperer l'agent concerné
         $agent = Agent::where('id_user', $user->id)->First();
 
-        //recuperer la flotte concerné
+        //recuperer la Puce correspondante
         $flote = Flote::Find($request->id_flote);
 
-        //On recupere le type de la transaction
-        $type_transaction = Type_transaction::where('nom', \App\Enums\Transations::DEMANDE_FLOTTE)->First();        
+        
 
 
         // Récupérer les données validées
              
         $id_user = $user->id;
-        $id_transaction = null;
-        $id_versement = null;
-        $id_type_transaction = $type_transaction->id;
-        $id_flote = $request->id_flote;
+        $add_by = $user->id;
+        $reference = null;
         $montant = $request->montant;
-        $reste = null;
         $statut = \App\Enums\Statut::EN_ATTENTE;
-        $user_destination = $user->id;
-        $user_source = null;
+        $user_source = $request->id_flote;
+        $destination = $user->id;
 
 
         // Nouvelle demande de flotte
-        $transaction = new Transaction([
+        $demande_flote = new Demande_flote([
             'id_user' => $id_user,
-            'id_transaction' => $id_transaction,
-            'id_versement' => $id_versement,
-            'id_type_transaction' => $id_type_transaction,
-            'id_flote' => $id_flote,
+            'add_by' => $add_by,
+            'reference' => $reference,
             'montant' => $montant,
-            'reste' => $reste,
             'statut' => $statut,
-            'user_destination' => $user_destination,
+            'destination' => $destination,
             'user_source' => $user_source
         ]);
 
-        // creation de La flote
-        if ($transaction->save()) {
+        //dd($demande_flote );
+
+        // creation de La demande
+        if ($demande_flote->save()) {
 
             // Renvoyer un message de succès
             return response()->json(
                 [
                     'message' => 'Demande de Flote créée',
                     'status' => true,
-                    'data' => ['demande_flote' => $transaction, 'user' => $user, 'agent' => $agent, 'flote' => $flote]
+                    'data' => ['demande_flote' => $demande_flote, 'user' => $user, 'agent' => $agent, 'flote' => $flote]
                 ]
             );
         } else {
@@ -120,12 +114,9 @@ class DemandeflotteController extends Controller
     public function list_all()
     {
 
-        //On recupere le type de la transaction 'demande de flotte'
-        $type_transaction = Type_transaction::where('nom', \App\Enums\Transations::DEMANDE_FLOTTE)->First();
 
         //On recupere les 'demande de flotte'
-        $demandes_flote = Transaction::where('id_type_transaction', $type_transaction->id)
-        ->where('statut', \App\Enums\Statut::EN_ATTENTE)
+        $demandes_flote = Demande_flote::where('statut', \App\Enums\Statut::EN_ATTENTE)
         ->get();  
         
         if ($demandes_flote->count() == 0) {
@@ -147,9 +138,14 @@ class DemandeflotteController extends Controller
                 $agent = Agent::where('id_user', $user->id)->First();
 
             //recuperer la flotte concerné
-                $flote = Flote::Find($demande_flote->id_flote);
+                $flote = Flote::Find($demande_flote->user_source);
 
-            $demandes_flotes[] = ['demande_flote' => $demande_flote, 'user' => $user, 'agent' => $agent, 'flote' => $flote,];
+            //recuperer la puce de l'agent
+            $puce = Puce::where('id_flotte', $flote->id)
+            ->where('id_agent', $agent->id)
+            ->First();
+
+            $demandes_flotes[] = ['demande_flote' => $demande_flote, 'user' => $user, 'agent' => $agent, 'flote' => $flote, 'puce' => $puce,];
 
         }
 
@@ -182,12 +178,9 @@ class DemandeflotteController extends Controller
     public function list()
     {
 
-        //On recupere le type de la transaction 'demande de flotte'
-        $type_transaction = Type_transaction::where('nom', \App\Enums\Transations::DEMANDE_FLOTTE)->First();
 
         //On recupere mes 'demande de flotte'
-        $demandes_flote = Transaction::where('id_type_transaction', $type_transaction->id)
-        ->where('statut', \App\Enums\Statut::EN_ATTENTE)
+        $demandes_flote = Demande_flote::where('statut', \App\Enums\Statut::EN_ATTENTE)
         ->where('id_user', Auth::user()->id)
         ->get();
 
@@ -211,9 +204,14 @@ class DemandeflotteController extends Controller
                 $agent = Agent::where('id_user', $user->id)->First();
 
             //recuperer la flotte concerné
-                $flote = Flote::Find($demande_flote->id_flote);
+                $flote = Flote::Find($demande_flote->user_source);
 
-            $demandes_flotes[] = ['demande_flote' => $demande_flote, 'user' => $user, 'agent' => $agent, 'flote' => $flote,];
+            //recuperer la puce de l'agent
+            $puce = Puce::where('id_flotte', $flote->id)
+            ->where('id_agent', $agent->id)
+            ->First();
+
+            $demandes_flotes[] = ['demande_flote' => $demande_flote, 'user' => $user, 'agent' => $agent, 'flote' => $flote, 'puce' => $puce,];
 
         }
 
@@ -246,7 +244,7 @@ class DemandeflotteController extends Controller
     public function show($id)
     {
         //on recherche la demande de flote en question
-        $demande_flote = Transaction::find($id);
+        $demande_flote = Demande_flote::find($id);
 
         //Envoie des information
         if($demande_flote != null){
@@ -268,13 +266,18 @@ class DemandeflotteController extends Controller
                 $agent = Agent::where('id_user', $user->id)->First();
 
             //recuperer la flotte concerné
-                $flote = Flote::Find($demande_flote->id_flote);
+                $flote = Flote::Find($demande_flote->user_source);
+
+            //recuperer la puce de l'agent
+            $puce = Puce::where('id_flotte', $flote->id)
+            ->where('id_agent', $agent->id)
+            ->First();
 
             return response()->json(
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['demande_flote' => $demande_flote, 'flote' => $flote, 'agent' => $agent, 'user' => $user,]
+                    'data' => ['demande_flote' => $demande_flote, 'flote' => $flote, 'agent' => $agent, 'user' => $user, 'puce' => $puce,]
                 ]
             );
 
