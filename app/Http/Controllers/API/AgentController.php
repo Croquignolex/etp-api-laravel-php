@@ -175,14 +175,14 @@ class AgentController extends Controller
                 
                 if ($agent->save()) {
 
-                    $success['agent'] =  $agent;
+                    //$success['agent'] =  $agent;
 
                     // Renvoyer un message de succès
                     return response()->json(
                         [
                             'message' => 'agent cree',
                             'status' => true,
-                            'data' => ['success' => $success]
+                            'data' => ['agent' => $agent]
                         ]
                     );
 

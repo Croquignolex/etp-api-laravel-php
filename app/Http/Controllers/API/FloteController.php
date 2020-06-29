@@ -88,15 +88,6 @@ class FloteController extends Controller
         //on recherche la flote en question
         $flote = Flote::find($id);
 		  
-		$puces = json_decode($flote->id_flote);
-		$puces_list = [];
-		
-		if ($puces != null) {
-			foreach ($puces as $puce) {
-				$puces_list[] = Puce::Find($puce);
-			}
-		}
-  
         //Envoie des information
         if(Flote::find($id)){
 
@@ -104,7 +95,7 @@ class FloteController extends Controller
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['flote' => $flote, 'puces' => $puces_list]
+                    'data' => ['flote' => $flote, 'puces' => $flote->puces]
                 ]
             );
 
@@ -182,18 +173,9 @@ class FloteController extends Controller
         if (Flote::where('deleted_at', null)) {
             $flotes = Flote::where('deleted_at', null)->get();
 			$returenedFlote = [];
-            foreach($flotes as $flote) {
-
-                $puces = json_decode($flote->id_flote);
-                $puces_list = [];
-                
-                if ($puces != null) {
-                    foreach ($puces as $puce) {
-                        $puces_list[] = Puce::Find($puce);
-                    }
-                }
-
-                $returenedFlote[] = ['flote' => $flote, 'puces' => $puces_list];
+            foreach($flotes as $flote) 
+			{ 
+                $returenedFlote[] = ['flote' => $flote, 'puces' => $flote->puces->count()];
             }         
 			
             return response()->json(
