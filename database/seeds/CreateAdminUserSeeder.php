@@ -1,5 +1,7 @@
 <?php
 
+use App\Agent;
+use App\Puce;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
 use App\User;
@@ -16,7 +18,7 @@ class CreateAdminUserSeeder extends Seeder
 
     {
 
-        //creer l'admin
+        //creer l'admin et les autre utilisateurs par defaut
 
         $user = User::create([
 
@@ -85,6 +87,42 @@ class CreateAdminUserSeeder extends Seeder
             'adresse' => 'Douala, Ndokotti',
 
         	'password' => bcrypt('123456')
+
+        ]);
+
+
+        ///creation de l'agent gestionnaire de flotte
+
+        $agent_principal = Agent::create([
+
+        	'point_de_vente' => 'ETP', 
+
+            'id_creator' => $user->id,
+            
+            'id_user' => $user3->id
+
+        ]);
+
+
+        ///creation de la puce de distribution de flotte par defaut
+
+        $puce_principal_MTN = Puce::create([
+
+        	'id_flotte' => 1, 
+
+            'id_agent' => $agent_principal->id,
+            
+            'nom' => \App\Enums\Statut::MTN
+
+        ]);
+
+        $puce_principal_Orange = Puce::create([
+
+        	'id_flotte' => 2, 
+
+            'id_agent' => $agent_principal->id,
+            
+            'nom' => \App\Enums\Statut::ORANGE
 
         ]);
 

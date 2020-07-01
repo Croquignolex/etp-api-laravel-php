@@ -11,14 +11,14 @@ class FloteTableSeeder extends Seeder {
 
 		// 'flote1'
 		Flote::create(array(
-				'nom' => 'MTN',
+				'nom' => \App\Enums\Statut::MTN,
 				'description' => 'opérateur MTN'
 			));
 
 		// 'flote2'
 		Flote::create(array(
-				'nom' => 'ORANGE',
-				'description' => 'operateur Orange'
+				'nom' => \App\Enums\Statut::ORANGE,
+				'description' => 'opérateur Orange'
 			));
 	}
 }

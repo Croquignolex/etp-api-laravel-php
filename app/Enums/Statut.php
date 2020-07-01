@@ -15,6 +15,8 @@ class Statut
     const ARCHIVER = 'archiver';
     const TERMINEE = 'terminee';
     const EFFECTUER = 'effectue';
+    const MTN = 'MTN Cameroun';
+    const ORANGE = 'Orange Cameroun';
     const LU = 'lu';
 
     /**

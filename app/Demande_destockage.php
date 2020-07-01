@@ -13,8 +13,8 @@ class Demande_destockage extends Model
     use SoftDeletes;
 
     protected $dates = ['deleted_at'];
-    protected $fillable = array('id_user', 'id_puce', 'reference', 'montant','statut', 'user_source', 'user_destination');
-    protected $visible = array('id_user', 'id_puce', 'reference', 'montant','statut', 'user_source', 'user_destination');
+    protected $fillable = array('id_user', 'id_puce', 'add_by', 'reference', 'montant','statut', 'user_source', 'user_destination');
+    protected $visible = array('id_user', 'id_puce', 'add_by', 'reference', 'montant','statut', 'user_source', 'user_destination');
 
 
     public function user()
