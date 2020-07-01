@@ -12,7 +12,7 @@ class AgentTableSeeder extends Seeder {
 		// 'agent'
 		Agent::create(array(
 			'id_creator' => '1',
-			'id_user' => '2',
+			'id_user' => '3',
 			'img_cni' => null,
 			'img_cni_back' => null,
 			'reference' => 'd6070',
