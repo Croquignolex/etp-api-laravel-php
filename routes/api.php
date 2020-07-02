@@ -238,7 +238,6 @@ Route::group(['middleware' => 'auth:api'], function(){
 
 
 
-
         /*
     //////////////////////Demande de destockage/////////////////////
     */
