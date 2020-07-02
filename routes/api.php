@@ -198,19 +198,44 @@ Route::group(['middleware' => 'auth:api'], function(){
         /*
     //////////////////////Demande de Flotte/////////////////////
     */
-    
-        //Creer une demande de flote
-        Route::post('demande_flote', 'API\DemandeflotteController@store');
 
-        //Lister les demandes de flote
-        Route::get('list_demandes_flote', 'API\DemandeflotteController@list_all');
 
-        //Lister mes demandes de flote
-        Route::get('list_mes_demandes_flote', 'API\DemandeflotteController@list');
+        //par tout les deux cas            
 
-        //Details d'une demande de flote
-        Route::get('detail_demandes_flote/{id}', 'API\DemandeflotteController@show')
-        ->where('id', '[0-9]+');
+            //Details d'une demande de flote
+            Route::get('detail_demandes_flote/{id}', 'API\DemandeflotteController@show')
+            ->where('id', '[0-9]+');
+
+
+        //par un Agent
+
+            //Creer une demande de flote
+            Route::post('demande_flote', 'API\DemandeflotteController@store');
+
+            //lister mes demandes de flotes peu importe le statut
+            Route::get('list_all_demandes_flote', 'API\DemandeflotteController@list_all_status');
+
+            //lister mes demandes de flotes en attente
+            Route::get('list_mes_demandes_flote', 'API\DemandeflotteController@list');
+
+
+        //pour un Agent
+
+            //Creer une demande de flote pour un Agent
+            Route::post('demande_flote_agent', 'API\Demande_flote_recouvreurController@store');
+
+            //lister toutes les demandes de flotes
+            Route::get('list_all_status_demande_flote', 'API\Demande_flote_recouvreurController@list_all_status_all_user');
+
+            //lister toutes les demandes de flotes non traitées
+            Route::get('list_all_demande_flote', 'API\Demande_flote_recouvreurController@list_all');
+
+            //lister mes demandes de flotes peu importe le statut
+            Route::get('list_demandes_flote', 'API\Demande_flote_recouvreurController@list_all_status');
+
+            //lister mes demandes de flotes en attente
+            Route::get('list_mes_demandes_flote_agent', 'API\Demande_flote_recouvreurController@list');
+
 
 
 
@@ -218,18 +243,19 @@ Route::group(['middleware' => 'auth:api'], function(){
     //////////////////////Demande de destockage/////////////////////
     */
     
-        //Creer une demande de destockage
-        Route::post('demande_destockage', 'API\DemandedestockageController@store');
+        //par un Agent
+            //Creer une demande de destockage
+            Route::post('demande_destockage', 'API\DemandedestockageController@store');
 
-        //Lister les demandes de destockage
-        Route::get('list_demandes_destockages_flote', 'API\DemandedestockageController@list_all');
+            //Lister les demandes de destockage
+            Route::get('list_demandes_destockages_flote', 'API\DemandedestockageController@list_all');
 
-        //Lister mes demandes de destockage
-        Route::get('list_mes_demandes_destockages', 'API\DemandedestockageController@list');
+            //Lister mes demandes de destockage
+            Route::get('list_mes_demandes_destockages', 'API\DemandedestockageController@list');
 
-        //Details d'une demande de destockage
-        Route::get('detail_demandes_destockage/{id}', 'API\DemandedestockageController@show')
-        ->where('id', '[0-9]+'); 
+            //Details d'une demande de destockage
+            Route::get('detail_demandes_destockage/{id}', 'API\DemandedestockageController@show')
+            ->where('id', '[0-9]+'); 
 
 
     /*

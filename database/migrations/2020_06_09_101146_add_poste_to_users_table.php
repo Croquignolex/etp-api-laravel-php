@@ -14,7 +14,7 @@ class AddPosteToUsersTable extends Migration
     public function up()
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('poste')->nullable()->after('id');
+            $table->string('poste')->nullable()->after('name');
         });
     }
 

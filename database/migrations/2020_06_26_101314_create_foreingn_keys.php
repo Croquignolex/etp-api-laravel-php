@@ -178,7 +178,7 @@ class CreateForeingnKeys extends Migration
     			->onUpdate('no action');
         });
 
-
+        
 
         // pour la table demande_flotes
         Schema::table('demande_flotes', function(Blueprint $table) {
@@ -193,14 +193,26 @@ class CreateForeingnKeys extends Migration
                 ->references('id')
                 ->on('users')
                 ->onDelete('set null')
-				->onUpdate('no action');                
-
+                ->onUpdate('no action');   
                 
             $table->foreign('add_by')
                 ->references('id')
                 ->on('users')
-                ->onDelete('set null')
+				->onDelete('set null')
+                ->onUpdate('no action');
+                
+            $table->foreign('user_source')
+                ->references('id')
+                ->on('flotes')
+				->onDelete('set null')
+                ->onUpdate('no action');
+                
+            $table->foreign('destination')
+                ->references('id')
+                ->on('users')
+				->onDelete('set null')
 				->onUpdate('no action');
+
         });
 
 
@@ -218,13 +230,14 @@ class CreateForeingnKeys extends Migration
                 ->references('id')
                 ->on('users')
                 ->onDelete('set null')
-				->onUpdate('no action');
-
+                ->onUpdate('no action');
+                
             $table->foreign('add_by')
                 ->references('id')
                 ->on('users')
-                ->onDelete('set null')
+				->onDelete('set null')
 				->onUpdate('no action');
+
         });
 
 
