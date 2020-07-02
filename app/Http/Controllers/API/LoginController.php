@@ -41,7 +41,7 @@ class LoginController extends Controller
 
             return response()->json(
                 [
-                    'message' => ['error'=>$val->errors()],
+                    'message' => 'Un ou plusieurs valeurs du formulaire incorrect',
                     'status' => false,
                     'data' => null
                 ]
@@ -57,9 +57,9 @@ class LoginController extends Controller
                     if ($userAnable->deleted_at != null) {
                         return response()->json(
                             [
-                                'message' => 'cet utilisateur est Archivé',
+                                'message' => 'Cet utilisateur est archivé',
                                 'status' => false,
-                                'data' => null
+                                'data' => null,
                             ]
                         );
                     } 
@@ -67,9 +67,9 @@ class LoginController extends Controller
                     if ($userAnable->statut == Statut::DECLINE) {
                         return response()->json(
                             [
-                                'message' => 'cet utilisateur est Archivé',
+                                'message' => 'Cet utilisateur est archivé',
                                 'status' => false,
-                                'data' => null
+                                'data' => null,
                             ]
                         );
                     } 
@@ -96,18 +96,19 @@ class LoginController extends Controller
 
             return response()->json(
                 [
-                    'message' => '',
+                    'message' => null,
                     'status' => true,
                     'data' => [
-                        'access_token' =>$token->accessToken,
-                        'user' => $user->setHidden(['deleted_at'])
+                        'token' =>$token->accessToken,
+                        'user' => $user->setHidden(['deleted_at']),
+						'role' => $user->roles->pluck('name','name')->all()
                     ]
                 ]
             );
         } else {
             return response()->json(
                 [
-                    'message' => "Login ou mot de passe incorrect!",
+                    'message' => "Combinaison login et mot de passe incorrect",
                     'status' => false,
                     'data' => null,
                 ]
