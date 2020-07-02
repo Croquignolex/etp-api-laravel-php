@@ -2,6 +2,7 @@
 
 use App\Agent;
 use App\Puce;
+use App\Type_puce;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
 use App\User;
@@ -104,6 +105,21 @@ class CreateAdminUserSeeder extends Seeder
         ]);
 
 
+        ///creation des types de puce par defaut
+
+        $puce_agent = Type_puce::create([
+
+        	'name' => "Puce Agent"
+
+        ]);
+
+        $puce_ETP = Type_puce::create([
+
+        	'name' => "Puce ETP"
+
+        ]);
+
+
         ///creation de la puce de distribution de flotte par defaut
 
         $puce_principal_MTN = Puce::create([
@@ -111,6 +127,8 @@ class CreateAdminUserSeeder extends Seeder
         	'id_flotte' => 1, 
 
             'id_agent' => $agent_principal->id,
+
+            'type' => 2,
             
             'nom' => \App\Enums\Statut::MTN
 
@@ -118,7 +136,9 @@ class CreateAdminUserSeeder extends Seeder
 
         $puce_principal_Orange = Puce::create([
 
-        	'id_flotte' => 2, 
+            'id_flotte' => 2, 
+            
+            'type' => 2,
 
             'id_agent' => $agent_principal->id,
             
@@ -126,8 +146,10 @@ class CreateAdminUserSeeder extends Seeder
 
         ]);
 
+
+
   
-            //creer les roles
+        //creer les roles
         $role = Role::create(['name' => App\Enums\Roles::ADMIN]);
         $role2 = Role::create(['name' => App\Enums\Roles::AGENT]);
         $role3 = Role::create(['name' => App\Enums\Roles::GESTION_FLOTTE]);

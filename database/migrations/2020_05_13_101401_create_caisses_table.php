@@ -10,8 +10,10 @@ class CreateCaissesTable extends Migration {
 	{
 		Schema::create('caisses', function(Blueprint $table) {
 			$table->increments('id');
+			$table->integer('id_user')->unsigned()->nullable()->index();
 			$table->string('nom')->nullable();
 			$table->string('description')->nullable();
+			$table->integer('solde')->nullable();
 			$table->string('reference')->nullable();
 			$table->softDeletes();
 			$table->timestamps();

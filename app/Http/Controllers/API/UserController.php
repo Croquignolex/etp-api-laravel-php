@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Caisse;
 use App\User;
 use Illuminate\Http\Request;
 use App\Utiles\ImageFromBase64;
@@ -105,19 +106,44 @@ class UserController extends Controller
         //$input['avatar'] = $server_image_name_path;
         $input['add_by'] = Auth::user()->id;
         $input['id_zone'] = json_encode($request->id_zone);
-        $user = User::create($input); 
-        $user->assignRole($request->input('roles'));
-        $success['token'] =  $user->createToken('MyApp')-> accessToken; 
-        $success['user'] =  $user;
-            
-                
+        $user = User::create($input);
+
+        if (isset($user)) {
+
+            //On crée la caisse de l'utilisateur
+            $caisse = new Caisse([
+                'nom' => 'Caisse ' . $request->name,
+                'description' => Null,
+                'id_user' => $user->id,
+                'reference' => Null,
+                'solde' => 0
+            ]);
+            $caisse->save();
+
+            //on lui donne un role
+            $user->assignRole($request->input('roles'));
+
+            //On lui crée un token
+            $success['token'] =  $user->createToken('MyApp')->accessToken; 
+            $success['user'] =  $user;
+
             return response()->json(
                 [
                     'message' => '',
                     'status' => true,
                     'data' => ['user'=>$success]
                 ]
-            ); 
+            );
+        }     
+            
+        
+        return response()->json(
+            [
+                'message' => "l'utilisateur n'a pas été créé",
+                'status' => false,
+                'data' => null
+            ]
+        ); 
     }
 
 /** 

@@ -30,7 +30,7 @@ class PuceController extends Controller
         // Valider données envoyées
         $validator = Validator::make($request->all(), [ 
             'numero' => ['required', 'string', 'max:255', 'unique:puces,numero'],
-            'reference' => ['nullable', 'string', 'max:255'],
+            'reference' => ['nullable', 'string', 'max:255','unique:puces,reference'],
             'id_flotte' => ['required', 'Numeric'],
             'id_agent' => ['required', 'Numeric'],
             'nom' => ['required', 'string'],
@@ -131,7 +131,7 @@ class PuceController extends Controller
     {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [ 
-            'reference' => ['nullable', 'string', 'max:255'],
+            'reference' => ['nullable', 'string', 'max:255', 'unique:puces,reference'],
             'id_flotte' => ['required', 'Numeric'],
             'id_agent' => ['required', 'Numeric'],
             'nom' => ['required', 'string'],

@@ -11,16 +11,49 @@ class CaisseTableSeeder extends Seeder {
 
 		// 'caisse1'
 		Caisse::create(array(
-				'nom' => 'Caisse 1',
-				'description' => 'la caisse de recetion pour MoMo',
-				'reference' => 'momo'
+			'nom' => 'Caisse Admin',
+			'description' => Null,
+			'id_user' => 1,
+			'reference' => Null,
+			'solde' => 0
 			));
 
 		// 'caisse2'
 		Caisse::create(array(
-				'nom' => 'Caisse 2',
-				'description' => 'la caisse de recetion pour Canal sat',
-				'reference' => 'canal'
+			'nom' => 'Caisse AGENT',
+			'description' => Null,
+			'id_user' => 2,
+			'reference' => Null,
+			'solde' => 0
 			));
+
+		// 'caisse1'
+		Caisse::create(array(
+			'nom' => 'Caisse GESTION_FLOTTE',
+			'description' => Null,
+			'id_user' => 3,
+			'reference' => Null,
+			'solde' => 0
+		));
+
+		// 'caisse2'
+		Caisse::create(array(
+			'nom' => 'Caisse RECOUVREUR',
+			'description' => Null,
+			'id_user' => 4,
+			'reference' => Null,
+			'solde' => 0
+		));
+
+		// 'caisse5'
+		Caisse::create(array(
+			'nom' => 'Caisse SUPERVISEUR',
+			'description' => Null,
+			'id_user' => 5,
+			'reference' => Null,
+			'solde' => 0
+		));
+
+
 	}
 }

@@ -201,15 +201,15 @@ class CreateForeingnKeys extends Migration
 				->onDelete('set null')
                 ->onUpdate('no action');
                 
-            $table->foreign('user_source')
+            $table->foreign('source')
                 ->references('id')
                 ->on('flotes')
 				->onDelete('set null')
                 ->onUpdate('no action');
                 
-            $table->foreign('destination')
+            $table->foreign('puce_destination')
                 ->references('id')
-                ->on('users')
+                ->on('puces')
 				->onDelete('set null')
 				->onUpdate('no action');
 
@@ -221,6 +221,18 @@ class CreateForeingnKeys extends Migration
         Schema::table('demande_destockages', function(Blueprint $table) {
 			//migrations des clés
             $table->foreign('id_puce')
+                ->references('id')
+                ->on('puces')
+                ->onDelete('set null')
+                ->onUpdate('no action');
+                
+            $table->foreign('puce_source')
+                ->references('id')
+                ->on('puces')
+                ->onDelete('set null')
+                ->onUpdate('no action');
+                
+            $table->foreign('puce_destination')
                 ->references('id')
                 ->on('puces')
                 ->onDelete('set null')
@@ -251,7 +263,7 @@ class CreateForeingnKeys extends Migration
                 ->onDelete('set null')
 				->onUpdate('no action');
 
-            $table->foreign('id_user')
+            $table->foreign('add_by')
                 ->references('id')
                 ->on('users')
                 ->onDelete('set null')
@@ -270,6 +282,17 @@ class CreateForeingnKeys extends Migration
                 ->onDelete('set null')
 				->onUpdate('no action');
 
+            $table->foreign('id_user')
+                ->references('id')
+                ->on('users')
+                ->onDelete('set null')
+				->onUpdate('no action');
+        });
+
+
+        // pour la table caisse
+        Schema::table('caisses', function(Blueprint $table) {
+			//migrations des clés
             $table->foreign('id_user')
                 ->references('id')
                 ->on('users')
