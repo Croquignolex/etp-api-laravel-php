@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use App\Agent;
 use App\Zone;
+use App\Caisse;
 use App\User;
 use App\Utiles\ImageFromBase64;
 use Illuminate\Support\Facades\Validator;
@@ -150,6 +151,16 @@ class AgentController extends Controller
             ]);
 
         if ($user->save()) {
+
+            //On crée la caisse de l'utilisateur
+            $caisse = new Caisse([
+                'nom' => 'Caisse ' . $request->name,
+                'description' => Null,
+                'id_user' => $user->id,
+                'reference' => Null,
+                'solde' => 0
+            ]);
+            $caisse->save();
 
             $user->assignRole($roles);
             $user = User::find($user->id);

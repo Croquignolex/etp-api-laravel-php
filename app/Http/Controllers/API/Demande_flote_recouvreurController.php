@@ -91,8 +91,13 @@ class Demande_flote_recouvreurController extends Controller
         $reference = null;
         $montant = $request->montant;
         $statut = \App\Enums\Statut::EN_ATTENTE;
-        $user_source = $request->id_flote;
-        $destination = $user->id;
+        $source = $request->id_flote;
+
+        //recuperer la puce de l'agent
+        $puce = Puce::where('id_flotte', $source)
+        ->where('id_agent', $agent->id)
+        ->First();
+        $puce_destination = $puce->id;
 
 
         // Nouvelle demande de flotte
@@ -102,8 +107,8 @@ class Demande_flote_recouvreurController extends Controller
             'reference' => $reference,
             'montant' => $montant,
             'statut' => $statut,
-            'destination' => $destination,
-            'user_source' => $user_source
+            'puce_destination' => $puce_destination,
+            'source' => $source
         ]);
 
         //dd($demande_flote );

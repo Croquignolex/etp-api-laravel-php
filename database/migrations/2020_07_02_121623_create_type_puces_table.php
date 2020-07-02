@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class AddIdZoneToUsersTable extends Migration
+class CreateTypePucesTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,8 +13,12 @@ class AddIdZoneToUsersTable extends Migration
      */
     public function up()
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->longText('id_zone')->nullable()->after('name')->default(null);
+        Schema::create('type_puces', function (Blueprint $table) {
+            $table->increments('id');
+			$table->string('name')->nullable();
+			$table->string('description')->nullable();
+			$table->softDeletes();
+			$table->timestamps();
         });
     }
 
@@ -25,8 +29,6 @@ class AddIdZoneToUsersTable extends Migration
      */
     public function down()
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('id_zone');
-        });
+        Schema::dropIfExists('type_puces');
     }
 }

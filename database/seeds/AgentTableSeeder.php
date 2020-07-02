@@ -2,28 +2,16 @@
 
 use Illuminate\Database\Seeder;
 use App\Agent;
+use App\Puce;
 
 class AgentTableSeeder extends Seeder {
 
 	public function run()
 	{
-		//DB::table('agents')->delete();
 
-		// 'agent'
-		Agent::create(array(
-			'id_creator' => '1',
-			'id_user' => '3',
-			'img_cni' => null,
-			'img_cni_back' => null,
-			'reference' => 'd6070',
-			'taux_commission' => 50,
-			'ville' => 'Douala',
-			'point_de_vente' => 'Bepanda',
-			'pays' => 'Cameroun'
-			));
 
 		// 'agent_2'
-		Agent::create(array(
+		$agent_par_defaut = Agent::create(array(
 			'id_creator' => '1',
 			'id_user' => '2',
 			'img_cni' => null,
@@ -34,5 +22,27 @@ class AgentTableSeeder extends Seeder {
 			'point_de_vente' => 'Bonabery',
 			'pays' => 'Cameroun'
 			));
+
+			// 'Puce de l'agent par defaut mtn'
+			$puce_agent_par_defaut = Puce::create([
+
+				'id_flotte' => 1, 
+				
+				'type' => 1,
+	
+				'id_agent' => $agent_par_defaut->id
+	
+			]);
+			
+			// 'Puce de l'agent par defaut orange'
+			$puce_agent_par_defaut = Puce::create([
+
+				'id_flotte' => 2, 
+				
+				'type' => 1,
+	
+				'id_agent' => $agent_par_defaut->id
+	
+			]);
 	}
 }

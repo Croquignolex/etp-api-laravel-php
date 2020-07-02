@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Agent;
+use App\Demande_destockage;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 
@@ -10,6 +11,7 @@ use App\User;
 use App\Type_transaction;
 use Illuminate\Support\Facades\Validator;
 use App\Flote;
+use App\Puce;
 use App\Transaction;
 use Illuminate\Support\Facades\Auth;
 
@@ -32,14 +34,14 @@ class DemandedestockageController extends Controller
 
     
     /**
-     * //Initier une demande de Flotte
+     * //Initier une demande de destockage
      */
     public function store(Request $request)
     {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [ 
             'montant' => ['required', 'Numeric'],
-            'id_flote' => ['required', 'Numeric']
+            'id_puce' => ['required', 'Numeric'] //sous forme de select qui affiche juste les deux puces de type ETP
         ]);
         if ($validator->fails()) { 
             return response()->json(
@@ -49,58 +51,66 @@ class DemandedestockageController extends Controller
                     'data' => null
                 ]
             );            
-        }  
+        } 
 
-        //recuperer l'utilisateur connecté
+        if (!Puce::Find($request->id_puce)) { 
+            return response()->json(
+                [
+                    'message' => "Cette puce n'existe pas",
+                    'status' => false,
+                    'data' => null
+                ]
+            );            
+        }
+
+        //recuperer l'utilisateur connecté (c'est lui l'agent)
         $user = Auth::user();
 
         //recuperer l'agent concerné
         $agent = Agent::where('id_user', $user->id)->First();
 
-        //recuperer la flotte concerné
-        $flote = Flote::Find($request->id_flote);
+        //recuperer la Puce qui va recevoir la flotte
+        $puce_destination = Puce::Find($request->id_puce);
 
-        //On recupere le type de la transaction
-        $type_transaction = Type_transaction::where('nom', \App\Enums\Transations::DEMANDE_DESTOCK)->First();        
+        //recuperer la Puce qui va envoyer la flotte
+        $puce_envoi = Puce::where('id_flotte', $puce_destination->id_flotte)
+            ->where('id_agent', $agent->id)
+            ->First();
+
+        
 
 
         // Récupérer les données validées
              
         $id_user = $user->id;
-        $id_transaction = null;
-        $id_versement = null;
-        $id_type_transaction = $type_transaction->id;
-        $id_flote = $request->id_flote;
+        $add_by = $user->id;
+        $reference = null;
         $montant = $request->montant;
-        $reste = null;
         $statut = \App\Enums\Statut::EN_ATTENTE;
-        $user_destination = null;
-        $user_source = $user->id;
+        $puce_source = $puce_envoi->id;
 
 
-        // Nouvelle demande de flotte
-        $transaction = new Transaction([
+
+        // Nouvelle demande de destockage
+        $demande_destockage = new Demande_destockage([
             'id_user' => $id_user,
-            'id_transaction' => $id_transaction,
-            'id_versement' => $id_versement,
-            'id_type_transaction' => $id_type_transaction,
-            'id_flote' => $id_flote,
+            'add_by' => $add_by,
+            'reference' => $reference,
             'montant' => $montant,
-            'reste' => $reste,
             'statut' => $statut,
-            'user_destination' => $user_destination,
-            'user_source' => $user_source
+            'puce_destination' => $request->id_puce,
+            'puce_source' => $puce_source
         ]);
 
-        // creation de La flote
-        if ($transaction->save()) {
+        // creation de La demande
+        if ($demande_destockage->save()) {
 
             // Renvoyer un message de succès
             return response()->json(
                 [
-                    'message' => 'Demande de destokage créée',
+                    'message' => 'Demande de destockage créée',
                     'status' => true,
-                    'data' => ['demande_dest' => $transaction, 'user' => $user, 'agent' => $agent, 'flote' => $flote]
+                    'data' => ['demande_destockage' => $demande_destockage, 'user' => $user, 'agent' => $agent, 'puce_agent' => $puce_envoi]
                 ]
             );
         } else {
@@ -115,180 +125,4 @@ class DemandedestockageController extends Controller
         } 
     }
 
-
-    
-    /**
-     * //lister les demandes de destockage
-     */
-    public function list_all()
-    {
-
-        //On recupere le type de la transaction 'demande de destockage'
-        $type_transaction = Type_transaction::where('nom', \App\Enums\Transations::DEMANDE_DESTOCK)->First();
-
-        //On recupere les 'demande de destockage'
-        $demandes_dest = Transaction::where('id_type_transaction', $type_transaction->id)
-        ->where('statut', \App\Enums\Statut::EN_ATTENTE)
-        ->get();  
-        
-        if ($demandes_dest->count() == 0) {
-            return response()->json(
-                [
-                    'message' => 'aucune demande trouvée',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
-        }
-
-        foreach($demandes_dest as $demande_dest) {
-
-            //recuperer l'utilisateur concerné
-                $user = User::Find($demande_dest->id_user);
-
-            //recuperer l'agent concerné
-                $agent = Agent::where('id_user', $user->id)->First();
-
-            //recuperer la flotte concerné
-                $flote = Flote::Find($demande_dest->id_flote);
-
-            $demandes_destock[] = ['demande_dest' => $demande_dest, 'user' => $user, 'agent' => $agent, 'flote' => $flote,];
-
-        }
-
-
-        if (!empty($demandes_destock)) {
-
-            return response()->json(
-                [
-                    'message' => '',
-                    'status' => true,
-                    'data' => ['demandes_destock' => $demandes_destock]
-                ]
-            );
-            
-         }else{
-            return response()->json(
-                [
-                    'message' => 'pas de dmande de destockage à lister',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
-         }
-    }
-
-
-    /**
-     * //lister les demandes de destockage
-     */
-    public function list()
-    {
-
-        //On recupere le type de la transaction 'demande de destockage'
-        $type_transaction = Type_transaction::where('nom', \App\Enums\Transations::DEMANDE_DESTOCK)->First();
-
-        //On recupere les 'demande de destockage'
-        $demandes_dest = Transaction::where('id_type_transaction', $type_transaction->id)
-        ->where('statut', \App\Enums\Statut::EN_ATTENTE)
-        ->where('id_user', Auth::user()->id)
-        ->get();  
-        
-        if ($demandes_dest->count() == 0) {
-            return response()->json(
-                [
-                    'message' => 'aucune demande trouvée',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
-        }
-
-        foreach($demandes_dest as $demande_dest) {
-
-            //recuperer l'utilisateur concerné
-                $user = User::Find($demande_dest->id_user);
-
-            //recuperer l'agent concerné
-                $agent = Agent::where('id_user', $user->id)->First();
-
-            //recuperer la flotte concerné
-                $flote = Flote::Find($demande_dest->id_flote);
-
-            $demandes_destock[] = ['demande_dest' => $demande_dest, 'user' => $user, 'agent' => $agent, 'flote' => $flote,];
-
-        }
-
-
-        if (!empty($demandes_destock)) {
-
-            return response()->json(
-                [
-                    'message' => '',
-                    'status' => true,
-                    'data' => ['demandes_destock' => $demandes_destock]
-                ]
-            );
-            
-         }else{
-            return response()->json(
-                [
-                    'message' => 'pas de dmande de destockage à lister',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
-         }
-    }
-
-
-    /**
-     * //details d'une demande de destockage'
-     */
-    public function show($id)
-    {
-        //on recherche la demande de flote en question
-        $demande_destock = Transaction::find($id);
-
-        //Envoie des information
-        if($demande_destock != null){
-
-            if ($demande_destock->statut != \App\Enums\Statut::EN_ATTENTE) {
-                return response()->json(
-                    [
-                        'message' => 'cette demande flote a déjà été traitée',
-                        'status' => false,
-                        'data' => null
-                    ]
-                );
-            }            
-            
-            //recuperer l'utilisateur concerné
-                $user = User::Find($demande_destock->id_user);
-
-            //recuperer l'agent concerné
-                $agent = Agent::where('id_user', $user->id)->First();
-
-            //recuperer la flotte concerné
-                $flote = Flote::Find($demande_destock->id_flote);
-
-            return response()->json(
-                [
-                    'message' => '',
-                    'status' => true,
-                    'data' => ['demande_destock' => $demande_destock, 'flote' => $flote, 'agent' => $agent, 'user' => $user,]
-                ]
-            );
-
-        }else{
-
-            return response()->json(
-                [
-                    'message' => 'ecette demande destockage n existe pas',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
-        }
-    }
 }
