@@ -86,6 +86,7 @@ class LoginController extends Controller
         if (auth()->attempt($credentials)) {
             // Créer un token pour l'utilisateur
             $token = auth()->user()->createToken(config('app.name', 'ETP'));
+            dd($token);
 
                 $user = auth()->user();
 
