@@ -267,10 +267,23 @@ Route::group(['middleware' => 'auth:api'], function(){
             //Lister mes demandes de destockage en attente
             Route::get('list_mes_demandes_destockages', 'API\DemandedestockageController@list');
 
+
         //pour un Agent
 
-            //Lister les demandes de destockage en attente
-            Route::get('list_demandes_destockages_flote', 'API\DemandedestockageController@list_all');
+            //Creer une demande de destockage pour un Agent
+            Route::post('demande_destockage_agent', 'API\Demande_destockage_recouvreurController@store');
+
+            //lister toutes mes demandes de destockage
+            Route::get('list_all_mes_demande_destockage', 'API\Demande_destockage_recouvreurController@list_all_status');
+
+            //lister toutes mes demandes de destockage non traitées
+            Route::get('list_mes_demande_destockage', 'API\Demande_destockage_recouvreurController@list_all');
+
+            //lister les demandes de destockage peu importe le statut
+            Route::get('list_all_status_demandes_destockage', 'API\Demande_destockage_recouvreurController@list_all_status_all_user');
+
+            //lister les demandes de destockage en attente
+            Route::get('list_demandes_destockage_agent', 'API\Demande_destockage_recouvreurController@list');
             
 
 
