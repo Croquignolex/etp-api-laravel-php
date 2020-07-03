@@ -172,17 +172,18 @@ class FloteController extends Controller
     {
         if (Flote::where('deleted_at', null)) {
             $flotes = Flote::where('deleted_at', null)->get();
-			$returenedFlote = [];
-            foreach($flotes as $flote) 
-			{ 
-                $returenedFlote[] = ['flote' => $flote, 'puces' => $flote->puces->count()];
+			
+			$returenedFlotes = [];
+			
+            foreach($flotes as $flote) { 
+                $returenedFlotes[] = ['flote' => $flote, 'puces' => $flote->puces->count()];
             }         
 			
             return response()->json(
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['flotes' => $returenedFlote]
+                    'data' => ['flotes' => $returenedFlotes]
                 ]
             );
          }else{

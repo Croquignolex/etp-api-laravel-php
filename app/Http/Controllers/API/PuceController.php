@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Puce;
+use App\User;
 use Illuminate\Support\Facades\Validator;
 
 class PuceController extends Controller
@@ -100,15 +101,16 @@ class PuceController extends Controller
         //on recherche la puce en question
         $puce = Puce::find($id);
 
-
         //Envoie des information
         if(puce::find($id)){
-
+			
+			$user = User::find($puce->agent->id_user);
+			
             return response()->json(
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['puce' => $puce]
+                    'data' => ['puce' => $puce, 'flote' => $puce->flote->nom, 'agent' => $user->name]
                 ]
             );
 
@@ -116,7 +118,7 @@ class PuceController extends Controller
 
             return response()->json(
                 [
-                    'message' => 'ecette puce n existe pas',
+                    'message' => "Cette puce n'existe pas",
                     'status' => false,
                     'data' => null
                 ]
@@ -132,8 +134,8 @@ class PuceController extends Controller
         // Valider données envoyées
         $validator = Validator::make($request->all(), [ 
             'reference' => ['nullable', 'string', 'max:255', 'unique:puces,reference'],
-            'id_flotte' => ['required', 'Numeric'],
-            'id_agent' => ['required', 'Numeric'],
+            //'id_flotte' => ['required', 'Numeric'],
+            //'id_agent' => ['required', 'Numeric'],
             'nom' => ['required', 'string'],
             'description' => ['nullable', 'string']
         ]);
@@ -152,8 +154,8 @@ class PuceController extends Controller
         $numero = $request->numero;
         $nom = $request->nom;
         $reference = $request->reference;
-        $id_flotte = $request->id_flotte;
-        $id_agent = $request->id_agent;
+        //$id_flotte = $request->id_flotte;
+        //$id_agent = $request->id_agent;
         $description = $request->description;
 
         // rechercher la puce
@@ -163,8 +165,8 @@ class PuceController extends Controller
         $puce->numero = $numero;
         $puce->nom = $nom;
         $puce->reference = $reference;
-        $puce->id_flotte = $id_flotte;
-        $puce->id_agent = $id_agent;
+        //$puce->id_flotte = $id_flotte;
+        //$puce->id_agent = $id_agent;
         $puce->description = $description;
 
 
@@ -181,7 +183,7 @@ class PuceController extends Controller
             // Renvoyer une erreur
             return response()->json(
                 [
-                    'message' => 'erreur lors de la modification',
+                    'message' => 'Erreur lors de la modification',
                     'status' => false,
                     'data' => null
                 ]
@@ -190,23 +192,129 @@ class PuceController extends Controller
     }
 
     /**
+     * modification de l'opérateur de la puce
+     */
+    public function update_flote(Request $request, $id)
+    {
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [ 
+            'id_flotte' => ['required', 'Numeric']
+        ]);
+        if ($validator->fails()) { 
+            return response()->json(
+                [
+                    'message' => ['error'=>$validator->errors()],
+                    'status' => false,
+                    'data' => null
+                ]
+            );             
+        }
+
+        // Récupérer les données validées
+        $id_flotte = $request->id_flotte;
+
+        // rechercher la puce
+        $puce = Puce::find($id);
+
+        // Modifier la puce
+        $puce->id_flotte = $id_flotte;
+
+        if ($puce->save()) {
+            // Renvoyer un message de succès
+            return response()->json(
+                [
+                    'message' => '',
+                    'status' => true,
+                    'data' => ['puce' => $puce]
+                ]
+            );
+        } else {
+            // Renvoyer une erreur
+            return response()->json(
+                [
+                    'message' => 'Erreur lors de la modification',
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        } 
+    }
+	
+	/**
+     * modification de l'agent de la puce
+     */
+    public function update_agent(Request $request, $id)
+    {
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [ 
+            'id_agent' => ['required', 'Numeric'],
+        ]);
+        if ($validator->fails()) { 
+            return response()->json(
+                [
+                    'message' => ['error'=>$validator->errors()],
+                    'status' => false,
+                    'data' => null
+                ]
+            );             
+        }
+
+        // Récupérer les données validées
+        $id_agent = $request->id_agent;
+
+        // rechercher la puce
+        $puce = Puce::find($id);
+
+        // Modifier la puce
+        $puce->id_agent = $id_agent;
+
+        if ($puce->save()) {
+            // Renvoyer un message de succès
+            return response()->json(
+                [
+                    'message' => '',
+                    'status' => true,
+                    'data' => ['puce' => $puce]
+                ]
+            );
+        } else {
+            // Renvoyer une erreur
+            return response()->json(
+                [
+                    'message' => 'Erreur lors de la modification',
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        } 
+    }
+	
+	/**
      * //lister les puces
      */
     public function list()
     {
         if (Puce::where('deleted_at', null)) {
-            $puce = Puce::where('deleted_at', null)->get();
+            $puces = Puce::where('deleted_at', null)->get();
+			
+			$returenedPuces = [];
+             
+            foreach($puces as $puce) {
+				$user = User::find($puce->agent->id_user);
+                $returenedPuces[] = ['puce' => $puce, 'flote' => $puce->flote->nom, 'agent' => $user->name];
+            } 
+			
             return response()->json(
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['puces' => $puce]
+                    'data' => ['puces' => $returenedPuces]
                 ]
             );
          }else{
             return response()->json(
                 [
-                    'message' => 'pas de puce à lister',
+                    'message' => 'Pas de puce à lister',
                     'status' => false,
                     'data' => null
                 ]

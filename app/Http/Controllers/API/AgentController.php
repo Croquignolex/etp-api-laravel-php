@@ -346,7 +346,7 @@ class AgentController extends Controller
             foreach($agents as $agent) {
 
                 $user = User::find($agent->id_user);
-                $zone = Zone::Find($user->id_zone);
+                $zone = Zone::find($user->id_zone);
                 $returenedAgents[] = ['agent' => $agent, 'user' => $user, 'zone' => $zone];
 
             } 
