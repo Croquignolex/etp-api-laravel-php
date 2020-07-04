@@ -183,11 +183,11 @@ Route::group(['middleware' => 'auth:api'], function(){
         ->where('id', '[0-9]+');
 		
 		//modification de l'operateur d'une puce
-        Route::post('edit_flote/{id}', 'API\PuceController@update_flote')
+        Route::post('edit_puce_flote/{id}', 'API\PuceController@update_flote')
         ->where('id', '[0-9]+');
 		
 		//modification de l'agent d'une puce
-        Route::post('edit_agent/{id}', 'API\PuceController@update_agent')
+        Route::post('edit_puce_agent/{id}', 'API\PuceController@update_agent')
         ->where('id', '[0-9]+');
 
         //supprimer une puce
