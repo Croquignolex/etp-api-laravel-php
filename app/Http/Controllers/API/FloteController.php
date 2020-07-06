@@ -164,6 +164,69 @@ class FloteController extends Controller
             );
         } 
     }
+	
+	 /**
+     * ajouter une puce à une flotte
+     */
+    public function ajouter_puce(Request $request, $id)
+    {
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [ 
+			'numero' => ['required', 'string', 'max:255', 'unique:puces,numero'],
+            'reference' => ['nullable', 'string', 'max:255','unique:puces,reference'], 
+            'id_agent' => ['required', 'Numeric'],
+            'nom' => ['required', 'string'],
+            'description' => ['nullable', 'string']
+        ]);
+        if ($validator->fails()) { 
+            return response()->json(
+                [
+                    'message' => ['error'=>$validator->errors()],
+                    'status' => false,
+                    'data' => null
+                ]
+            );             
+        }
+
+        // Récupérer les données validées 
+		$nom = $request->nom;
+        $numero = $request->numero;
+		$id_agent = $request->id_agent;
+        $reference = $request->reference;
+        $description = $request->description;
+
+        // rechercher la flote
+        $flote = Flote::find($id);
+
+        // ajout de mla nouvelle puce
+        $puce = $flote->puces()->create([
+            'nom' => $nom,
+			'numero' => $numero,
+			'id_agent' => $id_agent,
+            'reference' => $reference, 
+            'description' => $description
+		]);
+
+        if ($puce !== null) {
+            // Renvoyer un message de succès
+            return response()->json(
+                [
+                    'message' => '',
+                    'status' => true,
+                    'data' => ['puce' => $puce]
+                ]
+            );
+        } else {
+            // Renvoyer une erreur
+            return response()->json(
+                [
+                    'message' => "Erreur l'ors de l'ajout de la nouvelle puce",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        } 
+    }
 
     /**
      * //lister les flotes

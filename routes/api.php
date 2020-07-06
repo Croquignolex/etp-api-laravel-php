@@ -160,8 +160,10 @@ Route::group(['middleware' => 'auth:api'], function(){
         //supprimer une flote
         Route::post('delete_flote/{id}', 'API\FloteController@destroy')
         ->where('id', '[0-9]+');
-
-
+		
+		// ajouter une puce à une flotte
+        Route::post('ajouter_puce_flote/{id}', 'API\FloteController@ajouter_puce')
+        ->where('id', '[0-9]+');
 
 
             /*

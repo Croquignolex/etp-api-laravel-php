@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Puce;
+use App\Flote;
 use App\User;
 use Illuminate\Support\Facades\Validator;
 
@@ -298,9 +299,11 @@ class PuceController extends Controller
             $puces = Puce::where('deleted_at', null)->get();
 			
 			$returenedPuces = [];
-             
+			
             foreach($puces as $puce) {
-				$user = User::find($puce->agent->id_user);
+				$user = User::find($puce->agent->id_user); 
+				//$flote = Flote::find($puce->id_flotte);
+				//$nom = $flote->nom;  
                 $returenedPuces[] = ['puce' => $puce, 'flote' => $puce->flote->nom, 'agent' => $user->name];
             } 
 			
