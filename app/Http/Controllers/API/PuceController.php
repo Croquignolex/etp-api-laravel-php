@@ -111,7 +111,7 @@ class PuceController extends Controller
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['puce' => $puce, 'flote' => $puce->flote->nom, 'agent' => $user->name]
+                    'data' => ['puce' => $puce, 'flote' => $puce->flote, 'agent' => $puce->agent, 'user' => $user]
                 ]
             );
 
@@ -134,7 +134,8 @@ class PuceController extends Controller
     {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [ 
-            'reference' => ['nullable', 'string', 'max:255', 'unique:puces,reference'],
+            //'reference' => ['nullable', 'string', 'max:255', 'unique:puces,reference'],
+            'reference' => ['nullable', 'string', 'max:255'],
             //'id_flotte' => ['required', 'Numeric'],
             //'id_agent' => ['required', 'Numeric'],
             'nom' => ['required', 'string'],
@@ -152,7 +153,7 @@ class PuceController extends Controller
 
         // Récupérer les données validées
             
-        $numero = $request->numero;
+        //$numero = $request->numero;
         $nom = $request->nom;
         $reference = $request->reference;
         //$id_flotte = $request->id_flotte;
@@ -163,7 +164,7 @@ class PuceController extends Controller
         $puce = Puce::find($id);
 
         // Modifier la puce
-        $puce->numero = $numero;
+        //$puce->numero = $numero;
         $puce->nom = $nom;
         $puce->reference = $reference;
         //$puce->id_flotte = $id_flotte;
