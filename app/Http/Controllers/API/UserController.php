@@ -167,7 +167,11 @@ class UserController extends Controller
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['user' => $user, 'userRole' => $userRole, 'zones_list' => $zones_list]
+                    'data' => [
+						'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
+						'role' => $userRole, 
+						'zones' => $zones_list
+					]
                 ]
             );
          }else{
@@ -263,7 +267,11 @@ class UserController extends Controller
                     }
                 }
 
-                $returenedUers[] = ['user' => $user, 'role' => $user->roles->pluck('name','name')->all(), 'zone' => $zones_list];
+                $returenedUers[] = [
+					'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']), 
+					'role' => $user->roles->pluck('name','name')->all(), 
+					'zones' => $zones_list
+				];
 
             }         
                 return response()->json(
