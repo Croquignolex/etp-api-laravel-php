@@ -215,7 +215,10 @@ Route::group(['middleware' => 'auth:api'], function(){
             //Details d'une demande de flote
             Route::get('detail_demandes_flote/{id}', 'API\DemandeflotteController@show')
             ->where('id', '[0-9]+');
-
+			
+			//Details d'une demande de flote
+            Route::post('modifier_demandes_flote/{id}', 'API\DemandeflotteController@modifier')
+            ->where('id', '[0-9]+');
 
         //par un Agent
 

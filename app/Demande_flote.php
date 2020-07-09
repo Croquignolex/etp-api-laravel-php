@@ -13,8 +13,8 @@ class Demande_flote extends Model
     use SoftDeletes;
 
     protected $dates = ['deleted_at'];
-    protected $fillable = array('id_user', 'reference', 'add_by', 'montant', 'statut','puce_destination', 'source', 'id_puce');
-    protected $visible = array('id_user', 'reference', 'add_by', 'montant', 'statut','puce_destination', 'source', 'id_puce');
+    protected $fillable = array('id', 'id_user', 'reference', 'add_by', 'montant', 'statut','puce_destination', 'source', 'id_puce');
+    protected $visible = array('id', 'id_user', 'reference', 'add_by', 'montant', 'statut','puce_destination', 'source', 'id_puce', 'created_at');
                                                      
 
     public function user()
