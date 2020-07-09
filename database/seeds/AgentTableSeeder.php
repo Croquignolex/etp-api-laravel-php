@@ -30,7 +30,9 @@ class AgentTableSeeder extends Seeder {
 				
 				'type' => 1,
 	
-				'id_agent' => $agent_par_defaut->id
+				'id_agent' => $agent_par_defaut->id,
+
+				'nom' => \App\Enums\Statut::MTN
 	
 			]);
 			
@@ -41,7 +43,9 @@ class AgentTableSeeder extends Seeder {
 				
 				'type' => 1,
 	
-				'id_agent' => $agent_par_defaut->id
+				'id_agent' => $agent_par_defaut->id,
+
+				'nom' => \App\Enums\Statut::ORANGE
 	
 			]);
 	}

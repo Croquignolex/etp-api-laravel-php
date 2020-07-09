@@ -18,7 +18,7 @@ class Agent extends Model
     protected $visible = array('id', 'created_at', 'img_cni','img_cni_back', 'point_de_vente', 'reference', 'taux_commission', 'ville', 'pays', 'id_creator', 'id_user');
 
 
-    public function puce()
+    public function puces()
     {
         return $this->hasMany('App\Puce', 'id_agent');
     }

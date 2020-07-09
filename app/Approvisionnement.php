@@ -21,5 +21,10 @@ class Approvisionnement extends Model
     {
         return $this->belongsTo('App\User', 'id_user');
     }
+
+    public function demande_flote()
+    {
+        return $this->belongsTo('App\Demande_flote', 'id_demande_flote');
+    }
 }
 

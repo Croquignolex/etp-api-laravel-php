@@ -38,7 +38,7 @@ class DemandedestockageController extends Controller
         // Valider données envoyées
         $validator = Validator::make($request->all(), [ 
             'montant' => ['required', 'Numeric'],
-            'id_puce' => ['required', 'Numeric'] //sous forme de select qui affiche juste les deux puces de type ETP
+            'id_puce' => ['required', 'Numeric'] 
         ]);
         if ($validator->fails()) { 
             return response()->json(
@@ -70,12 +70,9 @@ class DemandedestockageController extends Controller
         $puce_destination = Puce::Find($request->id_puce);
 
         //recuperer la Puce qui va envoyer la flotte
-        $puce_envoi = Puce::where('id_flotte', $puce_destination->id_flotte)
+        $puce_source = Puce::where('id_flotte', $puce_destination->id_flotte)
             ->where('id_agent', $agent->id)
             ->First();
-
-        
-
 
         // Récupérer les données validées
              
@@ -84,7 +81,7 @@ class DemandedestockageController extends Controller
         $reference = null;
         $montant = $request->montant;
         $statut = \App\Enums\Statut::EN_ATTENTE;
-        $puce_source = $puce_envoi->id;
+        $puce_source = $puce_source->id;
 
 
 
@@ -94,6 +91,7 @@ class DemandedestockageController extends Controller
             'add_by' => $add_by,
             'reference' => $reference,
             'montant' => $montant,
+            'reste' => $montant,
             'statut' => $statut,
             'puce_destination' => $request->id_puce,
             'puce_source' => $puce_source
@@ -107,7 +105,7 @@ class DemandedestockageController extends Controller
                 [
                     'message' => 'Demande de destockage créée',
                     'status' => true,
-                    'data' => ['demande_destockage' => $demande_destockage, 'user' => $user, 'agent' => $agent, 'puce_agent' => $puce_envoi]
+                    'data' => ['demande_destockage' => $demande_destockage]
                 ]
             );
         } else {

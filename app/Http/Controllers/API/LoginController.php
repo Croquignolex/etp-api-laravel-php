@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
 use App\Zone;
+use App\Agent;
 use App\Utiles\ImageFromBase64;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -48,47 +49,59 @@ class LoginController extends Controller
             );
         }
 
+		// on verifie que l'utilisateur n'est ni Archivé ni desactivé
+			$userAnable = User::where('phone', $request->phone)->first();
 
-            // on verifie que l'utilisateur n'est ni Archivé ni desactivé
-                $userAnable = User::where('phone', $request->phone)->first();
+			if ($userAnable != null) {
 
-                if ($userAnable != null) {
-
-                    if ($userAnable->deleted_at != null) {
-                        return response()->json(
-                            [
-                                'message' => 'Cet utilisateur est archivé',
-                                'status' => false,
-                                'data' => null,
-                            ]
-                        );
-                    } 
-                    
-                    if ($userAnable->statut == Statut::DECLINE) {
-                        return response()->json(
-                            [
-                                'message' => 'Cet utilisateur est archivé',
-                                'status' => false,
-                                'data' => null,
-                            ]
-                        );
-                    } 
-                    
-                }
+				if ($userAnable->deleted_at != null) {
+					return response()->json(
+						[
+							'message' => 'Cet utilisateur est archivé',
+							'status' => false,
+							'data' => null,
+						]
+					);
+				} 
+				
+				if ($userAnable->statut == Statut::DECLINE) {
+					return response()->json(
+						[
+							'message' => 'Cet utilisateur est archivé',
+							'status' => false,
+							'data' => null,
+						]
+					);
+				} 
+				
+			}
 
 
-            $credentials = [
-                'phone' => $request->phone,
-                'password' => $request->password
-            ];
+		$credentials = [
+			'phone' => $request->phone,
+			'password' => $request->password
+		];
 
         //si la connexion est bonne
         if (auth()->attempt($credentials)) {
             // Créer un token pour l'utilisateur
             $token = auth()->user()->createToken(config('app.name', 'ETP'));
 
-
-                $user = auth()->user();
+			$user = auth()->user();
+			
+			// recuperer les zones de l'utilisateur (utile pour l'agent et le recouvreur)
+			$zones = json_decode($user->id_zone);
+            $zones_list = [];
+            
+            if ($zones != null) {
+                foreach ($zones as $zone) {
+                    $zones_list[] = Zone::Find($zone);
+                }
+            }
+			
+			// recuperer l'agent et ses puces associé à l'utilisateur (utile pour l'agent)
+			$agent = Agent::where('id_user', $user->id)->first();
+			$puces = is_null($agent) ? $agent : $agent->puces;
 
             // Définir quand le token va s'expirer
             /*$token->token->expires_at = Carbon::now()->addHour();
@@ -101,8 +114,11 @@ class LoginController extends Controller
                     'status' => true,
                     'data' => [
                         'token' =>$token->accessToken,
-                        'user' => $user->setHidden(['deleted_at']),
-						'role' => $user->roles->pluck('name','name')->all()
+						'zones' => $zones_list,
+                        'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
+						'role' => $user->roles->pluck('name','name')->all(),
+						'agent' => $agent,
+						'puces' => $puces
                     ]
                 ]
             );

@@ -100,6 +100,7 @@ class Demande_destockage_recouvreurController extends Controller
             'add_by' => $add_by,
             'reference' => $reference,
             'montant' => $montant,
+            'reste' => $montant,
             'statut' => $statut,
             'puce_destination' => $request->id_puce,
             'puce_source' => $puce_source

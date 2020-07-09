@@ -160,8 +160,10 @@ Route::group(['middleware' => 'auth:api'], function(){
         //supprimer une flote
         Route::post('delete_flote/{id}', 'API\FloteController@destroy')
         ->where('id', '[0-9]+');
-
-
+		
+		// ajouter une puce à une flotte
+        Route::post('ajouter_puce_flote/{id}', 'API\FloteController@ajouter_puce')
+        ->where('id', '[0-9]+');
 
 
             /*
@@ -180,6 +182,14 @@ Route::group(['middleware' => 'auth:api'], function(){
 
         //modification d'une puce
         Route::post('edit_puce/{id}', 'API\PuceController@update')
+        ->where('id', '[0-9]+');
+		
+		//modification de l'operateur d'une puce
+        Route::post('edit_puce_flote/{id}', 'API\PuceController@update_flote')
+        ->where('id', '[0-9]+');
+		
+		//modification de l'agent d'une puce
+        Route::post('edit_puce_agent/{id}', 'API\PuceController@update_agent')
         ->where('id', '[0-9]+');
 
         //supprimer une puce
@@ -205,7 +215,10 @@ Route::group(['middleware' => 'auth:api'], function(){
             //Details d'une demande de flote
             Route::get('detail_demandes_flote/{id}', 'API\DemandeflotteController@show')
             ->where('id', '[0-9]+');
-
+			
+			//Details d'une demande de flote
+            Route::post('modifier_demandes_flote/{id}', 'API\DemandeflotteController@modifier')
+            ->where('id', '[0-9]+');
 
         //par un Agent
 

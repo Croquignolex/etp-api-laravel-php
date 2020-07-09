@@ -19,6 +19,7 @@ class CreateDemandeFlotesTable extends Migration
             $table->integer('id_user')->unsigned()->nullable()->index();
             $table->string('reference')->nullable();
             $table->integer('montant')->unsigned()->default('0');
+            $table->integer('reste')->unsigned()->default('0');
             $table->string('statut')->nullable();
             $table->integer('source')->unsigned()->nullable()->index();
             $table->integer('id_puce')->unsigned()->nullable()->index();			
