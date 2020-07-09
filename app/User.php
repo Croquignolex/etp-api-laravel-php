@@ -53,11 +53,24 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 	
-
+    //les opérations enregistrées par un utilisateur precis
     public function operations()
     {
         return $this->hasMany('App\Operation', 'id_user');
     }
+
+    //les demande de destockages enregistrées pour un utilisateur precis
+    public function demande_destockages()
+    {
+        return $this->hasMany('App\Demande_destockage', 'id_user');
+    }
+ 
+    //les demande de flotes enregistrées pour un utilisateur precis
+    public function demande_flotes()
+    {
+        return $this->hasMany('App\Demande_flote', 'id_user');
+    }
+
 
     public function AauthAcessToken(){
         return $this->hasMany('\App\OauthAccessToken');

@@ -38,7 +38,7 @@ class Demande_flote_recouvreurController extends Controller
         $validator = Validator::make($request->all(), [ 
             'montant' => ['required', 'Numeric'],
             'id_agent' => ['required', 'Numeric'],
-            'id_flote' => ['required', 'Numeric'] 
+            'id_puce' => ['required', 'Numeric'] 
         ]);
         if ($validator->fails()) { 
             return response()->json(
@@ -60,10 +60,10 @@ class Demande_flote_recouvreurController extends Controller
             );            
         }
 
-        if (!Flote::Find($request->id_flote)) { 
+        if (!Puce::Find($request->id_puce)) { 
             return response()->json(
                 [
-                    'message' => "Cette flotte n'existe pas",
+                    'message' => "Cette Puce n'existe pas",
                     'status' => false,
                     'data' => null
                 ]
@@ -78,12 +78,6 @@ class Demande_flote_recouvreurController extends Controller
 
         $user = User::find($agent->id_user);
 
-        //recuperer la Puce correspondante
-        $flote = Flote::Find($request->id_flote);
-
-        
-
-
         // Récupérer les données validées
              
         $id_user = $user->id;
@@ -91,13 +85,10 @@ class Demande_flote_recouvreurController extends Controller
         $reference = null;
         $montant = $request->montant;
         $statut = \App\Enums\Statut::EN_ATTENTE;
-        $source = $request->id_flote;
+        $source = null;
+        //recuperer l'id de puce de l'agent
+        $id_puce = $request->id_puce;
 
-        //recuperer la puce de l'agent
-        $puce = Puce::where('id_flotte', $source)
-        ->where('id_agent', $agent->id)
-        ->First();
-        $puce_destination = $puce->id;
 
 
         // Nouvelle demande de flotte
@@ -106,12 +97,12 @@ class Demande_flote_recouvreurController extends Controller
             'add_by' => $add_by,
             'reference' => $reference,
             'montant' => $montant,
+            'reste' => $montant,
             'statut' => $statut,
-            'puce_destination' => $puce_destination,
+            'id_puce ' => $id_puce,
             'source' => $source
         ]);
 
-        //dd($demande_flote );
 
         // creation de La demande
         if ($demande_flote->save()) {
@@ -121,7 +112,7 @@ class Demande_flote_recouvreurController extends Controller
                 [
                     'message' => 'Demande de Flote créée',
                     'status' => true,
-                    'data' => ['demande_flote' => $demande_flote, 'user' => $user, 'agent' => $agent, 'flote' => $flote]
+                    'data' => ['demande_flote' => $demande_flote]
                 ]
             );
         } else {

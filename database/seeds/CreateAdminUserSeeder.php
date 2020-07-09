@@ -92,19 +92,6 @@ class CreateAdminUserSeeder extends Seeder
         ]);
 
 
-        ///creation de l'agent gestionnaire de flotte
-
-        $agent_principal = Agent::create([
-
-        	'point_de_vente' => 'ETP', 
-
-            'id_creator' => $user->id,
-            
-            'id_user' => $user3->id
-
-        ]);
-
-
         ///creation des types de puce par defaut
 
         $puce_agent = Type_puce::create([
@@ -115,9 +102,23 @@ class CreateAdminUserSeeder extends Seeder
 
         $puce_ETP = Type_puce::create([
 
-        	'name' => "Puce ETP"
+        	'name' => "Puce Agent ETP"
 
         ]);
+
+        $puce_flottage = Type_puce::create([
+
+        	'name' => "Puce Flottage"
+
+        ]);
+
+        $puce_agent_sencondaire = Type_puce::create([
+
+        	'name' => "Puce Flotage Sencondaire"
+
+        ]);
+
+        
 
 
         ///creation de la puce de distribution de flotte par defaut
@@ -126,9 +127,9 @@ class CreateAdminUserSeeder extends Seeder
 
         	'id_flotte' => 1, 
 
-            'id_agent' => $agent_principal->id,
+            'id_agent' => Null,
 
-            'type' => 2,
+            'type' => 3,
             
             'nom' => \App\Enums\Statut::MTN
 
@@ -138,9 +139,21 @@ class CreateAdminUserSeeder extends Seeder
 
             'id_flotte' => 2, 
             
-            'type' => 2,
+            'type' => 3,
 
-            'id_agent' => $agent_principal->id,
+            'id_agent' => Null,
+            
+            'nom' => \App\Enums\Statut::ORANGE
+
+        ]);
+
+        $puce_sencondaire_Orange = Puce::create([
+
+            'id_flotte' => 2, 
+            
+            'type' => 4,
+
+            'id_agent' => Null,
             
             'nom' => \App\Enums\Statut::ORANGE
 

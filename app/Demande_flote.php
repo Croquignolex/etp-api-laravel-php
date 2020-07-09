@@ -13,9 +13,9 @@ class Demande_flote extends Model
     use SoftDeletes;
 
     protected $dates = ['deleted_at'];
-    protected $fillable = array('id', 'id_user', 'reference', 'add_by', 'montant', 'statut','puce_destination', 'source', 'id_puce');
-    protected $visible = array('id', 'id_user', 'reference', 'add_by', 'montant', 'statut','puce_destination', 'source', 'id_puce', 'created_at');
-                                                     
+
+    protected $fillable = array('id','id_user', 'reference', 'add_by','reste', 'montant', 'statut', 'source', 'id_puce');
+    protected $visible = array('id','id_user', 'reference', 'add_by','reste', 'montant', 'statut', 'source', 'id_puce', 'created_at');
 
     public function user()
     {
@@ -25,6 +25,12 @@ class Demande_flote extends Model
     public function puce()
     {
         return $this->belongsTo('App\Puce', 'id_puce');
+    }
+
+    //les approvisionnement enregistrées pour une demande precise
+    public function Approvisionnement()
+    {
+        return $this->hasMany('App\Approvisionnement', 'id_demande_destockage');
     }
 }
 
