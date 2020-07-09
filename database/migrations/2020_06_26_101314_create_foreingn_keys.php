@@ -206,12 +206,6 @@ class CreateForeingnKeys extends Migration
                 ->on('flotes')
 				->onDelete('cascade')
                 ->onUpdate('no action');
-                
-            $table->foreign('puce_destination')
-                ->references('id')
-                ->on('puces')
-				->onDelete('cascade')
-				->onUpdate('no action');
 
         });
 
