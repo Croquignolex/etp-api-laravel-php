@@ -150,7 +150,7 @@ class FloteController extends Controller
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['flote' => $flote]
+                    'data' => ['flote' => $flote, 'puces' => $flote->puces]
                 ]
             );
         } else {
@@ -174,9 +174,10 @@ class FloteController extends Controller
         $validator = Validator::make($request->all(), [ 
 			'numero' => ['required', 'string', 'max:255', 'unique:puces,numero'],
             'reference' => ['nullable', 'string', 'max:255','unique:puces,reference'], 
-            'id_agent' => ['required', 'Numeric'],
+            //'id_agent' => ['required', 'numeric'],
             'nom' => ['required', 'string'],
-            'description' => ['nullable', 'string']
+            'description' => ['nullable', 'string'],
+            'type' => ['required', 'numeric'],
         ]);
         if ($validator->fails()) { 
             return response()->json(
@@ -190,6 +191,7 @@ class FloteController extends Controller
 
         // Récupérer les données validées 
 		$nom = $request->nom;
+        $type = $request->type;
         $numero = $request->numero;
 		$id_agent = $request->id_agent;
         $reference = $request->reference;
@@ -201,6 +203,7 @@ class FloteController extends Controller
         // ajout de mla nouvelle puce
         $puce = $flote->puces()->create([
             'nom' => $nom,
+			'type' => $type,
 			'numero' => $numero,
 			'id_agent' => $id_agent,
             'reference' => $reference, 
@@ -213,7 +216,7 @@ class FloteController extends Controller
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['puce' => $puce]
+                    'data' => ['puce' => $puce, 'puces' => $flote->puces]
                 ]
             );
         } else {

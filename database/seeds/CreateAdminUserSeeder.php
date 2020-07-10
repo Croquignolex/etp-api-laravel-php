@@ -96,25 +96,25 @@ class CreateAdminUserSeeder extends Seeder
 
         $puce_agent = Type_puce::create([
 
-        	'name' => "Puce Agent"
+        	'name' => "AGENT"
 
         ]);
 
         $puce_ETP = Type_puce::create([
 
-        	'name' => "Puce Agent ETP"
+        	'name' => "AGENT ETP"
 
         ]);
 
         $puce_flottage = Type_puce::create([
 
-        	'name' => "Puce Flottage"
+        	'name' => "FLOTTAGE"
 
         ]);
 
         $puce_agent_sencondaire = Type_puce::create([
 
-        	'name' => "Puce Flotage Sencondaire"
+        	'name' => "OPERATEUR"
 
         ]);
 

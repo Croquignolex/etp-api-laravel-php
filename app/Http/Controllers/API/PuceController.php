@@ -105,8 +105,7 @@ class PuceController extends Controller
 
         //Envoie des information
         if(puce::find($id)){ 
-			$id_agent = $puce->id_agent;
-			$type = Type_puce::find($puce->type); 
+			$id_agent = $puce->id_agent; 
 			$agent = is_null($id_agent) ? $id_agent : $puce->agent;
 			$user = is_null($id_agent) ? $id_agent : User::find($puce->agent->id_user);
 			//----------	
@@ -114,7 +113,7 @@ class PuceController extends Controller
                 [
                     'message' => '',
                     'status' => true, 
-                    'data' => ['puce' => $puce, 'flote' => $puce->flote, 'agent' => $agent, 'user' => $user, 'type' => $type]
+                    'data' => ['puce' => $puce, 'flote' => $puce->flote, 'agent' => $agent, 'user' => $user, 'type' => $puce->type]
                 ]
             );
 
@@ -306,11 +305,10 @@ class PuceController extends Controller
 			
             foreach($puces as $puce) {
 				$id_agent = $puce->id_agent;
-				$nom_agent = is_null($id_agent) ? $id_agent : User::find($puce->agent->id_user)->name;
-				$type = Type_puce::find($puce->type); 
+				$nom_agent = is_null($id_agent) ? $id_agent : User::find($puce->agent->id_user)->name; 
 				//$flote = Flote::find($puce->id_flotte);
 				//$nom = $flote->nom;  
-                $returenedPuces[] = ['puce' => $puce, 'flote' => $puce->flote->nom, 'agent' => $nom_agent, 'type' => $type->id];
+                $returenedPuces[] = ['puce' => $puce, 'flote' => $puce->flote->nom, 'agent' => $nom_agent, 'type' => $puce->type];
             } 
 			
             return response()->json(
