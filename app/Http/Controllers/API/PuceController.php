@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Puce;
 use App\Flote;
 use App\User;
+use App\Type_puce;
 use Illuminate\Support\Facades\Validator;
 
 class PuceController extends Controller
@@ -103,15 +104,17 @@ class PuceController extends Controller
         $puce = Puce::find($id);
 
         //Envoie des information
-        if(puce::find($id)){
-			
-			$user = User::find($puce->agent->id_user);
-			
+        if(puce::find($id)){ 
+			$id_agent = $puce->id_agent;
+			$type = Type_puce::find($puce->type); 
+			$agent = is_null($id_agent) ? $id_agent : $puce->agent;
+			$user = is_null($id_agent) ? $id_agent : User::find($puce->agent->id_user);
+			//----------	
             return response()->json(
                 [
                     'message' => '',
-                    'status' => true,
-                    'data' => ['puce' => $puce, 'flote' => $puce->flote, 'agent' => $puce->agent, 'user' => $user]
+                    'status' => true, 
+                    'data' => ['puce' => $puce, 'flote' => $puce->flote, 'agent' => $agent, 'user' => $user, 'type' => $type]
                 ]
             );
 
@@ -302,10 +305,12 @@ class PuceController extends Controller
 			$returenedPuces = [];
 			
             foreach($puces as $puce) {
-				$user = User::find($puce->agent->id_user); 
+				$id_agent = $puce->id_agent;
+				$nom_agent = is_null($id_agent) ? $id_agent : User::find($puce->agent->id_user)->name;
+				$type = Type_puce::find($puce->type); 
 				//$flote = Flote::find($puce->id_flotte);
 				//$nom = $flote->nom;  
-                $returenedPuces[] = ['puce' => $puce, 'flote' => $puce->flote->nom, 'agent' => $user->name];
+                $returenedPuces[] = ['puce' => $puce, 'flote' => $puce->flote->nom, 'agent' => $nom_agent, 'type' => $type->id];
             } 
 			
             return response()->json(
