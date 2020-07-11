@@ -14,20 +14,16 @@ use App\Puce;
 use Illuminate\Support\Facades\Auth;
 
 class DemandeflotteController extends Controller
-{
-
+{ 
     /**
 
      * les conditions de lecture des methodes
 
-     */
-
+     */ 
     function __construct(){
         $this->middleware('permission:Recouvreur|Agent|Superviseur|Gestionnaire_flotte');
     }
-
-
-
+  
     /**
      * //Initier une demande de Flotte
      */
@@ -132,13 +128,15 @@ class DemandeflotteController extends Controller
 
         // update de La demande
         if ($demande_flote->save()) {
-
+			$user = $demande_flote->user;
+			$agent = Agent::where('id_user', $user->id)->first();
+			$demandeur = User::Find($demande_flote->add_by);
             // Renvoyer un message de succès
             return response()->json(
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['demande_flote' => $demande_flote]
+                    'data' => ['demande_flote' => $demande_flote, 'demandeur' => $demandeur, 'agent' => $agent, 'user' => $user, 'puce' => $demande_flote->puce]
                 ]
             );
         } else {
@@ -180,9 +178,7 @@ class DemandeflotteController extends Controller
 		);
  
     }
-
-
-
+  
     /**
      * //lister mes demandes de flotes en attente
      */
@@ -294,4 +290,43 @@ class DemandeflotteController extends Controller
             );
         }
     }
+	
+	/**
+     * //Annuler une demande de flotte
+     */
+    public function annuler(Request $request, $id)
+    {
+		$demande_floteDB = Demande_flote::find($id);
+		$demande_floteDB->statut = \App\Enums\Statut::ANNULE;
+		
+        // creation de La demande
+        if ($demande_floteDB->save()) {
+			$demandes_flote = Demande_flote::where('id_user', Auth::user()->id)->get();  
+			$demandes_flotes = []; 
+			foreach($demandes_flote as $demande_flote) { 
+				//recuperer le demandeur 
+				$demandeur = User::Find($demande_flote->add_by);
+
+				$demandes_flotes[] = ['demande_flote' => $demande_flote, 'demandeur' => $demandeur, 'puce' => $demande_flote->puce->numero];
+			}
+		
+            // Renvoyer un message de succès
+            return response()->json(
+                [
+                    'message' => 'Demande de Flote annulée',
+                    'status' => true,
+                    'data' => ['demandes_flotes' => $demandes_flotes]
+                ]
+            );
+        } else { 
+            // Renvoyer une erreur
+            return response()->json(
+                [
+                    'message' => 'erreur lors de la demande',
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        } 
+    } 
 }

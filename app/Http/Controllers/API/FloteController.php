@@ -9,9 +9,8 @@ use App\Puce;
 use Illuminate\Support\Facades\Validator;
 
 class FloteController extends Controller
-{
-
-        /**
+{ 
+	/**
 
      * les conditions de lecture des methodes
 
@@ -23,7 +22,6 @@ class FloteController extends Controller
 
     }
  
-
     /**
      * //Creer une flote.
      */
@@ -216,7 +214,56 @@ class FloteController extends Controller
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['puce' => $puce, 'puces' => $flote->puces]
+                    'data' => ['flote' => $flote, 'puces' => $flote->puces]
+                ]
+            );
+        } else {
+            // Renvoyer une erreur
+            return response()->json(
+                [
+                    'message' => "Erreur l'ors de l'ajout de la nouvelle puce",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        } 
+    }
+	
+	/**
+     * ajouter une puce à une flotte
+     */
+    public function delete_puce(Request $request, $id)
+    {
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [  
+            'id_puce' => ['required', 'numeric']
+        ]);
+        if ($validator->fails()) { 
+            return response()->json(
+                [
+                    'message' => ['error'=>$validator->errors()],
+                    'status' => false,
+                    'data' => null
+                ]
+            );             
+        }
+
+        // Récupérer les données validées 
+		$id_puce = $request->id_puce;
+          
+        // rechercher la flote
+        $flote = Flote::find($id); 
+		$puce = Puce::find($id_puce);
+        $puce->deleted_at = now();
+		$puce->save();
+		
+        if ($puce !== null) {
+            // Renvoyer un message de succès
+            return response()->json(
+                [
+                    'message' => '',
+                    'status' => true,
+                    'data' => ['flote' => $flote, 'puces' => $flote->puces]
                 ]
             );
         } else {
@@ -272,13 +319,21 @@ class FloteController extends Controller
             $flote = Flote::find($id);
             $flote->deleted_at = now();
             if ($flote->save()) {
+				
+				$flotes = Flote::where('deleted_at', null)->get();
+			
+				$returenedFlotes = [];
+				
+				foreach($flotes as $flote) { 
+					$returenedFlotes[] = ['flote' => $flote, 'puces' => $flote->puces->count()];
+				}         
 
                 // Renvoyer un message de succès
                 return response()->json(
                     [
                         'message' => 'Flote archivée',
                         'status' => true,
-                        'data' => null
+                        'data' => ['flotes' => $returenedFlotes]
                     ]
                 );
             } else {
