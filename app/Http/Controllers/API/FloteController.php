@@ -289,7 +289,7 @@ class FloteController extends Controller
 			$returenedFlotes = [];
 			
             foreach($flotes as $flote) { 
-                $returenedFlotes[] = ['flote' => $flote, 'puces' => $flote->puces->count()];
+                $returenedFlotes[] = ['flote' => $flote, 'puces' => $flote->puces];
             }         
 			
             return response()->json(
@@ -325,7 +325,7 @@ class FloteController extends Controller
 				$returenedFlotes = [];
 				
 				foreach($flotes as $flote) { 
-					$returenedFlotes[] = ['flote' => $flote, 'puces' => $flote->puces->count()];
+					$returenedFlotes[] = ['flote' => $flote, 'puces' => $flote->puces];
 				}         
 
                 // Renvoyer un message de succès

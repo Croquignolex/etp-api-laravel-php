@@ -102,7 +102,7 @@ class DemandeflotteController extends Controller
     }
 	
 	
-/**
+	/**
      * //modifier une demande de Flotte
      */
     public function modifier(Request $request, $id)
@@ -162,11 +162,16 @@ class DemandeflotteController extends Controller
 		$demandes_flotes = [];
 
         foreach($demandes_flote as $demande_flote) {
+			//recuperer l'utilisateur concerné
+            $user = $demande_flote->user;
+
+            //recuperer l'agent concerné
+            $agent = Agent::where('id_user', $user->id)->first();
 
             //recuperer le demandeur 
-                $demandeur = User::Find($demande_flote->add_by);
+			$demandeur = User::Find($demande_flote->add_by);
 
-            $demandes_flotes[] = ['demande_flote' => $demande_flote, 'demandeur' => $demandeur, 'puce' => $demande_flote->puce->numero];
+            $demandes_flotes[] = ['demande_flote' => $demande_flote, 'demandeur' => $demandeur, 'agent' => $agent, 'user' => $user, 'puce' => $demande_flote->puce]; 
         }
 		
 		return response()->json(
@@ -301,13 +306,22 @@ class DemandeflotteController extends Controller
 		
         // creation de La demande
         if ($demande_floteDB->save()) {
+			//On recupere les 'demande de flotte'
 			$demandes_flote = Demande_flote::where('id_user', Auth::user()->id)->get();  
-			$demandes_flotes = []; 
-			foreach($demandes_flote as $demande_flote) { 
+			
+			$demandes_flotes = [];
+
+			foreach($demandes_flote as $demande_flote) {
+				//recuperer l'utilisateur concerné
+				$user = $demande_flote->user;
+
+				//recuperer l'agent concerné
+				$agent = Agent::where('id_user', $user->id)->first();
+
 				//recuperer le demandeur 
 				$demandeur = User::Find($demande_flote->add_by);
 
-				$demandes_flotes[] = ['demande_flote' => $demande_flote, 'demandeur' => $demandeur, 'puce' => $demande_flote->puce->numero];
+				$demandes_flotes[] = ['demande_flote' => $demande_flote, 'demandeur' => $demandeur, 'agent' => $agent, 'user' => $user, 'puce' => $demande_flote->puce]; 
 			}
 		
             // Renvoyer un message de succès
