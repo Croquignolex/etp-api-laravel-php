@@ -22,7 +22,7 @@ class Demande_destockage_recouvreurController extends Controller
      */
 
     function __construct(){
-        $this->middleware('permission:Recouvreur|Superviseur|Gestionnaire_flotte');
+        $this->middleware('permission:Recouvreur|Superviseur|Gestionnaire de flotte');
     }
 
     /**

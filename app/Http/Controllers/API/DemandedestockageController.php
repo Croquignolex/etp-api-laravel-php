@@ -25,7 +25,7 @@ class DemandedestockageController extends Controller
 
     function __construct(){
 
-        $this->middleware('permission:Recouvreur|Agent|Superviseur|Gestionnaire_flotte');
+        $this->middleware('permission:Recouvreur|Agent|Superviseur|Gestionnaire de flotte');
 
     }
 

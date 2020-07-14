@@ -96,25 +96,25 @@ class CreateAdminUserSeeder extends Seeder
 
         $puce_agent = Type_puce::create([
 
-        	'name' => "Puce Agent"
+        	'name' => \App\Enums\Statut::AGENT
 
         ]);
 
         $puce_ETP = Type_puce::create([
 
-        	'name' => "Puce Agent ETP"
+        	'name' => \App\Enums\Statut::ETP
 
         ]);
 
-        $puce_flottage = Type_puce::create([
+        $puce_flottage = Type_puce::create([ 
 
-        	'name' => "Puce Flottage"
+        	'name' => \App\Enums\Statut::FLOTTAGE
 
         ]);
 
         $puce_agent_sencondaire = Type_puce::create([
 
-        	'name' => "Puce Flotage Sencondaire"
+        	'name' => \App\Enums\Statut::FLOTTAGE_SECONDAIRE
 
         ]);
 
