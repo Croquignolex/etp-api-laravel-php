@@ -88,17 +88,7 @@ class LoginController extends Controller
             $token = auth()->user()->createToken(config('app.name', 'ETP'));
 
 			$user = auth()->user();
-			
-			// recuperer les zones de l'utilisateur (utile pour l'agent et le recouvreur)
-			$zones = json_decode($user->id_zone);
-            $zones_list = [];
-            
-            if ($zones != null) {
-                foreach ($zones as $zone) {
-                    $zones_list[] = Zone::Find($zone);
-                }
-            }
-			
+			 
 			// recuperer l'agent et ses puces associé à l'utilisateur (utile pour l'agent)
 			$agent = Agent::where('id_user', $user->id)->first();
 			$puces = is_null($agent) ? [] : $agent->puces;
@@ -114,7 +104,7 @@ class LoginController extends Controller
                     'status' => true,
                     'data' => [
                         'token' =>$token->accessToken,
-						'zones' => $zones_list,
+						'zone' => $user->zone,
                         'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
 						'role' => $user->roles->pluck('name','name')->all(),
 						'agent' => $agent,

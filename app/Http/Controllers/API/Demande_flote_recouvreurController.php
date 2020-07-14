@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 
 use App\User;
+use App\Enums\Roles;
 use Illuminate\Support\Facades\Validator;
 use App\Flote;
 use App\Puce;
@@ -24,7 +25,7 @@ class Demande_flote_recouvreurController extends Controller
      */
 
     function __construct(){
-        $this->middleware('permission:Recouvreur|Superviseur|Gestionnaire_flotte');
+        $this->middleware(`permission:{RECOUVREUR}|Superviseur|{GESTION_FLOTTE}`);
     }
 
 
