@@ -29,27 +29,22 @@ class RoleController extends Controller
      */
 
     public function permisions_list()
-
     {
-
-        //recuperation des permissions
-        $permissions = Permission::get('name');
-
         //recuperation des roles
-        $Roles = Role::get('name');
+        $roles = Role::all();
 
-        if ($permissions != Null) {
+        if ($roles != null) {
             return response()->json(
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['permissions' => $permissions, 'roles' => $Roles]
+                    'data' => ['roles' => $roles]
                 ]
             );
          }else{
             return response()->json(
                 [
-                    'message' => 'Aucune permission trouvee',
+                    'message' => 'Aucun role trouve',
                     'status' => false,
                     'data' => null
                 ]

@@ -106,7 +106,7 @@ class LoginController extends Controller
                         'token' =>$token->accessToken,
 						'zone' => $user->zone,
                         'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
-						'role' => $user->roles->pluck('name','name')->all(),
+						'role' => $user->roles->first()->name,
 						'agent' => $agent,
 						'puces' => $puces
                     ]

@@ -47,13 +47,12 @@ class UserController extends Controller
             'name' => 'required',
             'phone' => 'required|numeric|unique:users,phone',
             'adresse' => 'nullable',
-            'id_zone' => ['nullable', 'array'], 
+            //'id_zone' => ['nullable', 'array'], 
             'description' => 'nullable',
             'poste' => ['nullable', 'string', 'max:255'],
-            //'base_64_image' => 'required|string',
             'email' => 'required|email|unique:users,email', 
             'password' => 'required|string|min:6', 
-            'roles' => 'required',
+            'id_role' => 'required',
         ]);
         if ($validator->fails()) { 
             return response()->json(
@@ -67,8 +66,8 @@ class UserController extends Controller
 
         //dd($request);
         // on verifie si le role est définit
-        $roleExist = Role::where('name', $request->roles)->count();
-        if ($roleExist == 0) {
+        $role = Role::find($request->id_role);
+        if (is_null($role)) {
             return response()->json(
                 [
                     'message' => 'ce role n est pas défini',
@@ -78,7 +77,7 @@ class UserController extends Controller
             ); 
         }
 
-        if (isset($request->id_zone)) {
+        /*if (isset($request->id_zone)) {
             foreach ($request->id_zone as $zone) {
                 // on verifie si la zone est définie
                 
@@ -93,10 +92,8 @@ class UserController extends Controller
                     }
                 
             }
-        }
+        }*/
         
-        
-
         // Convert base 64 image to normal image for the server and the data base
         //$server_image_name_path = ImageFromBase64::imageFromBase64AndSave($request->input('base_64_image'),
             //'images/avatars/');
@@ -105,11 +102,10 @@ class UserController extends Controller
         $input['password'] = bcrypt($input['password']); 
         //$input['avatar'] = $server_image_name_path;
         $input['add_by'] = Auth::user()->id;
-        $input['id_zone'] = json_encode($request->id_zone);
+        //$input['id_zone'] = json_encode($request->id_zone);
         $user = User::create($input);
 
         if (isset($user)) {
-
             //On crée la caisse de l'utilisateur
             $caisse = new Caisse([
                 'nom' => 'Caisse ' . $request->name,
@@ -121,7 +117,7 @@ class UserController extends Controller
             $caisse->save();
 
             //on lui donne un role
-            $user->assignRole($request->input('roles'));
+            $user->assignRole($role);
 
             //On lui crée un token
             $success['token'] =  $user->createToken('MyApp')->accessToken; 
