@@ -27,5 +27,9 @@ class Puce extends Model
         return $this->belongsTo('App\Agent', 'id_agent');
     }
 
+	public function type_puce()
+    {
+        return $this->belongsTo('App\Type_puce', 'type');
+    }
     
 }

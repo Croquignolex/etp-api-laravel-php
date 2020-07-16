@@ -456,7 +456,7 @@ class UserController extends Controller
         // Valider données envoyées
         $validator = Validator::make($request->all(), [ 
 
-            'role' => ['required']
+            'id_role' => ['required']
 
         ]);
         if ($validator->fails()) { 
@@ -470,8 +470,8 @@ class UserController extends Controller
         }
 
         // on verifie si le role est définit
-        $roleExist = Role::where('name', $request->role)->count();
-        if ($roleExist == 0) {
+        $roleExist = Role::find($request->input('id_role'));
+        if ($roleExist === null) {
             return response()->json(
                 [
                     'message' => 'ce role n est pas défini',
@@ -483,16 +483,19 @@ class UserController extends Controller
 
  
         DB::table('model_has_roles')->where('model_id',$id)->delete();
-        $user = User::Find($id);
+        $user = User::find($id);
 
-        if ($user->assignRole($request->input('role'))) {            
+        if ($user->assignRole($roleExist)) {            
 
             // Renvoyer un message de succès          
             return response()->json(
                 [
                     'message' => 'Role modifié',
                     'status' => true,
-                    'data' => ['user'=>$user]
+                     'data' => [
+						'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
+						'role' => $user->roles->first(), 
+					]
                 ]
             );
         } else {
