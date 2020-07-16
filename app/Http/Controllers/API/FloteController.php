@@ -272,7 +272,7 @@ class FloteController extends Controller
             // Renvoyer une erreur
             return response()->json(
                 [
-                    'message' => "Erreur l'ors de l'ajout de la nouvelle puce",
+                    'message' => "Erreur l'ors de la suppression d'une puce",
                     'status' => false,
                     'data' => null
                 ]

@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Enums\Roles;
 use App\User;
+use App\Enums\Roles;
 use Illuminate\Support\Facades\Validator;
 use App\Flote;
 use App\Puce;

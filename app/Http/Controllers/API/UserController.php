@@ -48,13 +48,12 @@ class UserController extends Controller
             'name' => 'required',
             'phone' => 'required|numeric|unique:users,phone',
             'adresse' => 'nullable',
-            'id_zone' => ['nullable', 'array'], 
+            //'id_zone' => ['nullable', 'array'], 
             'description' => 'nullable',
             'poste' => ['nullable', 'string', 'max:255'],
-            //'base_64_image' => 'required|string',
             'email' => 'required|email|unique:users,email', 
             'password' => 'required|string|min:6', 
-            'roles' => 'required',
+            'id_role' => 'required',
         ]);
         if ($validator->fails()) { 
             return response()->json(
@@ -68,8 +67,8 @@ class UserController extends Controller
 
         //dd($request);
         // on verifie si le role est définit
-        $roleExist = Role::where('name', $request->roles)->count();
-        if ($roleExist == 0) {
+        $role = Role::find($request->id_role);
+        if (is_null($role)) {
             return response()->json(
                 [
                     'message' => 'ce role n est pas défini',
@@ -79,7 +78,7 @@ class UserController extends Controller
             ); 
         }
 
-        if (isset($request->id_zone)) {
+        /*if (isset($request->id_zone)) {
             foreach ($request->id_zone as $zone) {
                 // on verifie si la zone est définie
                 
@@ -94,10 +93,8 @@ class UserController extends Controller
                     }
                 
             }
-        }
+        }*/
         
-        
-
         // Convert base 64 image to normal image for the server and the data base
         //$server_image_name_path = ImageFromBase64::imageFromBase64AndSave($request->input('base_64_image'),
             //'images/avatars/');
@@ -106,11 +103,10 @@ class UserController extends Controller
         $input['password'] = bcrypt($input['password']); 
         //$input['avatar'] = $server_image_name_path;
         $input['add_by'] = Auth::user()->id;
-        $input['id_zone'] = json_encode($request->id_zone);
+        //$input['id_zone'] = json_encode($request->id_zone);
         $user = User::create($input);
 
         if (isset($user)) {
-
             //On crée la caisse de l'utilisateur
             $caisse = new Caisse([
                 'nom' => 'Caisse ' . $request->name,
@@ -122,7 +118,7 @@ class UserController extends Controller
             $caisse->save();
 
             //on lui donne un role
-            $user->assignRole($request->input('roles'));
+            $user->assignRole($role);
 
             //On lui crée un token
             $success['token'] =  $user->createToken('MyApp')->accessToken; 
@@ -154,24 +150,15 @@ class UserController extends Controller
     { 
         $userCount = User::Where('id', $id)->count();
         if ($userCount != 0) {
-            $user = User::find($id);
-            $zones = json_decode($user->id_zone);
-            $zones_list = [];
-            
-            if ($zones != null) {
-                foreach ($zones as $zone) {
-                    $zones_list[] = Zone::Find($zone);
-                }
-            }
-            $userRole = $user->roles->pluck('name','name')->all();
+            $user = User::find($id);  
+			
             return response()->json(
                 [
                     'message' => '',
                     'status' => true,
                     'data' => [
 						'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
-						'role' => $userRole, 
-						'zones' => $zones_list
+						'role' => $user->roles->first(), 
 					]
                 ]
             );
@@ -193,10 +180,10 @@ class UserController extends Controller
      */ 
     public function edit_user_status($id) 
     { 
-        $user = User::Find($id);
-        $user_status = $user->statut;
+        $userDB = User::Find($id);
+        $user_status = $userDB->statut;
 
-        if ($user == null) {
+        if ($userDB == null) {
 
             // Renvoyer un message d'erreur          
             return response()->json(
@@ -210,24 +197,35 @@ class UserController extends Controller
         }elseif ($user_status == Statut::DECLINE) {
 
             // Approuver
-            $user->statut = Statut::APPROUVE;
+            $userDB->statut = Statut::APPROUVE;
 
             
         }else{
 
             // desapprouver
-            $user->statut = Statut::DECLINE;
+            $userDB->statut = Statut::DECLINE;
         }
   
          
-        if ($user->save()) {
+        if ($userDB->save()) {
+			
+			$users = User::where('deleted_at', null)->get();
+            $returenedUers = [];
+            foreach($users as $user) {
+ 
+                $returenedUers[] = [
+					'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']), 
+					'role' => $user->roles->first()
+				];
+
+            }         
 
             // Renvoyer un message de succès          
             return response()->json(
                 [
                     'message' => 'Statut changé',
                     'status' => true,
-                    'data' => ['user'=>$user]
+                    'data' => ['users' => $returenedUers]
                 ]
             );
         } else {
@@ -244,8 +242,6 @@ class UserController extends Controller
  
     }      
 
-    
-
     /**
      * liste des utilisateurs
      *
@@ -258,20 +254,10 @@ class UserController extends Controller
             $users = User::where('deleted_at', null)->get();
             $returenedUers = [];
             foreach($users as $user) {
-
-                $zones = json_decode($user->id_zone);
-                $zones_list = [];
-                
-                if ($zones != null) {
-                    foreach ($zones as $zone) {
-                        $zones_list[] = Zone::Find($zone);
-                    }
-                }
-
+ 
                 $returenedUers[] = [
 					'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']), 
-					'role' => $user->roles->pluck('name','name')->all(), 
-					'zones' => $zones_list
+					'role' => $user->roles->first()
 				];
 
             }         
@@ -312,15 +298,27 @@ class UserController extends Controller
             );
         }
         if (Auth::check()) {
-            $user = User::find($id);
-            $user->deleted_at = now();
-            if ($user->save()) {
+            $userDB = User::find($id);
+            $userDB->deleted_at = now();
+            if ($userDB->save()) {
+				 
+				$users = User::where('deleted_at', null)->get();
+				$returenedUers = [];
+				foreach($users as $user) {
+	 
+					$returenedUers[] = [
+						'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']), 
+						'role' => $user->roles->first()
+					];
+
+				}        
+				
                 // Renvoyer un message de succès
                 return response()->json(
                     [
                         'message' => 'utilisateur archivé',
                         'status' => true,
-                        'data' => null
+                        'data' => ['users' => $returenedUers]
                     ]
                 );
             } else {
@@ -410,13 +408,16 @@ class UserController extends Controller
         $user->adresse = $adresse;
 
         if ($user->save()) {
-
+			 
             // Renvoyer un message de succès          
             return response()->json(
                 [
                     'message' => 'profil modifié',
                     'status' => true,
-                    'data' => ['user'=>$user]
+                   'data' => [
+						'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
+						'role' => $user->roles->first(), 
+					]
                 ]
             );
         } else {

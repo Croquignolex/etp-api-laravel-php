@@ -70,7 +70,10 @@ class User extends Authenticatable
     {
         return $this->hasMany('App\Demande_flote', 'id_user');
     }
-
+	
+	public function zone() {
+        return $this->belongsTo('App\Zone', 'id_zone');
+    }
 
     public function AauthAcessToken(){
         return $this->hasMany('\App\OauthAccessToken');

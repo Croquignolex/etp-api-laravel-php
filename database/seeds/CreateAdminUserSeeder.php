@@ -2,6 +2,7 @@
 
 use App\Agent;
 use App\Puce;
+use App\Zone;
 use App\Type_puce;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
@@ -16,18 +17,21 @@ class CreateAdminUserSeeder extends Seeder
      * @return void
      */
     public function run()
-
     {
-
+		$user = Zone::create([
+        	'nom' => 'Douala',  
+			'map' => '<iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d127357.54605115415!2d9.671763356449453!3d4.036071988407635!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x1061128be2e1fe6d%3A0x92daa1444781c48b!2sDouala!5e0!3m2!1sfr!2scm!4v1594723557579!5m2!1sfr!2scm" width="600" height="450" frameborder="0" style="border:0;" allowfullscreen="" aria-hidden="false" tabindex="0"></iframe>'
+        ]);
+		 
         //creer l'admin et les autre utilisateurs par defaut
 
         $user = User::create([
 
         	'name' => 'Admin', 
 
-            'email' => 'admin@gmail.com',
+            'email' => 'admin@etp.com',
             
-            'phone' => '690444983', 
+            'phone' => '600000000', 
 
             'adresse' => 'Douala, Ndokotti',
 
@@ -37,25 +41,43 @@ class CreateAdminUserSeeder extends Seeder
 
         $user2 = User::create([
 
-        	'name' => 'AGENT', 
+        	'name' => 'JOE MANI', 
 
-            'email' => 'agent@gmail.com',
+            'email' => 'agent1@etp.com',
             
-            'phone' => '222222222', 
+            'phone' => '622222222', 
 
             'adresse' => 'Douala, Ndokotti',
 
-        	'password' => bcrypt('123456')
+        	'password' => bcrypt('123456'),
+			
+			'id_zone' => 1
+
+        ]);
+		
+		$user22 = User::create([
+
+        	'name' => 'EMI WHITE', 
+
+            'email' => 'agent2@etp.com',
+            
+            'phone' => '611111111', 
+
+            'adresse' => 'Douala, Ndokotti',
+
+        	'password' => bcrypt('123456'),
+			
+			'id_zone' => 1
 
         ]);
 
         $user3 = User::create([
 
-        	'name' => 'GESTION_FLOTTE', 
+        	'name' => 'CLARISSE JOKO', 
 
-            'email' => 'flotte@gmail.com',
+            'email' => 'gestionnaire_flote@etp.com',
             
-            'phone' => '333333333', 
+            'phone' => '633333333', 
 
             'adresse' => 'Douala, Ndokotti',
 
@@ -65,25 +87,27 @@ class CreateAdminUserSeeder extends Seeder
 
         $user4 = User::create([
 
-        	'name' => 'RECOUVREUR', 
+        	'name' => 'EMMA NUIP', 
 
-            'email' => 'recouvreur@gmail.com',
+            'email' => 'agent_recouvrement@etp.com',
             
-            'phone' => '444444444', 
+            'phone' => '644444444', 
 
             'adresse' => 'Douala, Ndokotti',
 
-        	'password' => bcrypt('123456')
+        	'password' => bcrypt('123456'),
+			
+			'id_zone' => 1
 
         ]);
 
         $user5 = User::create([
 
-        	'name' => 'SUPERVISEUR', 
+        	'name' => 'MIREILLE KIKI', 
 
-            'email' => 'supperviseur@gmail.com',
+            'email' => 'supperviseur@etp.com',
             
-            'phone' => '555555555', 
+            'phone' => '65555555', 
 
             'adresse' => 'Douala, Ndokotti',
 
@@ -126,6 +150,8 @@ class CreateAdminUserSeeder extends Seeder
         $puce_principal_MTN = Puce::create([
 
         	'id_flotte' => 1, 
+			
+			'numero' => '616000000',
 
             'id_agent' => Null,
 
@@ -138,6 +164,8 @@ class CreateAdminUserSeeder extends Seeder
         $puce_principal_Orange = Puce::create([
 
             'id_flotte' => 2, 
+			
+			'numero' => '615000000',
             
             'type' => 3,
 
@@ -149,13 +177,15 @@ class CreateAdminUserSeeder extends Seeder
 
         $puce_sencondaire_Orange = Puce::create([
 
-            'id_flotte' => 2, 
+            'id_flotte' => 1, 
+			
+			'numero' => '614000000',
             
             'type' => 4,
 
             'id_agent' => Null,
             
-            'nom' => \App\Enums\Statut::ORANGE
+            'nom' => "PUCE PRINCIPALE"
 
         ]);
 
@@ -197,6 +227,7 @@ class CreateAdminUserSeeder extends Seeder
 
         //Attribuer le role à l'agent1
         $user2->assignRole([$role2->id]);
+		$user22->assignRole([$role2->id]);
 
         //Attribuer le role à l'agent2
         $user3->assignRole([$role3->id]);

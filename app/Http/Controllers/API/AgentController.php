@@ -29,7 +29,7 @@ class AgentController extends Controller
 
         $superviseur = Roles::SUPERVISEUR;
         $recouvreur = Roles::RECOUVREUR;
-        $this->middleware("permission:$recouvreur|$superviseur");       
+        $this->middleware("permission:$recouvreur|$superviseur");
 
     }
 
@@ -347,19 +347,11 @@ class AgentController extends Controller
             foreach($agents as $agent) {
 
                 $user = User::find($agent->id_user);
-				
-				$zones = json_decode($user->id_zone);
-				$zones_list = [];
-
-				if ($zones != null) {
-					foreach ($zones as $zone) {
-						$zones_list[] = Zone::Find($zone);
-					}
-				}
+				 
 				$puces = is_null($agent) ? [] : $agent->puces;
 
                 $returenedAgents[] = [ 
-					'zones' => $zones_list,
+					'zone' => $user->zone,
 					'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']), 
 					'agent' => $agent,
 					'puces' => $puces 

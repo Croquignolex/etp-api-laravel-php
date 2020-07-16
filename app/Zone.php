@@ -15,6 +15,9 @@ class Zone extends Model
     protected $dates = ['deleted_at'];
     protected $fillable = array('id', 'nom', 'map', 'reference', 'description');
     protected $visible = array('id', 'nom', 'map', 'reference', 'description', 'created_at');
-
+	 
+    public function users() {
+        return $this->hasMany('App\User', 'id_zone');
+    }
 }
 

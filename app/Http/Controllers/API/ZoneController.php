@@ -104,20 +104,22 @@ class ZoneController extends Controller
 		
 		$agents = [];
 		$recouvreurs = [];
-		
-		$users = User::all(); 
+		$users = $zone->users;  
 		 foreach($users as $user) 
 		 {
-			 $userRole = $user->roles->pluck('name','name')->all();
+			 $userRole = $user->roles->first()->name;
+			 $user_agent = Agent::where('id_user', $user->id)->first();
 			 if($userRole === Roles::AGENT) 
 			 {
-				  $user_zones = json_decode($user->id_zone);
-				  if(array_search($zone->id, $user_zones)) $agents[] = $user;
+				 $agents[] = ['user' => $user, 'agent' => $user_agent];
+				  //$user_zones = json_decode($user->id_zone);
+				  //if(array_search($zone->id, $user_zones)) $agents[] = $user;
 			 }
 			 else if($userRole === Roles::RECOUVREUR)
 			 {
-				 $user_zones = json_decode($user->id_zone);
-				 if(array_search($zone->id, $user_zones)) $recouvreurs[] = $user;
+				 $recouvreurs[] = $user;
+				 //$user_zones = json_decode($user->id_zone);
+				 //if(array_search($zone->id, $user_zones)) $recouvreurs[] = $user;
 			 }
 		 }
 
@@ -251,12 +253,34 @@ class ZoneController extends Controller
 
 
         if ($zone->save()) {
+			
+			$users = $zone->users;  
+			$agents = [];
+			$recouvreurs = [];
+			 foreach($users as $user) 
+			 {
+				 $userRole = $user->roles->first()->name;
+				 $user_agent = Agent::where('id_user', $user->id)->first();
+				 if($userRole === Roles::AGENT) 
+				 {
+					 $agents[] = ['user' => $user, 'agent' => $user_agent];
+					  //$user_zones = json_decode($user->id_zone);
+					  //if(array_search($zone->id, $user_zones)) $agents[] = $user;
+				 }
+				 else if($userRole === Roles::RECOUVREUR)
+				 {
+					 $recouvreurs[] = $user;
+					 //$user_zones = json_decode($user->id_zone);
+					 //if(array_search($zone->id, $user_zones)) $recouvreurs[] = $user;
+				 }
+			 }
+		 
             // Renvoyer un message de succès
             return response()->json(
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['zone' => $zone]
+                    'data' => ['zone' => $zone, 'agents' => $agents, 'recouvreurs' => $recouvreurs]
                 ]
             );
         } else {
@@ -271,6 +295,150 @@ class ZoneController extends Controller
         } 
     }
 
+	/**
+     * ajouter un agent à une zone
+     */
+    public function delete_agent(Request $request, $id)
+    {
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [  
+            'id_agent' => ['required', 'numeric']
+        ]);
+        if ($validator->fails()) { 
+            return response()->json(
+                [
+                    'message' => ['error'=>$validator->errors()],
+                    'status' => false,
+                    'data' => null
+                ]
+            );             
+        }
+
+        // Récupérer les données validées 
+		$id_agent = $request->id_agent;
+          
+        // rechercher la flote
+        $zone = Zone::find($id); 
+		$agent = Agent::find($id_agent);
+		$user = User::find($agent->id_user);
+        $agent->deleted_at = now();
+        $user->deleted_at = now();
+		
+		$agent->save();
+		$user->save();
+		
+        if ($agent !== null) {
+			$agents = [];
+			$recouvreurs = [];
+			$users = $zone->users;  
+			 foreach($users as $user) 
+			 {
+				 $userRole = $user->roles->first()->name;
+				 $user_agent = Agent::where('id_user', $user->id)->first();
+				 if($userRole === Roles::AGENT) 
+				 {
+					 $agents[] = ['user' => $user, 'agent' => $user_agent];
+					  //$user_zones = json_decode($user->id_zone);
+					  //if(array_search($zone->id, $user_zones)) $agents[] = $user;
+				 }
+				 else if($userRole === Roles::RECOUVREUR)
+				 {
+					 $recouvreurs[] = $user;
+					 //$user_zones = json_decode($user->id_zone);
+					 //if(array_search($zone->id, $user_zones)) $recouvreurs[] = $user;
+				 }
+			 }
+			 
+            // Renvoyer un message de succès
+            return response()->json(
+                [
+                    'message' => '',
+                    'status' => true,
+                    'data' => ['zone' => $zone, 'agents' => $agents, 'recouvreurs' => $recouvreurs]
+                ]
+            );
+        } else {
+            // Renvoyer une erreur
+            return response()->json(
+                [
+                    'message' => "Erreur l'ors de lsuppression d'un agent",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        } 
+    }
+	
+	/**
+     * Supprimer un recouvreur à une zone
+     */
+    public function delete_recouvreur(Request $request, $id)
+    {
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [  
+            'id_user' => ['required', 'numeric']
+        ]);
+        if ($validator->fails()) { 
+            return response()->json(
+                [
+                    'message' => ['error'=>$validator->errors()],
+                    'status' => false,
+                    'data' => null
+                ]
+            );             
+        }
+
+        // Récupérer les données validées 
+		$id_user = $request->id_user;
+          
+        // rechercher la Zone
+        $zone = Zone::find($id); 
+		$user = User::find($id_user);
+        $user->deleted_at = now();
+		$user->save();
+		
+        if ($user !== null) {
+			$agents = [];
+			$recouvreurs = [];
+			$users = $zone->users;  
+			 foreach($users as $user) 
+			 {
+				 $userRole = $user->roles->first()->name;
+				 $user_agent = Agent::where('id_user', $user->id)->first();
+				 if($userRole === Roles::AGENT) 
+				 {
+					 $agents[] = ['user' => $user, 'agent' => $user_agent];
+					  //$user_zones = json_decode($user->id_zone);
+					  //if(array_search($zone->id, $user_zones)) $agents[] = $user;
+				 }
+				 else if($userRole === Roles::RECOUVREUR)
+				 {
+					 $recouvreurs[] = $user;
+					 //$user_zones = json_decode($user->id_zone);
+					 //if(array_search($zone->id, $user_zones)) $recouvreurs[] = $user;
+				 }
+			 }
+			 
+            // Renvoyer un message de succès
+            return response()->json(
+                [
+                    'message' => '',
+                    'status' => true,
+                    'data' => ['zone' => $zone, 'agents' => $agents, 'recouvreurs' => $recouvreurs]
+                ]
+            );
+        } else {
+            // Renvoyer une erreur
+            return response()->json(
+                [
+                    'message' => "Erreur l'ors de lsuppression d'un recouvreur",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        } 
+    }
+	
     /**
      * //lister les zone
      */
@@ -285,23 +453,26 @@ class ZoneController extends Controller
 				$agents = [];
 				$recouvreurs = [];
 				
-                $users = User::all(); 
+                $users = $zone->users;  
 				 foreach($users as $user) 
-				 {
-					 $userRole = $user->roles->pluck('name','name')->all();
+				 { 
+					 $userRole = $user->roles->first()->name;
+					 $user_agent = Agent::where('id_user', $user->id)->first();
 					 if($userRole === Roles::AGENT) 
 					 {
-						  $user_zones = json_decode($user->id_zone);
-						  if(array_search($zone->id, $user_zones)) $agents[] = $user;
+						 $agents[] = ['user' => $user, 'agent' => $user_agent];
+						  //$user_zones = json_decode($user->id_zone);
+						  //if(array_search($zone->id, $user_zones)) $agents[] = $user;
 					 }
 					 else if($userRole === Roles::RECOUVREUR)
 					 {
-						 $user_zones = json_decode($user->id_zone);
-						 if(array_search($zone->id, $user_zones)) $recouvreurs[] = $user;
+						 $recouvreurs[] = $user;
+						 //$user_zones = json_decode($user->id_zone);
+						 //if(array_search($zone->id, $user_zones)) $recouvreurs[] = $user;
 					 }
 				 }
 
-                $returenedZone[] = ['zone' => $zone, 'agents' => count($agents), 'recouvreurs' => count($recouvreurs)];
+                $returenedZone[] = ['zone' => $zone, 'agents' => $agents, 'recouvreurs' => $recouvreurs];
             }    
 			
 			
@@ -329,16 +500,46 @@ class ZoneController extends Controller
     public function destroy($id)
     {
         if (Zone::find($id)) {
-            $zone = Zone::find($id);
-            $zone->deleted_at = now();
-            if ($zone->save()) {
+            $zoneDB = Zone::find($id);
+            $zoneDB->deleted_at = now();
+            if ($zoneDB->save()) {
+				
+				$zones = Zone::where('deleted_at', null)->get();
+		
+				$returenedZone = [];
+				foreach($zones as $zone) 
+				{
+					$agents = [];
+					$recouvreurs = [];
+					
+					$users = $zone->users;  
+					 foreach($users as $user) 
+					 { 
+						 $userRole = $user->roles->first()->name;
+						 $user_agent = Agent::where('id_user', $user->id)->first();
+						 if($userRole === Roles::AGENT) 
+						 {
+							 $agents[] = ['user' => $user, 'agent' => $user_agent];
+							  //$user_zones = json_decode($user->id_zone);
+							  //if(array_search($zone->id, $user_zones)) $agents[] = $user;
+						 }
+						 else if($userRole === Roles::RECOUVREUR)
+						 {
+							 $recouvreurs[] = $user;
+							 //$user_zones = json_decode($user->id_zone);
+							 //if(array_search($zone->id, $user_zones)) $recouvreurs[] = $user;
+						 }
+					 }
+
+					$returenedZone[] = ['zone' => $zone, 'agents' => $agents, 'recouvreurs' => $recouvreurs];
+				}   
 
                 // Renvoyer un message de succès
                 return response()->json(
                     [
                         'message' => 'zone archivée',
                         'status' => true,
-                        'data' => null
+                        'data' => ['zones' => $returenedZone]
                     ]
                 );
             } else {

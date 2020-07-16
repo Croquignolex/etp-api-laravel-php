@@ -14,7 +14,7 @@ class CreateZonesTable extends Migration
     public function up()
     {
         Schema::create('zones', function (Blueprint $table) {
-            $table->bigIncrements('id');            
+            $table->increments('id');            
             $table->string('nom')->nullable();
             $table->longText('map')->nullable();
             $table->string('reference')->nullable();

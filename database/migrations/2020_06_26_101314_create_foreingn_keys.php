@@ -158,10 +158,14 @@ class CreateForeingnKeys extends Migration
                 ->on('users')
 				->onDelete('cascade')
 				->onUpdate('no action');
+				
+			 $table->foreign('id_zone')
+                ->references('id')
+                ->on('zones')
+				->onDelete('cascade')
+				->onUpdate('no action');
         });
-
-
-
+  
         // pour la table puces
         Schema::table('puces', function(Blueprint $table) {
 			//migrations des clés
