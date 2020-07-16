@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\User;
 use Illuminate\Support\Facades\Validator;
 use App\Flote;
+use App\Enums\Roles;
 use App\Puce;
 use Illuminate\Support\Facades\Auth;
 
@@ -22,7 +23,12 @@ class Demande_destockage_recouvreurController extends Controller
      */
 
     function __construct(){
-        $this->middleware('permission:Recouvreur|Superviseur|Gestionnaire de flotte');
+
+        $recouvreur = Roles::RECOUVREUR;
+        $superviseur = Roles::SUPERVISEUR;
+        $ges_flotte = Roles::GESTION_FLOTTE;
+        $this->middleware("permission:$recouvreur|$superviseur|$ges_flotte");
+
     }
 
     /**

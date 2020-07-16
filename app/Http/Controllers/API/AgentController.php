@@ -7,6 +7,7 @@ use App\Agent;
 use App\Zone;
 use App\Caisse;
 use App\User;
+use App\Enums\Roles;
 use App\Utiles\ImageFromBase64;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Controller;
@@ -26,7 +27,9 @@ class AgentController extends Controller
 
     {
 
-        $this->middleware('permission:Superviseur');
+        $superviseur = Roles::SUPERVISEUR;
+        $recouvreur = Roles::RECOUVREUR;
+        $this->middleware("permission:$recouvreur|$superviseur");       
 
     }
 
@@ -340,14 +343,27 @@ class AgentController extends Controller
         if (Agent::where('deleted_at', null)) {
             $agents = Agent::where('deleted_at', null)->get();
             $returenedAgents = [];
-            
-
-
+             	
             foreach($agents as $agent) {
 
                 $user = User::find($agent->id_user);
-                $zone = Zone::find($user->id_zone);
-                $returenedAgents[] = ['agent' => $agent, 'user' => $user, 'zone' => $zone];
+				
+				$zones = json_decode($user->id_zone);
+				$zones_list = [];
+
+				if ($zones != null) {
+					foreach ($zones as $zone) {
+						$zones_list[] = Zone::Find($zone);
+					}
+				}
+				$puces = is_null($agent) ? [] : $agent->puces;
+
+                $returenedAgents[] = [ 
+					'zones' => $zones_list,
+					'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']), 
+					'agent' => $agent,
+					'puces' => $puces 
+				];
 
             } 
 

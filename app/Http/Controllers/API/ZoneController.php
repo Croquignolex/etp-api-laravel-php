@@ -9,7 +9,6 @@ use Illuminate\Http\Request;
 use App\Agent;
 use App\Zone;
 use App\Enums\Roles;
-use App\Utiles\ImageFromBase64;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Controller;
 use App\User;
@@ -27,7 +26,8 @@ class ZoneController extends Controller
 
     function __construct(){
 
-        $this->middleware('permission:Superviseur');
+        $superviseur = Roles::SUPERVISEUR;
+        $this->middleware("permission:$superviseur");
 
     }
  

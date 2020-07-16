@@ -76,13 +76,6 @@ Route::group(['middleware' => 'auth:api'], function(){
             //Changer mon avatar
             Route::post('edit_avatar', 'API\LoginController@update_picture');
 
-
- 
-
-    
-
-
-
     /*
      /////////////////////GESTION DES AGENTS///////////////////////////
     */
@@ -164,6 +157,10 @@ Route::group(['middleware' => 'auth:api'], function(){
 		// ajouter une puce à une flotte
         Route::post('ajouter_puce_flote/{id}', 'API\FloteController@ajouter_puce')
         ->where('id', '[0-9]+');
+		
+		// supprimer une puce à une flotte
+        Route::post('delete_puce_flote/{id}', 'API\FloteController@delete_puce')
+        ->where('id', '[0-9]+');
 
 
             /*
@@ -210,18 +207,19 @@ Route::group(['middleware' => 'auth:api'], function(){
     */
 
 
-        //pour tous les deux cas            
 
+          //par un Agent     
             //Details d'une demande de flote
-            Route::get('detail_demandes_flote/{id}', 'API\DemandeflotteController@show')
+            Route::get('detail_demandes_flote/{id}', 'API\DemandeflotteController@show') 
             ->where('id', '[0-9]+');
 			
 			//Details d'une demande de flote
             Route::post('modifier_demandes_flote/{id}', 'API\DemandeflotteController@modifier')
             ->where('id', '[0-9]+');
-
-        //par un Agent
-
+			
+			Route::post('annuler_demandes_flote/{id}', 'API\DemandeflotteController@annuler')
+            ->where('id', '[0-9]+');
+			 
             //Creer une demande de flote
             Route::post('demande_flote', 'API\DemandeflotteController@store');
 
@@ -233,9 +231,19 @@ Route::group(['middleware' => 'auth:api'], function(){
 
 
         //pour un Agent
+			Route::post('annuler_demandes_flote_agent/{id}', 'API\Demande_flote_recouvreurController@annuler')
+			->where('id', '[0-9]+');
+			
+			//Details d'une demande de flote
+            Route::post('modifier_demandes_flote_agent/{id}', 'API\Demande_flote_recouvreurController@modifier')
+            ->where('id', '[0-9]+');
 
             //Creer une demande de flote pour un Agent
             Route::post('demande_flote_agent', 'API\Demande_flote_recouvreurController@store');
+			
+			//Details d'une demande de flote
+            Route::get('detail_demandes_flote_agent/{id}', 'API\Demande_flote_recouvreurController@show')
+            ->where('id', '[0-9]+');
 
             //lister toutes les demandes de flotes
             Route::get('list_all_status_demande_flote', 'API\Demande_flote_recouvreurController@list_all_status_all_user');
@@ -322,22 +330,20 @@ Route::group(['middleware' => 'auth:api'], function(){
     //////////////////////Flottage/////////////////////
     */
 
-        //pour tous les deux cas 
         
-            //Details d'un Flottage
-            Route::get('detail_flottage/{id}', 'API\FlotageController@show')
-            ->where('id', '[0-9]+'); 
+        //Details d'un Flottage
+        Route::get('detail_flottage/{id}', 'API\FlotageController@show')
+        ->where('id', '[0-9]+'); 
 
-        //par un gestionnaire de flotte
+        //lister les Flottages peu importe le statut
+        Route::get('list_all_flottage', 'API\FlotageController@list_all');
 
-            //Creer un Flottage
-            Route::post('flottage', 'API\FlotageController@store');   
+
+        //Creer un Flottage 
+        Route::post('flottage', 'API\FlotageController@store');  
             
-            //lister les Flottages peu importe le statut
-            Route::get('list_all_flottage', 'API\FlotageController@list_all_status');
-
-            //Annuler un Flottage
-            Route::get('cancel_flottage', 'API\FlotageController@list_all_status');         
+        //par un agent de recouvrement
+        Route::post('flottage', 'API\FlotageController@store_by_ar');       
 
 
 });

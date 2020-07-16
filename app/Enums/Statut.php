@@ -26,7 +26,7 @@ class Statut
     const AGENT = 'Puce Agent';
     const ETP = 'Puce Agent ETP';
     const FLOTTAGE = 'Puce Flottage';
-    const FLOTTAGE_SECONDAIRE = 'Puce Flotage Sencondaire';
+    const FLOTTAGE_SECONDAIRE = 'Master SIM';
 
     /**
      * Returns the list of all enum variants

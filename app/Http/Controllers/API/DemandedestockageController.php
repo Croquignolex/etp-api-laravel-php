@@ -10,6 +10,7 @@ use App\User;
 use Illuminate\Support\Facades\Validator;
 use App\Flote;
 use App\Puce;
+use App\Enums\Roles;
 use Illuminate\Support\Facades\Auth;
 
 
@@ -25,7 +26,11 @@ class DemandedestockageController extends Controller
 
     function __construct(){
 
-        $this->middleware('permission:Recouvreur|Agent|Superviseur|Gestionnaire de flotte');
+        $recouvreur = Roles::RECOUVREUR;
+        $agent = Roles::AGENT;
+        $superviseur = Roles::SUPERVISEUR;
+        $ges_flotte = Roles::GESTION_FLOTTE;
+        $this->middleware("permission:$recouvreur|$agent|$superviseur|$ges_flotte"); 
 
     }
 

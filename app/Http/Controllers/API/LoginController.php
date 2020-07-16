@@ -101,7 +101,7 @@ class LoginController extends Controller
 			
 			// recuperer l'agent et ses puces associé à l'utilisateur (utile pour l'agent)
 			$agent = Agent::where('id_user', $user->id)->first();
-			$puces = is_null($agent) ? $agent : $agent->puces;
+			$puces = is_null($agent) ? [] : $agent->puces;
 
             // Définir quand le token va s'expirer
             /*$token->token->expires_at = Carbon::now()->addHour();

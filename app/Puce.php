@@ -13,9 +13,9 @@ class Puce extends Model
     use SoftDeletes;
 
     protected $dates = ['deleted_at'];
-    protected $fillable = array('id', 'nom', 'id_flotte', 'id_agent', 'type', 'reference', 'numero', 'solde', 'description');
-    protected $visible = array('id', 'nom', 'id_flotte', 'id_agent', 'numero', 'type', 'reference', 'solde', 'description', 'created_at');
 
+    protected $fillable = array('id', 'nom', 'id_flotte', 'id_agent', 'reference', 'numero', 'type', 'solde', 'description');
+    protected $visible = array('id', 'nom', 'id_flotte', 'id_agent', 'numero', 'reference', 'type', 'description', 'created_at');
 
     public function flote()
     {
