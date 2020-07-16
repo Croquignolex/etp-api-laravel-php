@@ -109,7 +109,7 @@ class PuceController extends Controller
                 [
                     'message' => '',
                     'status' => true, 
-                    'data' => ['puce' => $puce, 'flote' => $puce->flote, 'agent' => $agent, 'user' => $user]
+                    'data' => ['puce' => $puce, 'flote' => $puce->flote, 'type' => $puce->type_puce, 'agent' => $agent, 'user' => $user]
                 ]
             ); 
         }else{ 
@@ -177,7 +177,7 @@ class PuceController extends Controller
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['puce' => $puce, 'flote' => $puce->flote, 'agent' => $agent, 'user' => $user]
+                    'data' => ['puce' => $puce, 'flote' => $puce->flote, 'type' => $puce->type_puce, 'agent' => $agent, 'user' => $user]
                 ]
             );
         } else {
@@ -229,7 +229,7 @@ class PuceController extends Controller
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['puce' => $puce, 'flote' => $puce->flote, 'agent' => $agent, 'user' => $user]
+                    'data' => ['puce' => $puce, 'flote' => $puce->flote, 'type' => $puce->type_puce, 'agent' => $agent, 'user' => $user]
                 ]
             );
         } else {
@@ -281,7 +281,7 @@ class PuceController extends Controller
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['puce' => $puce, 'flote' => $puce->flote, 'agent' => $agent, 'user' => $user]
+                    'data' => ['puce' => $puce, 'flote' => $puce->flote, 'type' => $puce->type_puce, 'agent' => $agent, 'user' => $user]
                 ]
             );
         } else {
@@ -312,7 +312,7 @@ class PuceController extends Controller
 				$user = is_null($id_agent) ? $id_agent : User::find($puce->agent->id_user); 
 				//$flote = Flote::find($puce->id_flotte);
 				//$nom = $flote->nom;  
-                $returenedPuces[] = ['puce' => $puce, 'flote' => $puce->flote, 'agent' => $agent, 'user' => $user]; 
+                $returenedPuces[] = ['puce' => $puce, 'flote' => $puce->flote, 'type' => $puce->type_puce, 'agent' => $agent, 'user' => $user]; 
             } 
 			
             return response()->json(
@@ -407,7 +407,7 @@ class PuceController extends Controller
 					$user = is_null($id_agent) ? $id_agent : User::find($puce->agent->id_user); 
 					//$flote = Flote::find($puce->id_flotte);
 					//$nom = $flote->nom;  
-					$returenedPuces[] = ['puce' => $puce, 'flote' => $puce->flote, 'agent' => $agent, 'user' => $user]; 
+					$returenedPuces[] = ['puce' => $puce, 'flote' => $puce->flote, 'type' => $puce->type_puce, 'agent' => $agent, 'user' => $user]; 
 				} 
                 // Renvoyer un message de succès
                 return response()->json(
