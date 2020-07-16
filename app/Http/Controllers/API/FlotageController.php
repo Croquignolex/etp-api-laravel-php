@@ -92,7 +92,7 @@ class FlotageController extends Controller
 
             //On se rassure que la puce passée en paramettre est reelement l'une des puces de flottage sollicités
             if ($type_puce == \App\Enums\Statut::AGENT || $type_puce == \App\Enums\Statut::ETP || $puce_etp->id_flotte != $puce_agent->id_flotte) {
-                return response()->json(
+                return response()->json(  
                     [
                         'message' => "cette puce n'est pas capable d'effectuer un flottagage",
                         'status' => false,
