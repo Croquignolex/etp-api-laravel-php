@@ -55,6 +55,13 @@ Route::group(['middleware' => 'auth:api'], function(){
             //Approuver ou desapprouver un utilisateur
             Route::post('edit_user_status/{id}', 'API\UserController@edit_user_status')
             ->where('id', '[0-9]+');
+			
+			 //Creation d'un agent de recouvrement
+            Route::post('create_recouvreur', 'API\UserController@create_recouvreur');
+			
+			 //Changer la zone d'un utilisateur
+            Route::post('edit_zone_user/{id}', 'API\UserController@edit_zone_user')
+            ->where('id', '[0-9]+');
         
         /////////////////User sur lui meme
 
@@ -154,6 +161,8 @@ Route::group(['middleware' => 'auth:api'], function(){
             /*
     //////////////////////GESTION DES PUCE /////////////////////
     */
+		//liste des types de puces
+        Route::get('types_puces_list', 'API\PuceController@types_puces_list');
     
         //Creer une puce
         Route::post('store_puce', 'API\PuceController@store');

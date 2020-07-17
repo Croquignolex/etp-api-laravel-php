@@ -35,7 +35,6 @@ class UserController extends Controller
 
    }
    
-
     /**
      * Inscription d'un utilisateur
      *
@@ -159,6 +158,7 @@ class UserController extends Controller
                     'data' => [
 						'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
 						'role' => $user->roles->first(), 
+						'zone' => $user->zone
 					]
                 ]
             );
@@ -215,7 +215,8 @@ class UserController extends Controller
  
                 $returenedUers[] = [
 					'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']), 
-					'role' => $user->roles->first()
+					'role' => $user->roles->first(),
+					'zone' => $user->zone
 				];
 
             }         
@@ -257,7 +258,8 @@ class UserController extends Controller
  
                 $returenedUers[] = [
 					'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']), 
-					'role' => $user->roles->first()
+					'role' => $user->roles->first(),
+					'zone' => $user->zone
 				];
 
             }         
@@ -308,7 +310,8 @@ class UserController extends Controller
 	 
 					$returenedUers[] = [
 						'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']), 
-						'role' => $user->roles->first()
+						'role' => $user->roles->first(),
+						'zone' => $user->zone
 					];
 
 				}        
@@ -417,6 +420,7 @@ class UserController extends Controller
                    'data' => [
 						'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
 						'role' => $user->roles->first(), 
+						'zone' => $user->zone
 					]
                 ]
             );
@@ -439,7 +443,6 @@ class UserController extends Controller
      */ 
     public function edit_role_user(Request $request, $id) 
     { 
-
         //voir si l'utilisateur à modifier existe
         if(!User::Find($id)){
 
@@ -511,5 +514,150 @@ class UserController extends Controller
             );
         } 
     } 
+	
+	
+ /** 
+     * modification du role d'un utilisateur 
+     */ 
+    public function edit_zone_user(Request $request, $id) 
+    { 
+        //voir si l'utilisateur à modifier existe
+        if(!User::Find($id)){
 
+            // Renvoyer un message de notification
+            return response()->json(
+                [
+                    'message' => 'utilisateur non trouvé',
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+            
+        }
+        
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [ 
+
+            'id_zone' => ['required']
+
+        ]);
+        if ($validator->fails()) { 
+            return response()->json(
+                [
+                    'message' => ['error'=>$validator->errors()],
+                    'status' => false,
+                    'data' => null
+                ]
+            );            
+        }
+
+        // on verifie si la zone est définit
+        $zoneExist = Zone::find($request->input('id_zone'));
+        if ($zoneExist === null) {
+            return response()->json(
+                [
+                    'message' => 'cette zone n est pas défini',
+                    'status' => false,
+                    'data' => null
+                ]
+            ); 
+        }
+ 
+        $user = User::find($id);
+		$user->id_zone = $request->input('id_zone');
+
+        if ($user->save()) {            
+
+            // Renvoyer un message de succès          
+            return response()->json(
+                [
+                    'message' => 'Role modifié',
+                    'status' => true,
+                     'data' => [
+						'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
+						'zone' => $user->zone
+					]
+                ]
+            );
+        } else {
+
+            // Renvoyer une erreur
+            return response()->json(
+                [
+                    'message' => 'erreur lors de la modification',
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        } 
+    } 
+	/** 
+     * Creation d'un responsable de zone
+     */
+    public function create_recouvreur(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required',
+            'phone' => 'required|numeric|unique:users,phone',
+            'adresse' => 'nullable',
+            'id_zone' => ['required'], 
+            'description' => 'nullable',
+            'email' => 'required|email|unique:users,email', 
+            'password' => 'required|string|min:6',  
+        ]);
+        if ($validator->fails()) { 
+            return response()->json(
+                [
+                    'message' => ['error'=>$validator->errors()],
+                    'status' => false,
+                    'data' => null
+                ]
+            );             
+        }
+ 
+        $role = Role::where('name', Roles::RECOUVREUR)->first();
+
+        $input = $request->all(); 
+        $input['password'] = bcrypt($input['password']); 
+        //$input['avatar'] = $server_image_name_path;
+        $input['add_by'] = Auth::user()->id;
+        //$input['id_zone'] = json_encode($request->id_zone);
+        $user = User::create($input);
+
+        if (isset($user)) {
+            //On crée la caisse de l'utilisateur
+            $caisse = new Caisse([
+                'nom' => 'Caisse ' . $request->name,
+                'description' => Null,
+                'id_user' => $user->id,
+                'reference' => Null,
+                'solde' => 0
+            ]);
+            $caisse->save();
+
+            //on lui donne un role
+            $user->assignRole($role);
+
+            //On lui crée un token
+            $success['token'] =  $user->createToken('MyApp')->accessToken; 
+            $success['user'] =  $user;
+
+            return response()->json(
+                [
+                    'message' => '',
+                    'status' => true,
+                    'data' => ['user'=>$success]
+                ]
+            );
+        }     
+            
+        
+        return response()->json(
+            [
+                'message' => "l'utilisateur n'a pas été créé",
+                'status' => false,
+                'data' => null
+            ]
+        ); 
+    }
 }
