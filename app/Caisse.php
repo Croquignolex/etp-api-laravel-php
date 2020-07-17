@@ -22,4 +22,9 @@ class Caisse extends Model
         return $this->hasMany('App\Versement', 'id_caisse');
     }
 
+    public function user()
+    {
+        return $this->belongsTo('App\User', 'id_user');
+    }
+
 }

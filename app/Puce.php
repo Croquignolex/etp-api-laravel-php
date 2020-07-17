@@ -13,13 +13,18 @@ class Puce extends Model
     use SoftDeletes;
 
     protected $dates = ['deleted_at'];
+
     protected $fillable = array('id', 'nom', 'id_flotte', 'id_agent', 'reference', 'numero', 'type', 'solde', 'description');
     protected $visible = array('id', 'nom', 'id_flotte', 'id_agent', 'numero', 'reference', 'type', 'description', 'created_at');
-
 
     public function flote()
     {
         return $this->belongsTo('App\Flote', 'id_flotte');
+    }
+
+    public function type_puce()
+    {
+        return $this->belongsTo('App\type_puce', 'type');
     }
 
     public function agent()

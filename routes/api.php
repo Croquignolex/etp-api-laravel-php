@@ -195,7 +195,7 @@ Route::group(['middleware' => 'auth:api'], function(){
 
           //par un Agent     
             //Details d'une demande de flote
-            Route::get('detail_demandes_flote/{id}', 'API\DemandeflotteController@show')
+            Route::get('detail_demandes_flote/{id}', 'API\DemandeflotteController@show') 
             ->where('id', '[0-9]+');
 			
 			//Details d'une demande de flote
@@ -244,7 +244,7 @@ Route::group(['middleware' => 'auth:api'], function(){
     //////////////////////Demande de destockage/////////////////////
     */
 
-        //par tout les deux cas 
+        //pour tous les deux cas 
         
             //Details d'une demande de destockage
             Route::get('detail_demandes_destockage/{id}', 'API\DemandedestockageController@show')
@@ -312,7 +312,29 @@ Route::group(['middleware' => 'auth:api'], function(){
         Route::post('delete_agent_zone/{id}', 'API\ZoneController@delete_agent')
         ->where('id', '[0-9]+');
 
-		// supprimer un recouvreur à une zone
+        // supprimer un recouvreur à une zone
         Route::post('delete_recouvreur_zone/{id}', 'API\ZoneController@delete_recouvreur')
         ->where('id', '[0-9]+');
+
+
+        
+        /*
+    //////////////////////Flottage/////////////////////
+    */
+
+        
+        //Details d'un Flottage
+        Route::get('detail_flottage/{id}', 'API\FlotageController@show')
+        ->where('id', '[0-9]+'); 
+
+        //lister les Flottages peu importe le statut
+        Route::get('list_all_flottage', 'API\FlotageController@list_all');
+
+
+        //Creer un Flottage 
+        Route::post('flottage', 'API\FlotageController@store');  
+            
+        //par un agent de recouvrement
+        Route::post('flottage', 'API\FlotageController@store_by_ar');       
+
 });

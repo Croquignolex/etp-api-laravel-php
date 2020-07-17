@@ -6,7 +6,7 @@ use App\Agent;
 use App\Demande_flote;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-
+use App\Enums\Roles;
 use App\User;
 use App\Enums\Roles;
 use Illuminate\Support\Facades\Validator;
@@ -25,7 +25,12 @@ class Demande_flote_recouvreurController extends Controller
      */
 
     function __construct(){
-        $this->middleware(`permission:{RECOUVREUR}|Superviseur|{GESTION_FLOTTE}`);
+
+        $superviseur = Roles::SUPERVISEUR;
+        $recouvreur = Roles::RECOUVREUR;
+        $ges_flotte = Roles::GESTION_FLOTTE;
+        $this->middleware("permission:$recouvreur|$superviseur|$ges_flotte");
+
     }
 
 
@@ -195,8 +200,7 @@ class Demande_flote_recouvreurController extends Controller
      */
     public function list_all()
     {
-
-
+        
         //On recupere les 'demande de flotte'
         $demandes_flote = Demande_flote::where('statut', \App\Enums\Statut::EN_ATTENTE)
         ->get();  
@@ -205,33 +209,27 @@ class Demande_flote_recouvreurController extends Controller
             return response()->json(
                 [
                     'message' => 'aucune demande trouvée',
-                    'status' => false,
+                    'status' => true,
                     'data' => null
                 ]
             );
         }
-
+        
         foreach($demandes_flote as $demande_flote) {
-
+            
             //recuperer l'utilisateur concerné
                 $user = User::Find($demande_flote->id_user);
-
+                
             //recuperer l'agent concerné
                 $agent = Agent::where('id_user', $user->id)->First();
-
-            //recuperer la flotte concerné
-                $flote = Flote::Find($demande_flote->user_source);
-
+                
             //recuperer la puce de l'agent
-            $puce = Puce::where('id_flotte', $flote->id)
-            ->where('id_agent', $agent->id)
-            ->First();
-
-            $demandes_flotes[] = ['demande_flote' => $demande_flote, 'user' => $user, 'agent' => $agent, 'flote' => $flote, 'puce' => $puce,];
+            $puce = Puce::find($demande_flote->id_puce);
+            $demandes_flotes[] = ['demande_flote' => $demande_flote, 'user' => $user, 'agent' => $agent, 'puce' => $puce,];
 
         }
 
-
+        
         if (!empty($demandes_flote)) {
 
             return response()->json(
@@ -246,7 +244,7 @@ class Demande_flote_recouvreurController extends Controller
             return response()->json(
                 [
                     'message' => 'pas de dmande de flote à lister',
-                    'status' => false,
+                    'status' => true,
                     'data' => null
                 ]
             );
@@ -285,10 +283,7 @@ class Demande_flote_recouvreurController extends Controller
             //recuperer l'agent concerné
                 $agent = Agent::where('id_user', $user->id)->First();
 
-             //recuperer le demandeur 
-			//$demandeur = User::Find($demande_flote->add_by);
-
-            $demandes_flotes[] = ['demande_flote' => $demande_flote, 'demandeur' => $user, 'agent' => $agent, 'user' => $user, 'puce' => $demande_flote->puce]; 
+            $demandes_flotes[] = ['demande_flote' => $demande_flote, 'agent' => $agent, 'user' => $user, 'puce' => $demande_flote->puce]; 
         }
 
 
