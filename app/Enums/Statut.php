@@ -23,10 +23,10 @@ class Statut
     const LU = 'lu';
 
     //types de puce
-    const AGENT = 'Puce Agent';
-    const ETP = 'Puce Agent ETP';
-    const FLOTTAGE = 'Puce Flottage';
-    const FLOTTAGE_SECONDAIRE = 'Master SIM';
+    const AGENT = 'AGENT';
+    const ETP = 'AGENT ETP';
+    const FLOTTAGE = 'FLOTTAGE';
+    const FLOTTAGE_SECONDAIRE = 'MASTER SIM';
 
     /**
      * Returns the list of all enum variants

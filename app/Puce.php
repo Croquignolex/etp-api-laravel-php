@@ -22,11 +22,6 @@ class Puce extends Model
         return $this->belongsTo('App\Flote', 'id_flotte');
     }
 
-    public function type_puce()
-    {
-        return $this->belongsTo('App\type_puce', 'type');
-    }
-
     public function agent()
     {
         return $this->belongsTo('App\Agent', 'id_agent');
@@ -36,5 +31,5 @@ class Puce extends Model
     {
         return $this->belongsTo('App\Type_puce', 'type');
     }
-    
+
 }

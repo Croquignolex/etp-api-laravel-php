@@ -8,7 +8,6 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Enums\Roles;
 use App\User;
-use App\Enums\Roles;
 use Illuminate\Support\Facades\Validator;
 use App\Flote;
 use App\Puce;
@@ -16,7 +15,7 @@ use Illuminate\Support\Facades\Auth;
 
 class Demande_flote_recouvreurController extends Controller
 {
-    
+
 
     /**
 
@@ -41,39 +40,39 @@ class Demande_flote_recouvreurController extends Controller
     public function store(Request $request)
     {
         // Valider données envoyées
-        $validator = Validator::make($request->all(), [ 
+        $validator = Validator::make($request->all(), [
             'montant' => ['required', 'Numeric'],
             'id_agent' => ['required', 'Numeric'],
-            'id_puce' => ['required', 'Numeric'] 
+            'id_puce' => ['required', 'Numeric']
         ]);
-        if ($validator->fails()) { 
+        if ($validator->fails()) {
             return response()->json(
                 [
                     'message' => ['error'=>$validator->errors()],
                     'status' => false,
                     'data' => null
                 ]
-            );            
-        }  
+            );
+        }
 
-        if (!Agent::Find($request->id_agent)) { 
+        if (!Agent::Find($request->id_agent)) {
             return response()->json(
                 [
                     'message' => "Cet Agent n'existe pas",
                     'status' => false,
                     'data' => null
                 ]
-            );            
+            );
         }
 
-        if (!Puce::Find($request->id_puce)) { 
+        if (!Puce::Find($request->id_puce)) {
             return response()->json(
                 [
                     'message' => "Cette Puce n'existe pas",
                     'status' => false,
                     'data' => null
                 ]
-            );            
+            );
         }
 
         //recuperer l'utilisateur connecté (c'est lui l'agent)
@@ -85,7 +84,7 @@ class Demande_flote_recouvreurController extends Controller
         $user = User::find($agent->id_user);
 
         // Récupérer les données validées
-             
+
         $id_user = $user->id;
         $add_by = $add_by->id;
         $reference = null;
@@ -128,20 +127,20 @@ class Demande_flote_recouvreurController extends Controller
                     'data' => null
                 ]
             );
-        } 
+        }
     }
 
 
     /**
-     * //lister toutes les demandes de flotes 
+     * //lister toutes les demandes de flotes
      */
     public function list_all_status_all_user()
     {
 
 
         //On recupere les 'demande de flotte'
-        $demandes_flote = Demande_flote::get();  
-        
+        $demandes_flote = Demande_flote::get();
+
         if ($demandes_flote->count() == 0) {
             return response()->json(
                 [
@@ -182,7 +181,7 @@ class Demande_flote_recouvreurController extends Controller
                     'data' => ['demandes_flotes' => $demandes_flotes]
                 ]
             );
-            
+
          }else{
             return response()->json(
                 [
@@ -200,11 +199,11 @@ class Demande_flote_recouvreurController extends Controller
      */
     public function list_all()
     {
-        
+
         //On recupere les 'demande de flotte'
         $demandes_flote = Demande_flote::where('statut', \App\Enums\Statut::EN_ATTENTE)
-        ->get();  
-        
+        ->get();
+
         if ($demandes_flote->count() == 0) {
             return response()->json(
                 [
@@ -214,22 +213,22 @@ class Demande_flote_recouvreurController extends Controller
                 ]
             );
         }
-        
+
         foreach($demandes_flote as $demande_flote) {
-            
+
             //recuperer l'utilisateur concerné
                 $user = User::Find($demande_flote->id_user);
-                
+
             //recuperer l'agent concerné
                 $agent = Agent::where('id_user', $user->id)->First();
-                
+
             //recuperer la puce de l'agent
             $puce = Puce::find($demande_flote->id_puce);
             $demandes_flotes[] = ['demande_flote' => $demande_flote, 'user' => $user, 'agent' => $agent, 'puce' => $puce,];
 
         }
 
-        
+
         if (!empty($demandes_flote)) {
 
             return response()->json(
@@ -239,7 +238,7 @@ class Demande_flote_recouvreurController extends Controller
                     'data' => ['demandes_flotes' => $demandes_flotes]
                 ]
             );
-            
+
          }else{
             return response()->json(
                 [
@@ -261,8 +260,8 @@ class Demande_flote_recouvreurController extends Controller
     {
         //On recupere les 'demande de flotte'
         $demandes_flote = Demande_flote::where('add_by', Auth::user()->id)
-        ->get();  
-        
+        ->get();
+
         /*if ($demandes_flote->count() == 0) {
             return response()->json(
                 [
@@ -272,7 +271,7 @@ class Demande_flote_recouvreurController extends Controller
                 ]
             );
         }*/
-		
+
 		$demandes_flotes = [];
 
         foreach($demandes_flote as $demande_flote) {
@@ -283,7 +282,7 @@ class Demande_flote_recouvreurController extends Controller
             //recuperer l'agent concerné
                 $agent = Agent::where('id_user', $user->id)->First();
 
-            $demandes_flotes[] = ['demande_flote' => $demande_flote, 'agent' => $agent, 'user' => $user, 'puce' => $demande_flote->puce]; 
+            $demandes_flotes[] = ['demande_flote' => $demande_flote, 'agent' => $agent, 'user' => $user, 'puce' => $demande_flote->puce];
         }
 
 
@@ -296,7 +295,7 @@ class Demande_flote_recouvreurController extends Controller
                     'data' => ['demandes_flotes' => $demandes_flotes]
                 ]
             );
-            
+
         // }else{
             /*return response()->json(
                 [
@@ -324,7 +323,7 @@ class Demande_flote_recouvreurController extends Controller
                 $user = $demande_flote->user;
 
             //recuperer l'agent concerné
-                $agent = Agent::where('id_user', $user->id)->first(); 
+                $agent = Agent::where('id_user', $user->id)->first();
 
             return response()->json(
                 [
@@ -351,7 +350,7 @@ class Demande_flote_recouvreurController extends Controller
      * //lister mes demandes de flotes en attente
      */
     public function list()
-    { 
+    {
         //On recupere mes 'demande de flotte'
         $demandes_flote = Demande_flote::where('statut', \App\Enums\Statut::EN_ATTENTE)
         ->where('add_by', Auth::user()->id)
@@ -398,7 +397,7 @@ class Demande_flote_recouvreurController extends Controller
                     'data' => ['demandes_flotes' => $demandes_flotes]
                 ]
             );
-            
+
          }else{
             return response()->json(
                 [
@@ -417,12 +416,12 @@ class Demande_flote_recouvreurController extends Controller
     {
 		$demande_floteDB = Demande_flote::find($id);
 		$demande_floteDB->statut = \App\Enums\Statut::ANNULE;
-		
+
         // creation de La demande
         if ($demande_floteDB->save()) {
 			//On recupere les 'demande de flotte'
-			$demandes_flote = Demande_flote::where('add_by', Auth::user()->id)->get();  
-			
+			$demandes_flote = Demande_flote::where('add_by', Auth::user()->id)->get();
+
 			$demandes_flotes = [];
 
 			foreach($demandes_flote as $demande_flote) {
@@ -432,9 +431,9 @@ class Demande_flote_recouvreurController extends Controller
 				//recuperer l'agent concerné
 				$agent = Agent::where('id_user', $user->id)->first();
 
-				$demandes_flotes[] = ['demande_flote' => $demande_flote, 'demandeur' => $user, 'agent' => $agent, 'user' => $user, 'puce' => $demande_flote->puce]; 
+				$demandes_flotes[] = ['demande_flote' => $demande_flote, 'demandeur' => $user, 'agent' => $agent, 'user' => $user, 'puce' => $demande_flote->puce];
 			}
-		
+
             // Renvoyer un message de succès
             return response()->json(
                 [
@@ -443,7 +442,7 @@ class Demande_flote_recouvreurController extends Controller
                     'data' => ['demandes_flotes' => $demandes_flotes]
                 ]
             );
-        } else { 
+        } else {
             // Renvoyer une erreur
             return response()->json(
                 [
@@ -452,30 +451,30 @@ class Demande_flote_recouvreurController extends Controller
                     'data' => null
                 ]
             );
-        } 
-    } 
-	
+        }
+    }
+
 	/**
      * //modifier une demande de Flotte
      */
     public function modifier(Request $request, $id)
     {
         // Valider données envoyées
-        $validator = Validator::make($request->all(), [ 
+        $validator = Validator::make($request->all(), [
             'montant' => ['required', 'Numeric'],
 			'id_agent' => ['required', 'Numeric'],
             'id_puce' => ['required', 'Numeric'] //sous forme de select qui affiche juste les deux puces MTN et ORANGE créé par seed
         ]);
-        if ($validator->fails()) { 
+        if ($validator->fails()) {
             return response()->json(
                 [
                     'message' => ['error'=>$validator->errors()],
                     'status' => false,
                     'data' => null
                 ]
-            );            
-        } 
-          
+            );
+        }
+
 		$demande_flote = Demande_flote::find($id);
 		$demande_flote->montant = $request->montant;
 		$demande_flote->id_puce = $request->id_puce;
@@ -485,7 +484,7 @@ class Demande_flote_recouvreurController extends Controller
         // update de La demande
         if ($demande_flote->save()) {
 			$user = $demande_flote->user;
-			$agent = Agent::where('id_user', $user->id)->first(); 
+			$agent = Agent::where('id_user', $user->id)->first();
             // Renvoyer un message de succès
             return response()->json(
                 [
@@ -503,6 +502,6 @@ class Demande_flote_recouvreurController extends Controller
                     'data' => null
                 ]
             );
-        } 
+        }
     }
 }
