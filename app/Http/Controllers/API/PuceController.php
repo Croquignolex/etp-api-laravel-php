@@ -7,7 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Puce;
 use App\Flote;
 use App\User;
-use App\Type_puce;
+use App\Enums\Roles;
 use Illuminate\Support\Facades\Validator;
 
 class PuceController extends Controller
@@ -20,7 +20,8 @@ class PuceController extends Controller
 
      function __construct(){
 
-        $this->middleware('permission:Superviseur');
+        $superviseur = Roles::SUPERVISEUR;
+        $this->middleware("permission:$superviseur");
 
     }
 

@@ -6,7 +6,7 @@ use App\Agent;
 use App\Demande_flote;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-
+use \App\Enums\Roles;
 use App\User;
 use Illuminate\Support\Facades\Validator;
 use App\Flote;
@@ -21,7 +21,12 @@ class DemandeflotteController extends Controller
 
      */ 
     function __construct(){
-        $this->middleware('permission:Recouvreur|Agent|Superviseur|Gestionnaire_flotte');
+        $recouvreur = Roles::RECOUVREUR;
+        $agent = Roles::AGENT;
+        $superviseur = Roles::SUPERVISEUR;
+        $ges_flotte = Roles::GESTION_FLOTTE;
+        
+        $this->middleware("permission:$recouvreur|$agent|$superviseur|$ges_flotte");       
     }
   
     /**
@@ -151,7 +156,7 @@ class DemandeflotteController extends Controller
         } 
     }
 
-    /**
+    /**  
      * //lister mes demandes de flotes peu importe le statut
      */
     public function list_all_status()

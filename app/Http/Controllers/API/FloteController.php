@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Flote;
 use App\Puce;
+use App\Enums\Roles;
 use Illuminate\Support\Facades\Validator;
 
 class FloteController extends Controller
@@ -18,7 +19,8 @@ class FloteController extends Controller
 
     function __construct(){
 
-        $this->middleware('permission:Superviseur');
+        $superviseur = Roles::SUPERVISEUR;
+        $this->middleware("permission:$superviseur");
 
     }
  

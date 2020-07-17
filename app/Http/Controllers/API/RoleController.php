@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator; 
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
-
+use App\Enums\Roles;
 
 class RoleController extends Controller
 {
@@ -15,7 +15,8 @@ class RoleController extends Controller
 
     public function __construct(){
 
-        $this->middleware('permission:Superviseur');
+        $superviseur = Roles::SUPERVISEUR;
+        $this->middleware("permission:$superviseur");
         
     }
 

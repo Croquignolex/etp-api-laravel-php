@@ -26,8 +26,10 @@ class AgentController extends Controller
     function __construct()
 
     {
-		$role = Roles::RECOUVREUR; 
-        $this->middleware("permission:Superviseur|$role");
+
+        $superviseur = Roles::SUPERVISEUR;
+        $recouvreur = Roles::RECOUVREUR;
+        $this->middleware("permission:$recouvreur|$superviseur");
 
     }
 

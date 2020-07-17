@@ -6,13 +6,12 @@ use ReflectionClass;
 
 class Roles
 {
-    const ADMIN = 'Admin';
-    const AGENT = 'Agent';
-    const GESTION_FLOTTE = 'Gestionnaire de flotte';
-    const RECOUVREUR = 'Responsable de zone';
-    const SUPERVISEUR = 'Superviseur';
 
-    
+    const ADMIN = 'ADMIN';
+    const AGENT = 'AGENT';
+    const GESTION_FLOTTE = 'GESTIONNAIRE DE FLOTTE';
+    const RECOUVREUR = 'RESPONSABLE DE ZONNE';
+    const SUPERVISEUR = 'SUPERVISEUR';    
 
     /**
      * Returns the list of all enum variants

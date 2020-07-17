@@ -14,7 +14,7 @@ use Spatie\Permission\Models\Role;
 use App\Http\Controllers\Controller;
 use App\Zone;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
+use App\Enums\Roles;
 use Illuminate\Support\Facades\Validator;
 
 
@@ -30,7 +30,8 @@ class UserController extends Controller
 
     function __construct(){
 
-        $this->middleware('permission:Superviseur');
+        $superviseur = Roles::SUPERVISEUR;
+        $this->middleware("permission:$superviseur");
 
    }
    

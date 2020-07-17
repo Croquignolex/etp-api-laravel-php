@@ -9,7 +9,6 @@ use Illuminate\Http\Request;
 use App\Agent;
 use App\Zone;
 use App\Enums\Roles;
-use App\Utiles\ImageFromBase64;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Controller;
 use App\User;
@@ -27,7 +26,8 @@ class ZoneController extends Controller
 
     function __construct(){
 
-        $this->middleware('permission:Superviseur');
+        $superviseur = Roles::SUPERVISEUR;
+        $this->middleware("permission:$superviseur");
 
     }
  
@@ -370,7 +370,7 @@ class ZoneController extends Controller
     }
 	
 	/**
-     * ajouter un recouvreur à une zone
+     * Supprimer un recouvreur à une zone
      */
     public function delete_recouvreur(Request $request, $id)
     {
@@ -391,7 +391,7 @@ class ZoneController extends Controller
         // Récupérer les données validées 
 		$id_user = $request->id_user;
           
-        // rechercher la flote
+        // rechercher la Zone
         $zone = Zone::find($id); 
 		$user = User::find($id_user);
         $user->deleted_at = now();

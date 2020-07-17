@@ -6,6 +6,7 @@ use ReflectionClass;
 
 class Statut
 {
+    //Statut
     const EN_ATTENTE = 'en-attente';
     const EN_COURS = 'en-cours';
     const APPROUVE = 'approuve';
@@ -15,9 +16,17 @@ class Statut
     const ARCHIVER = 'archiver';
     const TERMINEE = 'terminee';
     const EFFECTUER = 'effectue';
+
+    //Opérateurs
     const MTN = 'MTN Cameroun';
     const ORANGE = 'Orange Cameroun';
     const LU = 'lu';
+
+    //types de puce
+    const AGENT = 'Puce Agent';
+    const ETP = 'Puce Agent ETP';
+    const FLOTTAGE = 'Puce Flottage';
+    const FLOTTAGE_SECONDAIRE = 'Master SIM';
 
     /**
      * Returns the list of all enum variants
