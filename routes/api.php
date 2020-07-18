@@ -325,7 +325,13 @@ Route::group(['middleware' => 'auth:api'], function(){
         Route::post('delete_recouvreur_zone/{id}', 'API\ZoneController@delete_recouvreur')
         ->where('id', '[0-9]+');
 
+		// ajouter un agent à une zone
+        Route::post('ajouter_agent_zone/{id}', 'API\ZoneController@ajouter_a')
+        ->where('id', '[0-9]+');
 
+        // ajouter un recouvreur à une zone
+        Route::post('ajouter_recouvreur_zone/{id}', 'API\ZoneController@ajouter_recouvreur')
+        ->where('id', '[0-9]+');
         
         /*
     //////////////////////Flottage/////////////////////

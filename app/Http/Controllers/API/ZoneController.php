@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use App\Agent;
 use App\Zone;
+use App\Caisse;
+use Spatie\Permission\Models\Role;
 use App\Enums\Roles;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Controller;
@@ -370,13 +372,18 @@ class ZoneController extends Controller
     }
 	
 	/**
-     * Supprimer un recouvreur à une zone
+     * ajouter un recouvreur à une zone
      */
-    public function delete_recouvreur(Request $request, $id)
+    public function ajouter_recouvreur(Request $request, $id)
     {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [  
-            'id_user' => ['required', 'numeric']
+            'name' => 'required',
+            'phone' => 'required|numeric|unique:users,phone',
+            'adresse' => 'nullable', 
+            'description' => 'nullable',
+            'email' => 'required|email|unique:users,email', 
+            'password' => 'required|string|min:6',  
         ]);
         if ($validator->fails()) { 
             return response()->json(
@@ -387,15 +394,34 @@ class ZoneController extends Controller
                 ]
             );             
         }
-
-        // Récupérer les données validées 
-		$id_user = $request->id_user;
           
         // rechercher la Zone
         $zone = Zone::find($id); 
-		$user = User::find($id_user);
-        $user->deleted_at = now();
-		$user->save();
+		$role = Role::where('name', Roles::RECOUVREUR)->first();
+		$input = $request->all(); 
+        $input['password'] = bcrypt($input['password']); 
+        $input['add_by'] = Auth::user()->id; 
+        $input['id_zone'] = $id;  
+		$user = User::create($input);
+		
+		if (isset($user)) {
+            //On crée la caisse de l'utilisateur
+            $caisse = new Caisse([
+                'nom' => 'Caisse ' . $request->name,
+                'description' => Null,
+                'id_user' => $user->id,
+                'reference' => Null,
+                'solde' => 0
+            ]);
+            $caisse->save();
+
+            //on lui donne un role
+            $user->assignRole($role);
+
+            //On lui crée un token
+            $success['token'] =  $user->createToken('MyApp')->accessToken; 
+            $success['user'] =  $user;
+        }     
 		
         if ($user !== null) {
 			$agents = [];
@@ -438,6 +464,8 @@ class ZoneController extends Controller
             );
         } 
     }
+	
+	
 	
     /**
      * //lister les zone
