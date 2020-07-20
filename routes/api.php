@@ -79,7 +79,7 @@ Route::group(['middleware' => 'auth:api'], function(){
 
             //Changer mon avatar
             Route::post('edit_avatar', 'API\LoginController@update_picture');
-
+			
 
     /*
      /////////////////////GESTION DES AGENTS///////////////////////////
@@ -105,6 +105,14 @@ Route::group(['middleware' => 'auth:api'], function(){
         //supprimer un Agents
         Route::post('delete_agent/{id}', 'API\AgentController@delete')
         ->where('id', '[0-9]+');
+		
+		//Approuver ou desapprouver un agent
+            Route::post('edit_agent_status/{id}', 'API\AgentController@edit_agent_status')
+            ->where('id', '[0-9]+');
+			
+		 //Changer la zone d'un agent
+		Route::post('edit_zone_agent/{id}', 'API\AgentController@edit_zone_agent')
+		->where('id', '[0-9]+');
 
     /*
       ///////////////GESTION DES ROLES DES UTILISATEURS///////////////////

@@ -19,10 +19,8 @@ use Illuminate\Support\Facades\Validator;
 
 
 class UserController extends Controller
-{
-
-
-            /***
+{ 
+	/***
 
      * les conditions de lecture des methodes
 
@@ -142,7 +140,7 @@ class UserController extends Controller
         ); 
     }
 
-/** 
+	/** 
      * details d'un utilisateur 
      */ 
     public function details_user($id) 
@@ -173,7 +171,6 @@ class UserController extends Controller
          }        
  
     } 
-
 
     /** 
      * //Approuver ou desapprouver un utilisateur
@@ -345,7 +342,6 @@ class UserController extends Controller
          }
     }
 
-
     /** 
      * modification d'un utilisateur 
      */ 
@@ -437,7 +433,6 @@ class UserController extends Controller
         }
     }
 
-
     /** 
      * modification du role d'un utilisateur 
      */ 
@@ -515,8 +510,7 @@ class UserController extends Controller
         } 
     } 
 	
-	
- /** 
+	/** 
      * modification du role d'un utilisateur 
      */ 
     public function edit_zone_user(Request $request, $id) 
@@ -591,6 +585,7 @@ class UserController extends Controller
             );
         } 
     } 
+	
 	/** 
      * Creation d'un responsable de zone
      */
