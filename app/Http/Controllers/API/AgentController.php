@@ -8,6 +8,7 @@ use App\Zone;
 use App\Enums\Statut;
 use App\Caisse;
 use App\User;
+use App\Puce;
 use Spatie\Permission\Models\Role;
 use App\Enums\Roles;
 use App\Utiles\ImageFromBase64;
@@ -675,5 +676,134 @@ class AgentController extends Controller
             );
         }
         
+    }
+	
+	/**
+     * ajouter une puce à un agent
+     */
+    public function ajouter_puce(Request $request, $id)
+    {
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [ 
+			'numero' => ['required', 'string', 'max:255', 'unique:puces,numero'],
+            'reference' => ['nullable', 'string', 'max:255','unique:puces,reference'], 
+            'id_flotte' => ['required', 'numeric'],
+            'nom' => ['required', 'string'],
+            'description' => ['nullable', 'string'],
+            'type' => ['required', 'numeric'],
+        ]);
+        if ($validator->fails()) { 
+            return response()->json(
+                [
+                    'message' => ['error'=>$validator->errors()],
+                    'status' => false,
+                    'data' => null
+                ]
+            );             
+        }
+
+        // Récupérer les données validées 
+		$nom = $request->nom;
+        $type = $request->type;
+        $numero = $request->numero;
+		$id_flotte = $request->id_flotte;
+        $reference = $request->reference;
+        $description = $request->description;
+
+        // rechercher la flote
+        $agent = Agent::find($id);
+
+        // ajout de mla nouvelle puce
+        $puce = $agent->puces()->create([
+            'nom' => $nom,
+			'type' => $type,
+			'numero' => $numero,
+			'id_flotte' => $id_flotte,
+            'reference' => $reference, 
+            'description' => $description
+		]);
+
+        if ($puce !== null) {
+			$user = User::find($agent->id_user);
+			$puces = is_null($agent) ? [] : $agent->puces;
+            // Renvoyer un message de succès
+            return response()->json(
+                [
+                    'message' => '',
+                    'status' => true,
+                    'data' => [
+						'zone' => $user->zone,
+						'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']), 
+						'agent' => $agent,
+						'puces' => $puces 
+					]
+                ]
+            );
+        } else {
+            // Renvoyer une erreur
+            return response()->json(
+                [
+                    'message' => "Erreur l'ors de l'ajout de la nouvelle puce",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        } 
+    }
+	
+	/**
+     * ajouter une puce à un agent
+     */
+    public function delete_puce(Request $request, $id)
+    {
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [  
+            'id_puce' => ['required', 'numeric']
+        ]);
+        if ($validator->fails()) { 
+            return response()->json(
+                [
+                    'message' => ['error'=>$validator->errors()],
+                    'status' => false,
+                    'data' => null
+                ]
+            );             
+        }
+
+        // Récupérer les données validées 
+		$id_puce = $request->id_puce;
+          
+        // rechercher la flote
+		$puce = Puce::find($id_puce);
+        $puce->deleted_at = now();
+		$puce->save();
+		
+        if ($puce !== null) {
+			$agent = Agent::find($id);
+			$user = User::find($agent->id_user);
+			$puces = is_null($agent) ? [] : $agent->puces;
+            // Renvoyer un message de succès
+            return response()->json(
+                [
+                    'message' => '',
+                    'status' => true,
+                    'data' => [
+						'zone' => $user->zone,
+						'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']), 
+						'agent' => $agent,
+						'puces' => $puces 
+					]
+                ]
+            );
+        } else {
+            // Renvoyer une erreur
+            return response()->json(
+                [
+                    'message' => "Erreur l'ors de la suppression d'une puce",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        } 
     }
 }

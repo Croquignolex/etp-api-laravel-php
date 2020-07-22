@@ -54,21 +54,22 @@ class User extends Authenticatable
     ];
 	
     //les opérations enregistrées par un utilisateur precis
-    public function operations()
-    {
+    public function operations() {
         return $this->hasMany('App\Operation', 'id_user');
     }
 
     //les demande de destockages enregistrées pour un utilisateur precis
-    public function demande_destockages()
-    {
+    public function demande_destockages() {
         return $this->hasMany('App\Demande_destockage', 'id_user');
     }
  
     //les demande de flotes enregistrées pour un utilisateur precis
-    public function demande_flotes()
-    {
+    public function demande_flotes() {
         return $this->hasMany('App\Demande_flote', 'id_user');
+    }
+	
+	public function settings() {
+        return $this->hasMany('App\Setting', 'id_user');
     }
 	
 	public function zone() {

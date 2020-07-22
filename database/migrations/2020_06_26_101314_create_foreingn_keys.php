@@ -21,7 +21,7 @@ class CreateForeingnKeys extends Migration
             $table->foreign('id_demande_flote')
                 ->references('id')
                 ->on('demande_flotes')
-				->onDelete('set null')
+				->onDelete('cascade')
 				->onUpdate('no action');
 				
 				

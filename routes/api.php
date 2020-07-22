@@ -107,12 +107,20 @@ Route::group(['middleware' => 'auth:api'], function(){
         ->where('id', '[0-9]+');
 		
 		//Approuver ou desapprouver un agent
-            Route::post('edit_agent_status/{id}', 'API\AgentController@edit_agent_status')
-            ->where('id', '[0-9]+');
+		Route::post('edit_agent_status/{id}', 'API\AgentController@edit_agent_status')
+		->where('id', '[0-9]+');
 			
 		 //Changer la zone d'un agent
 		Route::post('edit_zone_agent/{id}', 'API\AgentController@edit_zone_agent')
 		->where('id', '[0-9]+');
+		
+		// ajouter une puce à un agent
+        Route::post('ajouter_puce_agent/{id}', 'API\AgentController@ajouter_puce')
+        ->where('id', '[0-9]+');
+		
+		// supprimer une puce depuis un agent
+        Route::post('delete_puce_agent/{id}', 'API\AgentController@delete_puce')
+        ->where('id', '[0-9]+');
 
     /*
       ///////////////GESTION DES ROLES DES UTILISATEURS///////////////////
@@ -333,8 +341,8 @@ Route::group(['middleware' => 'auth:api'], function(){
         Route::post('delete_recouvreur_zone/{id}', 'API\ZoneController@delete_recouvreur')
         ->where('id', '[0-9]+');
 
-		// ajouter un agent à une zone
-        Route::post('ajouter_agent_zone/{id}', 'API\ZoneController@ajouter_a')
+		// ajouter un agent à un
+        Route::post('ajouter_agent_zone/{id}', 'API\ZoneController@ajouter_agent')
         ->where('id', '[0-9]+');
 
         // ajouter un recouvreur à une zone
