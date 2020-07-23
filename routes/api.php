@@ -55,6 +55,13 @@ Route::group(['middleware' => 'auth:api'], function(){
             //Approuver ou desapprouver un utilisateur
             Route::post('edit_user_status/{id}', 'API\UserController@edit_user_status')
             ->where('id', '[0-9]+');
+			
+			 //Creation d'un agent de recouvrement
+            Route::post('create_recouvreur', 'API\UserController@create_recouvreur');
+			
+			 //Changer la zone d'un utilisateur
+            Route::post('edit_zone_user/{id}', 'API\UserController@edit_zone_user')
+            ->where('id', '[0-9]+');
         
         /////////////////User sur lui meme
 
@@ -72,7 +79,7 @@ Route::group(['middleware' => 'auth:api'], function(){
 
             //Changer mon avatar
             Route::post('edit_avatar', 'API\LoginController@update_picture');
-
+			
 
     /*
      /////////////////////GESTION DES AGENTS///////////////////////////
@@ -97,6 +104,22 @@ Route::group(['middleware' => 'auth:api'], function(){
 
         //supprimer un Agents
         Route::post('delete_agent/{id}', 'API\AgentController@delete')
+        ->where('id', '[0-9]+');
+		
+		//Approuver ou desapprouver un agent
+		Route::post('edit_agent_status/{id}', 'API\AgentController@edit_agent_status')
+		->where('id', '[0-9]+');
+			
+		 //Changer la zone d'un agent
+		Route::post('edit_zone_agent/{id}', 'API\AgentController@edit_zone_agent')
+		->where('id', '[0-9]+');
+		
+		// ajouter une puce à un agent
+        Route::post('ajouter_puce_agent/{id}', 'API\AgentController@ajouter_puce')
+        ->where('id', '[0-9]+');
+		
+		// supprimer une puce depuis un agent
+        Route::post('delete_puce_agent/{id}', 'API\AgentController@delete_puce')
         ->where('id', '[0-9]+');
 
     /*
@@ -154,6 +177,8 @@ Route::group(['middleware' => 'auth:api'], function(){
             /*
     //////////////////////GESTION DES PUCE /////////////////////
     */
+		//liste des types de puces
+        Route::get('types_puces_list', 'API\PuceController@types_puces_list');
     
         //Creer une puce
         Route::post('store_puce', 'API\PuceController@store');
@@ -316,7 +341,13 @@ Route::group(['middleware' => 'auth:api'], function(){
         Route::post('delete_recouvreur_zone/{id}', 'API\ZoneController@delete_recouvreur')
         ->where('id', '[0-9]+');
 
+		// ajouter un agent à un
+        Route::post('ajouter_agent_zone/{id}', 'API\ZoneController@ajouter_agent')
+        ->where('id', '[0-9]+');
 
+        // ajouter un recouvreur à une zone
+        Route::post('ajouter_recouvreur_zone/{id}', 'API\ZoneController@ajouter_recouvreur')
+        ->where('id', '[0-9]+');
         
         /*
     //////////////////////Flottage/////////////////////

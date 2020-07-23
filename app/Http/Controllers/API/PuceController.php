@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Puce;
+use App\Type_puce;
 use App\Flote;
 use App\User;
 use App\Enums\Roles;
@@ -438,4 +439,36 @@ class PuceController extends Controller
             );
          }
     }
+	 
+	/**
+
+     * Liste des types de puces
+
+     */
+    public function types_puces_list()
+    {
+        //recuperation des roles
+        $types = Type_puce::all();
+
+        if ($types != null) {
+            return response()->json(
+                [
+                    'message' => '',
+                    'status' => true,
+                    'data' => ['types' => $types]
+                ]
+            );
+         }else{
+            return response()->json(
+                [
+                    'message' => 'Aucun type de puce trouve',
+                    'status' => false,
+                    'data' => null
+                ]
+            ); 
+         }
+         
+
+    }
+
 }

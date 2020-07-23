@@ -8,6 +8,9 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use App\Agent;
 use App\Zone;
+use App\Caisse;
+use App\Utiles\ImageFromBase64;
+use Spatie\Permission\Models\Role;
 use App\Enums\Roles;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Controller;
@@ -15,9 +18,7 @@ use App\User;
 use Illuminate\Support\Facades\Auth;
 
 class ZoneController extends Controller
-{
-    
-    
+{ 
             /**
 
      * les conditions de lecture des methodes
@@ -29,9 +30,8 @@ class ZoneController extends Controller
         $superviseur = Roles::SUPERVISEUR;
         $this->middleware("permission:$superviseur");
 
-    }
- 
-
+    } 
+	
     /**
      * //Creer une zone.
      */
@@ -145,8 +145,7 @@ class ZoneController extends Controller
             );
         }
     }
-
-
+ 
     /**
      * //Attribuer une zonne à un utilisateur'
      */
@@ -210,9 +209,7 @@ class ZoneController extends Controller
             );
         }
     }
-
-
-
+ 
     /**
      * modification d'une zone
      */
@@ -370,13 +367,18 @@ class ZoneController extends Controller
     }
 	
 	/**
-     * Supprimer un recouvreur à une zone
+     * ajouter un recouvreur à une zone
      */
-    public function delete_recouvreur(Request $request, $id)
+    public function ajouter_recouvreur(Request $request, $id)
     {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [  
-            'id_user' => ['required', 'numeric']
+            'name' => 'required',
+            'phone' => 'required|numeric|unique:users,phone',
+            'adresse' => 'nullable', 
+            'description' => 'nullable',
+            'email' => 'required|email|unique:users,email', 
+            'password' => 'required|string|min:6',  
         ]);
         if ($validator->fails()) { 
             return response()->json(
@@ -387,15 +389,34 @@ class ZoneController extends Controller
                 ]
             );             
         }
-
-        // Récupérer les données validées 
-		$id_user = $request->id_user;
           
         // rechercher la Zone
         $zone = Zone::find($id); 
-		$user = User::find($id_user);
-        $user->deleted_at = now();
-		$user->save();
+		$role = Role::where('name', Roles::RECOUVREUR)->first();
+		$input = $request->all(); 
+        $input['password'] = bcrypt($input['password']); 
+        $input['add_by'] = Auth::user()->id; 
+        $input['id_zone'] = $id;  
+		$user = User::create($input);
+		
+		if (isset($user)) {
+            //On crée la caisse de l'utilisateur
+            $caisse = new Caisse([
+                'nom' => 'Caisse ' . $request->name,
+                'description' => Null,
+                'id_user' => $user->id,
+                'reference' => Null,
+                'solde' => 0
+            ]);
+            $caisse->save();
+
+            //on lui donne un role
+            $user->assignRole($role);
+
+            //On lui crée un token
+            $success['token'] =  $user->createToken('MyApp')->accessToken; 
+            $success['user'] =  $user;
+        }     
 		
         if ($user !== null) {
 			$agents = [];
@@ -439,6 +460,136 @@ class ZoneController extends Controller
         } 
     }
 	
+	/**
+     * ajouter un agent à une zone
+     */
+    public function ajouter_agent(Request $request, $id)
+    {
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [   
+			'name' => 'required',
+			'phone' => 'required|numeric|unique:users,phone',
+			'adresse' => 'nullable',
+			'description' => 'nullable', 
+			'email' => 'required|email|unique:users,email', 
+			'password' => 'required|string|min:6',   
+			'base_64_image' => 'nullable|string',
+			'base_64_image_back' => 'nullable|string',
+			'reference' => ['nullable', 'string', 'max:255'], 
+        ]);
+        if ($validator->fails()) { 
+            return response()->json(
+                [
+                    'message' => ['error'=>$validator->errors()],
+                    'status' => false,
+                    'data' => null
+                ]
+            );             
+        }
+		 
+		$name = $request->name;
+		$phone = $request->phone;
+		$adresse = $request->adresse;
+		$description = $request->description;       
+		$email = $request->email;
+		$password = bcrypt($request->password);           
+		$zone = Zone::find($id); 
+		$role = Role::where('name', Roles::AGENT)->first();
+                
+		$reference = $request->reference; 
+		$ville = $request->ville;      
+		$pays = $request->pays;  
+		$img_cni = null; 
+		$img_cni_back = null;             
+
+		if (isset($request->base_64_image)) {
+			$img_cni = $request->base_64_image; 
+			$server_image_name_path1 = ImageFromBase64::imageFromBase64AndSave($request->input('base_64_image'), 'images/avatars/');
+			$img_cni = $server_image_name_path1;
+		} 
+		if (isset($request->base_64_image_back)) {
+			$img_cni_back = $request->base_64_image_back; 
+			$server_image_name_path2 = ImageFromBase64::imageFromBase64AndSave($request->input('base_64_image_back'), 'images/avatars/');
+			$img_cni_back = $server_image_name_path2;
+		}        
+  
+		$add_by_id = Auth::user()->id;
+            
+        // Nouvel utilisateur
+		$user = new User([
+			'add_by' => $add_by_id, 
+			'name' => $name,
+			'email' => $email,
+			'password' => $password,
+			'phone' => $phone,
+			'adresse' => $adresse,
+			'id_zone' => $zone->id,
+			'description' => $description
+		]);
+           
+		if ($user->save()) {
+            //On crée la caisse de l'utilisateur
+            $caisse = new Caisse([
+                'nom' => 'Caisse ' . $request->name,
+                'description' => Null,
+                'id_user' => $user->id,
+                'reference' => Null,
+                'solde' => 0
+            ]);
+            $caisse->save();
+
+            //on lui donne un role
+            $user->assignRole($role);
+
+            //On lui crée un token
+            $success['token'] =  $user->createToken('MyApp')->accessToken; 
+            $success['user'] =  $user;
+			
+			$agent = new Agent([
+				'id_creator' => $add_by_id,
+				'id_user' => $user->id,
+				'img_cni' => $img_cni,
+				'img_cni_back' => $img_cni_back,
+				'reference' => $reference,  
+				'ville' => $ville, 
+				'pays' => $pays
+			]);
+				
+			$agent->save();
+        }     
+		
+        if ($user !== null) {
+			$agents = [];
+			$recouvreurs = [];
+			$users = $zone->users;  
+			 foreach($users as $user) 
+			 {
+				 $userRole = $user->roles->first()->name;
+				 $user_agent = Agent::where('id_user', $user->id)->first();
+				 if($userRole === Roles::AGENT) $agents[] = ['user' => $user, 'agent' => $user_agent]; 
+				 else if($userRole === Roles::RECOUVREUR) $recouvreurs[] = $user; 
+			 }
+			 
+            // Renvoyer un message de succès
+            return response()->json(
+                [
+                    'message' => '',
+                    'status' => true,
+                    'data' => ['zone' => $zone, 'agents' => $agents, 'recouvreurs' => $recouvreurs]
+                ]
+            );
+        } else {
+            // Renvoyer une erreur
+            return response()->json(
+                [
+                    'message' => "Erreur l'ors de lsuppression d'un recouvreur",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        } 
+    }
+	 
     /**
      * //lister les zone
      */

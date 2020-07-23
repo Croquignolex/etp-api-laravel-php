@@ -3,6 +3,7 @@
 use App\Agent;
 use App\Puce;
 use App\Zone;
+use App\Setting;
 use App\Type_puce;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
@@ -237,6 +238,47 @@ class CreateAdminUserSeeder extends Seeder
 
         //Attribuer le role à l'agent2
         $user5->assignRole([$role5->id]);
+		
+		Setting::create([
+			'cards' => '[1, 2, 3, 4, 5, 6]', 
+			'charts' => '[1, 2, 3, 4, 5]', 
+			'bars' => '[]',
+			'id_user' => $user->id
+		]);
+		
+		Setting::create([
+			'cards' => '[1, 2, 3, 4, 5, 6]', 
+			'charts' => '[1, 2, 3, 4, 5]', 
+			'bars' => '[]',
+			'id_user' => $user5->id
+		]);
+		
+		Setting::create([
+			'cards' => '[1, 2]', 
+			'charts' => '[1]', 
+			'bars' => '[]',
+			'id_user' => $user2->id
+		]);
+		
+		Setting::create([
+			'cards' => '[1, 2]', 
+			'charts' => '[1]', 
+			'bars' => '[]',
+			'id_user' => $user22->id
+		]);
 
+		Setting::create([
+			'cards' => '[]', 
+			'charts' => '[]', 
+			'bars' => '[]',
+			'id_user' => $user3->id
+		]);
+		
+		Setting::create([
+			'cards' => '[1]', 
+			'charts' => '[1]', 
+			'bars' => '[]',
+			'id_user' => $user4->id
+		]);
     }
 }

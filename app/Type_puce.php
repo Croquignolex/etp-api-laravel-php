@@ -15,4 +15,9 @@ class Type_puce extends Model
     protected $dates = ['deleted_at'];
     protected $fillable = array('id', 'name', 'description');
     protected $visible = array('id', 'name', 'description', 'created_at');
+	
+	public function puces()
+    {
+        return $this->hasMany('App\Puce', 'type');
+    }
 }
