@@ -9,7 +9,7 @@ use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
 use App\Zone;
-use App\Agent;
+use App\Agent; 
 use App\Utiles\ImageFromBase64;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -19,7 +19,6 @@ use Illuminate\Support\Facades\Storage;
 
 class LoginController extends Controller
 {
-    
     /**
      * Connection d'un utilisateur
      *
@@ -108,7 +107,8 @@ class LoginController extends Controller
                         'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
 						'role' => $user->roles->first(),
 						'agent' => $agent,
-						'puces' => $puces
+						'puces' => $puces,
+						'setting' => $user->setting->first()
                     ]
                 ]
             );
@@ -122,7 +122,6 @@ class LoginController extends Controller
             );
         }
     }
-
 
     /**
      * si un utilisateur n'est pas connecté
@@ -139,8 +138,6 @@ class LoginController extends Controller
             ]
         );
     }
-
-
 
     /**
      * deconnexion d'un utilisateur
@@ -168,7 +165,6 @@ class LoginController extends Controller
             );
         }
     }
-
 
     /**
      * details d'un utilisateur connecté
@@ -212,9 +208,6 @@ class LoginController extends Controller
             );
          }
     } 
-
-
-
 
     /**
      * Réinitialisation du mot de passe
@@ -289,7 +282,6 @@ class LoginController extends Controller
         }
     }
 
-
     /**
      * @param Base64ImageRequest $request
      * @return JsonResponse
@@ -350,8 +342,64 @@ class LoginController extends Controller
         }
         
     }
+	
+	/**
+     * @param Base64ImageRequest $request
+     * @return JsonResponse
+     */
+    public function update_setting(Request $request)
+    { 
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [ 
+            'bars' => 'array', 
+            'cards' => 'array', 
+            'charts' => 'array', 
+            'sound' => 'required',  
+            'session' => 'required', 
+            //'description' => 'string', 
+        ]);
+        
+        if ($validator->fails()) {  
+            return response()->json(
+                [
+                    'message' => ['error'=>$validator->errors()],
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+                       
+        }
+        
+        // Get current user 
+		$setting = Auth::user()->setting->first();
+		$setting->sound = $request->sound;
+		$setting->session = $request->session;
+		$setting->description = $request->description;
+		$setting->bars = json_encode($request->bars);
+		$setting->charts = json_encode($request->charts);
+		$setting->cards = json_encode($request->cards);
+        // Save image name in database      
+        if ($setting->save()) {
+            return response()->json(
+                [
+                    'message' => 'Setting upadated',
+                    'status' => true,
+                    'data' => null
+                ]
+            );
+        }else {
+            return response()->json(
+                [
+                    'message' => 'erreur de modification de l avatar',
+                    'status' => true,
+                    'data' => []
+                ]
+            );
+        }
+        
+    }
 
-/** 
+	/** 
      * modification d'un utilisateur 
      */ 
     public function edit_profile(Request $request) 

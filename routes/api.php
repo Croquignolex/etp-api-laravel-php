@@ -80,6 +80,9 @@ Route::group(['middleware' => 'auth:api'], function(){
             //Changer mon avatar
             Route::post('edit_avatar', 'API\LoginController@update_picture');
 			
+			//setting update
+            Route::post('edit_setting', 'API\LoginController@update_setting');
+			
 
     /*
      /////////////////////GESTION DES AGENTS///////////////////////////

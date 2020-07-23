@@ -240,29 +240,29 @@ class CreateAdminUserSeeder extends Seeder
         $user5->assignRole([$role5->id]);
 		
 		Setting::create([
-			'cards' => '[1, 2, 3, 4, 5, 6]', 
-			'charts' => '[1, 2, 3, 4, 5]', 
+			'cards' => '[0, 1, 2, 3, 4, 5]', 
+			'charts' => '[0, 1, 2, 3, 4]', 
 			'bars' => '[]',
 			'id_user' => $user->id
 		]);
 		
 		Setting::create([
-			'cards' => '[1, 2, 3, 4, 5, 6]', 
-			'charts' => '[1, 2, 3, 4, 5]', 
+			'cards' => '[0, 1, 2, 3, 4, 5]', 
+			'charts' => '[0, 1, 2, 3, 4]', 
 			'bars' => '[]',
 			'id_user' => $user5->id
 		]);
 		
 		Setting::create([
-			'cards' => '[1, 2]', 
-			'charts' => '[1]', 
+			'cards' => '[0, 1]', 
+			'charts' => '[0]', 
 			'bars' => '[]',
 			'id_user' => $user2->id
 		]);
 		
 		Setting::create([
-			'cards' => '[1, 2]', 
-			'charts' => '[1]', 
+			'cards' => '[0, 1]', 
+			'charts' => '[0]', 
 			'bars' => '[]',
 			'id_user' => $user22->id
 		]);
@@ -275,8 +275,8 @@ class CreateAdminUserSeeder extends Seeder
 		]);
 		
 		Setting::create([
-			'cards' => '[1]', 
-			'charts' => '[1]', 
+			'cards' => '[0]', 
+			'charts' => '[0]', 
 			'bars' => '[]',
 			'id_user' => $user4->id
 		]);

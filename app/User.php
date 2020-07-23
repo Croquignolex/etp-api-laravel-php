@@ -68,7 +68,7 @@ class User extends Authenticatable
         return $this->hasMany('App\Demande_flote', 'id_user');
     }
 	
-	public function settings() {
+	public function setting() {
         return $this->hasMany('App\Setting', 'id_user');
     }
 	

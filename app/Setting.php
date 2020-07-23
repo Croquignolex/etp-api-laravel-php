@@ -14,7 +14,7 @@ class Setting extends Model
 
     protected $dates = ['deleted_at'];
     protected $fillable = array('id', 'cards', 'charts', 'bars', 'sound', 'session', 'id_user', 'description');
-    protected $visible = array('id', 'cards', 'charts', 'bars', 'sound', 'session', 'description', 'created_at');
+    protected $visible = array('id', 'cards', 'charts', 'bars', 'sound', 'session', 'description');
 	 
     public function user() {
         return $this->belongsTo('App\User', 'id_user');
