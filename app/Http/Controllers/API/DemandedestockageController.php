@@ -34,7 +34,7 @@ class DemandedestockageController extends Controller
 
     }
 
-    
+     
     /**
      * //Initier une demande de destockage
      */
@@ -71,12 +71,12 @@ class DemandedestockageController extends Controller
         //recuperer l'agent concerné
         $agent = Agent::where('id_user', $user->id)->First();
 
-        //recuperer la Puce qui va recevoir la flotte
-        $puce_destination = Puce::Find($request->id_puce);
-
         //recuperer la Puce qui va envoyer la flotte
-        $puce_source = Puce::where('id_flotte', $puce_destination->id_flotte)
-            ->where('id_agent', $agent->id)
+        $puce_source = Puce::Find($request->id_puce);
+
+        //recuperer la Puce qui va recevoir la flotte
+        $puce_destination = Puce::where('id_flotte', $puce_source->id_flotte)
+            ->where('id_agent', null)
             ->First();
 
         // Récupérer les données validées
@@ -86,7 +86,7 @@ class DemandedestockageController extends Controller
         $reference = null;
         $montant = $request->montant;
         $statut = \App\Enums\Statut::EN_ATTENTE;
-        $puce_source = $puce_source->id;
+
 
 
 
@@ -98,8 +98,8 @@ class DemandedestockageController extends Controller
             'montant' => $montant,
             'reste' => $montant,
             'statut' => $statut,
-            'puce_destination' => $request->id_puce,
-            'puce_source' => $puce_source
+            'puce_destination' => $puce_destination->id,
+            'puce_source' => $puce_source->id
         ]);
 
         // creation de La demande

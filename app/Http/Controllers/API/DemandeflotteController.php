@@ -31,7 +31,7 @@ class DemandeflotteController extends Controller
   
     /**
      * //Initier une demande de Flotte
-     */
+     */ 
     public function store(Request $request)
     {
         // Valider données envoyées
