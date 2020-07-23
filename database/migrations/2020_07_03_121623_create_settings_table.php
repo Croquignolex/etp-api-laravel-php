@@ -18,7 +18,7 @@ class CreateSettingsTable extends Migration
 			$table->string('cards');
 			$table->string('charts');
 			$table->string('bars');
-			$table->boolean('sound');
+			$table->boolean('sound')->default(true);
 			$table->integer('session')->default(15);
 			$table->string('description')->nullable();
 			$table->integer('id_user')->unsigned();
