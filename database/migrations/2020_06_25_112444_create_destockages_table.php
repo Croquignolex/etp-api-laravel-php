@@ -14,17 +14,15 @@ class CreateDestockagesTable extends Migration
     public function up()
     {
         Schema::create('destockages', function (Blueprint $table) {
+
             $table->increments('id');
-            $table->integer('add_by')->unsigned()->nullable()->index();
-            $table->integer('id_demande_destockage')->unsigned()->nullable()->index();
             $table->integer('id_recouvreur')->unsigned()->nullable()->index();
             $table->string('reference')->nullable();
             $table->string('statut')->nullable();
             $table->string('note')->nullable();
             $table->integer('montant')->nullable();
             $table->timestamps();
-            $table->softDeletes();
-            
+            $table->softDeletes();   
             
         });
     }

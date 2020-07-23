@@ -321,7 +321,6 @@ Route::group(['middleware' => 'auth:api'], function(){
         /*
     //////////////////////Flottage/////////////////////
     */
-
         
         //Details d'un Flottage
         Route::get('detail_flottage/{id}', 'API\FlotageController@show')
@@ -330,11 +329,38 @@ Route::group(['middleware' => 'auth:api'], function(){
         //lister les Flottages peu importe le statut
         Route::get('list_all_flottage', 'API\FlotageController@list_all');
 
-
         //Creer un Flottage 
-        Route::post('flottage', 'API\FlotageController@store');  
-            
-        //par un agent de recouvrement
-        Route::post('flottage', 'API\FlotageController@store_by_ar');       
+        Route::post('flottage', 'API\FlotageController@store'); 
+        
+        //lister les Flottages relatifs à une demande precise 
+        Route::post('list_flottage', 'API\FlotageController@list_flottage');
+
+
+
+
+
+        /*
+    //////////////////////Approvisionnement des Puces de ETP/////////////////////
+    */
+
+
+        //traitement d'une demande de destockage (juste pour signaler au système que je traite totalement ou en partie une demande)
+        Route::post('traiter_demande', 'API\ApprovisionnementEtpController@traiter_demande');
+        
+        //Approvisionnement.  faite par le responsable de zone, l'Approvisionnement est de 3 types. par un Agant, le digital partner ou la banque
+        Route::post('approvisionnement', 'API\ApprovisionnementEtpController@store');
+
+
+        //approbation par le gestionnaire de flotte, elle atteste avoir recu la flotte
+        Route::get('approuve', 'API\ApprovisionnementEtpController@approuve');
+
+
+        //Details d'un approvisionnement
+        Route::get('detail/{id}', 'API\ApprovisionnementEtpController@show')
+        ->where('id', '[0-9]+'); 
+
+        //lister les Flottages peu approvisionnement le statut
+        Route::get('list_all', 'API\ApprovisionnementEtpController@list_all');
+                
 
 });

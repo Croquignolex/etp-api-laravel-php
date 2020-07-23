@@ -157,11 +157,11 @@ class FlotageController extends Controller
                 //On change le statut de la demande de flotte 
                 if ($demande_flotte->reste == 0) {  
                     
-                    $demande_flotte->statut == \App\Enums\Statut::EFFECTUER ;
+                    $demande_flotte->statut = \App\Enums\Statut::EFFECTUER ;
 
                 }else {        
                     
-                    $demande_flotte->statut == \App\Enums\Statut::EN_COURS ;
+                    $demande_flotte->statut = \App\Enums\Statut::EN_COURS ;
 
                 }
 

@@ -78,15 +78,13 @@ class Demande_destockage_recouvreurController extends Controller
         //recuperer l'agent concerné
         $agent = Agent::Find($request->id_agent);
 
-        //recuperer la Puce qui va recevoir la flotte
-        $puce_destination = Puce::Find($request->id_puce);
-
         //recuperer la Puce qui va envoyer la flotte
-        $puce_envoi = Puce::where('id_flotte', $puce_destination->id_flotte)
-            ->where('id_agent', $request->id_agent)
-            ->First();
+        $puce_envoi = Puce::Find($request->id_puce);
 
-        
+        //recuperer la Puce qui va recevoir la flotte
+        $puce_destination = Puce::where('id_flotte', $puce_envoi->id_flotte)
+            ->where('id_agent', null)
+            ->First();
 
 
         // Récupérer les données validées
@@ -108,7 +106,7 @@ class Demande_destockage_recouvreurController extends Controller
             'montant' => $montant,
             'reste' => $montant,
             'statut' => $statut,
-            'puce_destination' => $request->id_puce,
+            'puce_destination' => $puce_destination->id,
             'puce_source' => $puce_source
         ]);
 
@@ -166,12 +164,12 @@ class Demande_destockage_recouvreurController extends Controller
                 $agent = Agent::where('id_user', $user->id)->First();
 
             //recuperer la puce de l'agent
-                $puce_receptrice = Puce::Find($demande_destockage->puce_destination);
+                $puce_source = Puce::Find($demande_destockage->puce_source);
 
             //recuperer la flotte concerné
-                $flote = Flote::Find($puce_receptrice->id_flotte);
+                $flote = Flote::Find($puce_source->id_flotte);
 
-            $demandes_destockages[] = ['demande_destockage' => $demande_destockage, 'user' => $user, 'agent' => $agent, 'flote' => $flote, 'puce_receptrice' => $puce_receptrice,];
+            $demandes_destockages[] = ['demande_destockage' => $demande_destockage, 'user' => $user, 'agent' => $agent, 'flote' => $flote, 'puce_receptrice' => $puce_source,];
 
         }
 
@@ -229,12 +227,12 @@ class Demande_destockage_recouvreurController extends Controller
                 $agent = Agent::where('id_user', $user->id)->First();
 
             //recuperer la puce de l'agent
-                $puce_receptrice = Puce::Find($demande_destockage->puce_destination);
+                $puce_source = Puce::Find($demande_destockage->puce_source);
 
             //recuperer la flotte concerné
-                $flote = Flote::Find($puce_receptrice->id_flotte);
+                $flote = Flote::Find($puce_source->id_flotte);
 
-            $demandes_destockages[] = ['demande_destockage' => $demande_destockage, 'user' => $user, 'agent' => $agent, 'flote' => $flote, 'puce_receptrice' => $puce_receptrice,];
+            $demandes_destockages[] = ['demande_destockage' => $demande_destockage, 'user' => $user, 'agent' => $agent, 'flote' => $flote, 'puce_receptrice' => $puce_source,];
 
         }
 
@@ -291,12 +289,12 @@ class Demande_destockage_recouvreurController extends Controller
                 $agent = Agent::where('id_user', $user->id)->First();
 
             //recuperer la puce de l'agent
-                $puce_receptrice = Puce::Find($demande_destockage->puce_destination);
+                $puce_source = Puce::Find($demande_destockage->puce_source);
 
             //recuperer la flotte concerné
-                $flote = Flote::Find($puce_receptrice->id_flotte);
+                $flote = Flote::Find($puce_source->id_flotte);
 
-            $demandes_destockages[] = ['demande_destockage' => $demande_destockage, 'user' => $user, 'agent' => $agent, 'flote' => $flote, 'puce_receptrice' => $puce_receptrice,];
+            $demandes_destockages[] = ['demande_destockage' => $demande_destockage, 'user' => $user, 'agent' => $agent, 'flote' => $flote, 'puce_source' => $puce_source,];
 
         }
 
@@ -352,12 +350,12 @@ class Demande_destockage_recouvreurController extends Controller
                 $agent = Agent::where('id_user', $user->id)->First();
 
             //recuperer la puce de l'agent
-                $puce_receptrice = Puce::Find($demande_destockage->puce_destination);
+                $puce_source = Puce::Find($demande_destockage->puce_source);
 
             //recuperer la flotte concerné
-                $flote = Flote::Find($puce_receptrice->id_flotte);
+                $flote = Flote::Find($puce_source->id_flotte);
 
-            $demandes_destockages[] = ['demande_destockage' => $demande_destockage, 'user' => $user, 'agent' => $agent, 'flote' => $flote, 'puce_receptrice' => $puce_receptrice,];
+            $demandes_destockages[] = ['demande_destockage' => $demande_destockage, 'user' => $user, 'agent' => $agent, 'flote' => $flote, 'puce_source' => $puce_source,];
 
         }
 
