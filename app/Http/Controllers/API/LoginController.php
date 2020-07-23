@@ -176,15 +176,6 @@ class LoginController extends Controller
         if (Auth::check()) {
             $user = Auth::user();
             $userRole = $user->roles->pluck('name','name')->all();
-            $zones = json_decode($user->id_zone);
-            $zones_list = [];
-            
-            if ($zones != null) {
-                foreach ($zones as $zone) {
-                    $zones_list[] = Zone::Find($zone);
-                }
-            }
-            
 
             return response()->json(
                 [
@@ -193,8 +184,7 @@ class LoginController extends Controller
                     'data' => [
                         'user' => $user->setHidden(['deleted_at']),
                         'zone' => Zone::Find($user->id_zone),
-                        'userRole' => $userRole,
-                        'zones_list' => $zones_list
+                        'userRole' => $userRole
                     ]
                 ]
             );

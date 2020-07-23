@@ -250,13 +250,8 @@ class CreateForeingnKeys extends Migration
         // pour la table destockages
         Schema::table('destockages', function(Blueprint $table) {
 			//migrations des clés
-            $table->foreign('id_demande_destockage')
-                ->references('id')
-                ->on('demande_destockages')
-                ->onDelete('cascade')
-				->onUpdate('no action');
 
-            $table->foreign('add_by')
+            $table->foreign('id_recouvreur')
                 ->references('id')
                 ->on('users')
                 ->onDelete('cascade')

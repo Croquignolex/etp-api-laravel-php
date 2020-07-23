@@ -28,6 +28,13 @@ class Statut
     const FLOTTAGE = 'FLOTTAGE';
     const FLOTTAGE_SECONDAIRE = 'MASTER SIM';
 
+
+    //types d'approvisionnement'
+    const BY_AGENT = "D'un Agent";
+    const BY_DIGIT_PARTNER = "D'un Digital Partner";
+    const BY_BANK = "De la Banque";
+
+
     /**
      * Returns the list of all enum variants
      * @return array

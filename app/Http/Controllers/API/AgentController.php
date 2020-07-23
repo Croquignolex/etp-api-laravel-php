@@ -48,16 +48,17 @@ class AgentController extends Controller
                 //'poste' => ['nullable', 'string', 'max:255'],
                 'email' => 'required|email|unique:users,email', 
                 'password' => 'required|string|min:6', 
-                'id_zone' => ['nullable'],
+                'id_zone' => ['nullable', 'Numeric'],
 
             //Agent informations
                 'base_64_image' => 'nullable|string',
                 'base_64_image_back' => 'nullable|string',
+                'dossier' => 'nullable|file|max:10000',
                 'reference' => ['nullable', 'string', 'max:255'],
-                //'taux_commission' => ['required', 'Numeric'],
-                //'ville' => ['required', 'string', 'max:255'],
-                //'pays' => ['required', 'string', 'max:255'],
-                //'point_de_vente' => ['required', 'string', 'max:255']   
+                'taux_commission' => ['nullable', 'Numeric'],
+                'ville' => ['required', 'string', 'max:255'],
+                'pays' => ['required', 'string', 'max:255'],
+                'point_de_vente' => ['required', 'string', 'max:255']   
 
         ]);  
 
@@ -72,7 +73,23 @@ class AgentController extends Controller
                 ]
             );             
         }  
-  
+
+
+        if (isset($request->id_zone)) {
+            // on verifie si la zone est définie
+                
+            if (!Zone::Find($request->id_zone)) {
+                return response()->json(
+                    [
+                        'message' => "la zonne n'est pas definie",
+                        'status' => false,
+                        'data' => null
+                    ]
+                ); 
+            }
+        }
+
+        
         // Récupérer les données validées
             // users
                 $name = $request->name;
@@ -82,12 +99,16 @@ class AgentController extends Controller
                 //$poste = $request->poste;
                 $email = $request->email;
                 $password = bcrypt($request->password);                
-                //$roles = 'Agent';
                 $id_zone = $request->id_zone;
 
                  $role = Role::where('name', Roles::AGENT)->first();
 
-            // Agent                
+            // Agent    
+            
+                $dossier = null;
+                if ($request->hasFile('dossier') && $request->file('dossier')->isValid()) {
+                    $dossier = $request->dossier->store('files/dossier/agents');
+                }
                 $reference = $request->reference;
                 //$taux_commission = $request->taux_commission;
                 $ville = $request->ville;      
@@ -153,6 +174,7 @@ class AgentController extends Controller
                     'id_creator' => $add_by_id,
                     'id_user' => $user->id,
                     'img_cni' => $img_cni,
+                    'dossier' => $dossier,
                     'img_cni_back' => $img_cni_back,
                     'reference' => $reference,
                     //'taux_commission' => $taux_commission,
