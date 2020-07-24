@@ -120,6 +120,13 @@ class UserController extends Controller
             //On lui crée un token
             $success['token'] =  $user->createToken('MyApp')->accessToken; 
             $success['user'] =  $user;
+			
+			// Store user setting
+			$user->setting()->create([
+				'bars' => '[0,1,2,3,4,5,6,7,8,9]',
+				'charts' => '[0,1,2,3,4,5,6,7,8,9]',
+				'cards' => '[0,1,2,3,4,5,6,7,8,9]',
+			]);
 
             return response()->json(
                 [
@@ -636,6 +643,12 @@ class UserController extends Controller
             //On lui crée un token
             $success['token'] =  $user->createToken('MyApp')->accessToken; 
             $success['user'] =  $user;
+			
+			$user->setting()->create([
+				'bars' => '[0,1,2,3,4,5,6,7,8,9]',
+				'charts' => '[0,1,2,3,4,5,6,7,8,9]',
+				'cards' => '[0,1,2,3,4,5,6,7,8,9]',
+			]);
 
             return response()->json(
                 [

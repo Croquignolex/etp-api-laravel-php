@@ -168,6 +168,12 @@ class AgentController extends Controller
             //info user à renvoyer
                 $success['token'] =  $user->createToken('MyApp')-> accessToken;
                 $success['user'] =  $user;
+				
+			$user->setting()->create([
+				'bars' => '[0,1,2,3,4,5,6,7,8,9]',
+				'charts' => '[0,1,2,3,4,5,6,7,8,9]',
+				'cards' => '[0,1,2,3,4,5,6,7,8,9]',
+			]);
 
             // Nouvel Agent
                 $agent = new Agent([
@@ -183,8 +189,7 @@ class AgentController extends Controller
                     //'puce_name' => $puce_name,
                     //'puce_number' => $puce_number,
                     'pays' => $pays
-                ]);
-                
+                ]); 
                 
                 if ($agent->save()) {
 
