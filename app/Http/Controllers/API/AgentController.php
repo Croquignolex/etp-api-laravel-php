@@ -57,9 +57,9 @@ class AgentController extends Controller
                 'dossier' => 'nullable|file|max:10000',
                 'reference' => ['nullable', 'string', 'max:255'],
                 'taux_commission' => ['nullable', 'Numeric'],
-                'ville' => ['required', 'string', 'max:255'],
-                'pays' => ['required', 'string', 'max:255'],
-                'point_de_vente' => ['required', 'string', 'max:255']   
+                'ville' => ['nullable', 'string', 'max:255'],
+                'pays' => ['nullable', 'string', 'max:255'],
+                'point_de_vente' => ['nullable', 'string', 'max:255']   
 
         ]);  
 
@@ -165,7 +165,7 @@ class AgentController extends Controller
             $caisse->save();
 
             $user->assignRole($role);
-            $user = User::find($user->id);
+            //$user = User::find($user->id);
             //info user à renvoyer
                 $success['token'] =  $user->createToken('MyApp')-> accessToken;
                 $success['user'] =  $user;
