@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use App\Agent;
+use App\Http\Resources\Agent as AgentResource;
 use App\Zone;
 use App\Enums\Statut;
 use App\Caisse;
@@ -346,6 +347,57 @@ class AgentController extends Controller
         } 
 
     }
+
+
+    /**
+     * Modifier le dossier d'un agent
+     */
+    public function edit_folder(Request $request, Agent $agent)
+    { 
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [
+            'dossier' => 'nullable|file|max:10000',
+        ]);
+
+        if ($validator->fails()) { 
+            return response()->json(
+                [
+                    'message' => ['error'=>$validator->errors()],
+                    'status' => false,
+                    'data' => null
+                ]
+            );             
+        }
+
+        // Récupérer les données validées             
+        $dossier = null;
+        if ($request->hasFile('dossier') && $request->file('dossier')->isValid()) {
+            $dossier = $request->dossier->store('files/dossier/agents');
+        }
+
+
+        // Modifier son dossier
+        $agent->dossier = $dossier;
+        
+        
+        if ($agent->save()) {
+
+            // Renvoyer un message de succès
+            return new AgentResource($agent);
+            
+        } else {
+            // Renvoyer une erreur
+            return response()->json(
+                [
+                    'message' => 'erreur lors de la modification', 
+                    'status'=>false,
+                    'data' => null
+                ]
+            );
+        } 
+
+    }
+
 
     /** 
      * liste des Agents
