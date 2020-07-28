@@ -16,7 +16,7 @@ class AddRecuToDestockageTable extends Migration
         Schema::table('destockages', function (Blueprint $table) {
             $table->string('id_puce')->after('id_recouvreur');
             $table->string('id_agent')->nullable()->after('id_recouvreur');
-            $table->string('fournisseur')->after('id_recouvreur');
+            $table->string('fournisseur')->nullable()->after('id_recouvreur');
             $table->string('type')->after('id_recouvreur');
             $table->string('recu')->nullable()->after('id_recouvreur');
 

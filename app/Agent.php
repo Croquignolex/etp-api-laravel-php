@@ -23,6 +23,7 @@ class Agent extends Model
         return $this->hasMany('App\Puce', 'id_agent');
     }
 
+
     public function user()
     {
         return $this->belongsTo('App\User', 'id_user');
