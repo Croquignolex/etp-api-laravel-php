@@ -52,14 +52,14 @@ class AgentController extends Controller
                 'id_zone' => ['nullable', 'Numeric'],
 
             //Agent informations
-                'base_64_image' => 'nullable|string',
-                'base_64_image_back' => 'nullable|string',
-                'dossier' => 'nullable|file|max:10000',
+                //'base_64_image' => 'nullable|string',
+                //'base_64_image_back' => 'nullable|string',
+                //'dossier' => 'nullable|file|max:10000',
                 'reference' => ['nullable', 'string', 'max:255'],
                 'taux_commission' => ['nullable', 'Numeric'],
-                'ville' => ['required', 'string', 'max:255'],
-                'pays' => ['required', 'string', 'max:255'],
-                'point_de_vente' => ['required', 'string', 'max:255']   
+                'ville' => ['nullable', 'string', 'max:255'],
+                'pays' => ['nullable', 'string', 'max:255'],
+                'point_de_vente' => ['nullable', 'string', 'max:255']   
 
         ]);  
 
@@ -106,10 +106,10 @@ class AgentController extends Controller
 
             // Agent    
             
-                $dossier = null;
+                /*$dossier = null;
                 if ($request->hasFile('dossier') && $request->file('dossier')->isValid()) {
                     $dossier = $request->dossier->store('files/dossier/agents');
-                }
+                }*/
                 $reference = $request->reference;
                 //$taux_commission = $request->taux_commission;
                 $ville = $request->ville;      
@@ -117,10 +117,10 @@ class AgentController extends Controller
                 //$point_de_vente = $request->point_de_vente;
                 //$puce_name = $request->puce_name;
                 //$puce_number = $request->puce_number;
-                $img_cni = null; 
-                $img_cni_back = null;             
+                //$img_cni = null; 
+                //$img_cni_back = null;             
 
-                if (isset($request->base_64_image)) {
+                /*if (isset($request->base_64_image)) {
                     $img_cni = $request->base_64_image;
                     // Convert base 64 image to normal image for the server and the data base
                     $server_image_name_path1 = ImageFromBase64::imageFromBase64AndSave($request->input('base_64_image'), 
@@ -133,7 +133,7 @@ class AgentController extends Controller
                     $server_image_name_path2 = ImageFromBase64::imageFromBase64AndSave($request->input('base_64_image_back'), 
                     'images/avatars/');
                     $img_cni_back = $server_image_name_path2;
-                }        
+                }*/        
 
 
         //l'utilisateur connecté
@@ -165,17 +165,23 @@ class AgentController extends Controller
             $caisse->save();
 
             $user->assignRole($role);
-            $user = User::find($user->id);
+            //$user = User::find($user->id);
             //info user à renvoyer
                 $success['token'] =  $user->createToken('MyApp')-> accessToken;
                 $success['user'] =  $user;
+				
+			$user->setting()->create([
+				'bars' => '[0,1,2,3,4,5,6,7,8,9]',
+				'charts' => '[0,1,2,3,4,5,6,7,8,9]',
+				'cards' => '[0,1,2,3,4,5,6,7,8,9]',
+			]);
 
             // Nouvel Agent
                 $agent = new Agent([
                     'id_creator' => $add_by_id,
                     'id_user' => $user->id,
                     'img_cni' => $img_cni,
-                    'dossier' => $dossier,
+                    //'dossier' => $dossier,
                     'img_cni_back' => $img_cni_back,
                     'reference' => $reference,
                     //'taux_commission' => $taux_commission,
@@ -184,8 +190,7 @@ class AgentController extends Controller
                     //'puce_name' => $puce_name,
                     //'puce_number' => $puce_number,
                     'pays' => $pays
-                ]);
-                
+                ]); 
                 
                 if ($agent->save()) {
 
@@ -351,7 +356,7 @@ class AgentController extends Controller
     { 
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
-            'dossier' => 'nullable|file|max:10000',
+            'document' => 'nullable|file|max:10000',
         ]);
 
         if ($validator->fails()) { 
@@ -366,8 +371,8 @@ class AgentController extends Controller
 
         // Récupérer les données validées             
         $dossier = null;
-        if ($request->hasFile('dossier') && $request->file('dossier')->isValid()) {
-            $dossier = $request->dossier->store('files/dossier/agents');
+        if ($request->hasFile('document') && $request->file('document')->isValid()) {
+            $dossier = $request->document->store('files/dossier/agents');
         }
 
 
@@ -378,7 +383,23 @@ class AgentController extends Controller
         if ($agent->save()) {
 
             // Renvoyer un message de succès
-            return new AgentResource($agent);
+            //return new AgentResource($agent);
+			
+			$puces = is_null($agent) ? [] : $agent->puces;
+			$user = User::find($agent->id_user);
+            // Renvoyer un message de succès
+            return response()->json(
+                [
+                    'message' => 'agent modifié',
+                    'status' => true,
+                    'data' => [
+						'zone' => $user->zone,
+						'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']), 
+						'agent' => $agent,
+						'puces' => $puces 
+					]
+                ]
+            );			
             
         } else {
             // Renvoyer une erreur
