@@ -190,18 +190,13 @@ class DemandeflotteController extends Controller
     }
   
     /**
-     * //lister mes demandes de flotes en attente
+     * //lister mes demandes de flotes (gestionnaire de flotte ou les admin)
      */
-    public function list()
+    public function list_demandes_flote_general()
     {
-
-
-        //On recupere mes 'demande de flotte'
-        $demandes_flote = Demande_flote::where('statut', \App\Enums\Statut::EN_ATTENTE)
-        ->where('id_user', Auth::user()->id)
-        ->get();
-
-
+        //On recupere toutes 'demande de flotte'
+        $demandes_flote = Demande_flote::all();
+     
         if ($demandes_flote->count() == 0) {
             return response()->json(
                 [
@@ -212,26 +207,20 @@ class DemandeflotteController extends Controller
             );
         }
 
-        foreach($demandes_flote as $demande_flote) {
+        $demandes_flotes = [];
 
-            //recuperer l'utilisateur concerné
-                $user = User::Find($demande_flote->id_user);
+        foreach($demandes_flote as $demande_flote) {
+			//recuperer l'utilisateur concerné
+            $user = $demande_flote->user;
 
             //recuperer l'agent concerné
-                $agent = Agent::where('id_user', $user->id)->First();
+            $agent = Agent::where('id_user', $user->id)->first();
 
-            //recuperer la flotte concerné
-                $flote = Flote::Find($demande_flote->user_source);
+            //recuperer le demandeur 
+			$demandeur = User::Find($demande_flote->add_by);
 
-            //recuperer la puce de l'agent
-            $puce = Puce::where('id_flotte', $flote->id)
-            ->where('id_agent', $agent->id)
-            ->First();
-
-            $demandes_flotes[] = ['demande_flote' => $demande_flote, 'user' => $user, 'agent' => $agent, 'flote' => $flote, 'puce' => $puce,];
-
+            $demandes_flotes[] = ['demande_flote' => $demande_flote, 'demandeur' => $demandeur, 'agent' => $agent, 'user' => $user, 'puce' => $demande_flote->puce]; 
         }
-
 
         if (!empty($demandes_flote)) {
 

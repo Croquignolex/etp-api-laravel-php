@@ -242,8 +242,8 @@ Route::group(['middleware' => 'auth:api'], function(){
             //lister mes demandes de flotes peu importe le statut
             Route::get('list_all_demandes_flote', 'API\DemandeflotteController@list_all_status');
 
-            //lister mes demandes de flotes en attente
-            Route::get('list_mes_demandes_flote', 'API\DemandeflotteController@list');
+            //lister mes demandes de flotes (gestionnaire de flotte ou les admin)
+            Route::get('list_demandes_flote_general', 'API\DemandeflotteController@list_demandes_flote_general');
 
         //pour un Agent
 			Route::post('annuler_demandes_flote_agent/{id}', 'API\Demande_flote_recouvreurController@annuler')
