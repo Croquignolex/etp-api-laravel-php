@@ -47,14 +47,14 @@ class AgentController extends Controller
                 'adresse' => 'nullable',
                 'description' => 'nullable',
                 //'poste' => ['nullable', 'string', 'max:255'],
-                'email' => 'required|email|unique:users,email', 
+                'email' => 'nullable|email', 
                 'password' => 'required|string|min:6', 
                 'id_zone' => ['nullable', 'Numeric'],
 
             //Agent informations
-                //'base_64_image' => 'nullable|string',
-                //'base_64_image_back' => 'nullable|string',
-                //'dossier' => 'nullable|file|max:10000',
+                'base_64_image' => 'nullable|string',
+                'base_64_image_back' => 'nullable|string',
+                'document' => 'nullable|file|max:10000',
                 'reference' => ['nullable', 'string', 'max:255'],
                 'taux_commission' => ['nullable', 'Numeric'],
                 'ville' => ['nullable', 'string', 'max:255'],
@@ -106,10 +106,10 @@ class AgentController extends Controller
 
             // Agent    
             
-                /*$dossier = null;
-                if ($request->hasFile('dossier') && $request->file('dossier')->isValid()) {
-                    $dossier = $request->dossier->store('files/dossier/agents');
-                }*/
+                $dossier = null;
+                if ($request->hasFile('document') && $request->file('document')->isValid()) {
+                    $dossier = $request->document->store('files/dossier/agents');
+                }
                 $reference = $request->reference;
                 //$taux_commission = $request->taux_commission;
                 $ville = $request->ville;      
@@ -117,10 +117,10 @@ class AgentController extends Controller
                 //$point_de_vente = $request->point_de_vente;
                 //$puce_name = $request->puce_name;
                 //$puce_number = $request->puce_number;
-                //$img_cni = null; 
-                //$img_cni_back = null;             
+                $img_cni = null; 
+                $img_cni_back = null;             
 
-                /*if (isset($request->base_64_image)) {
+                if (isset($request->base_64_image)) {
                     $img_cni = $request->base_64_image;
                     // Convert base 64 image to normal image for the server and the data base
                     $server_image_name_path1 = ImageFromBase64::imageFromBase64AndSave($request->input('base_64_image'), 
@@ -133,7 +133,7 @@ class AgentController extends Controller
                     $server_image_name_path2 = ImageFromBase64::imageFromBase64AndSave($request->input('base_64_image_back'), 
                     'images/avatars/');
                     $img_cni_back = $server_image_name_path2;
-                }*/        
+                }        
 
 
         //l'utilisateur connecté
@@ -181,7 +181,7 @@ class AgentController extends Controller
                     'id_creator' => $add_by_id,
                     'id_user' => $user->id,
                     'img_cni' => $img_cni,
-                    //'dossier' => $dossier,
+                    'dossier' => $dossier,
                     'img_cni_back' => $img_cni_back,
                     'reference' => $reference,
                     //'taux_commission' => $taux_commission,
@@ -285,6 +285,7 @@ class AgentController extends Controller
             'adresse' => ['nullable', 'string', 'max:255'],
             'pays' => ['nullable', 'string', 'max:255'],
             //'point_de_vente' => ['required', 'string', 'max:255']
+			'email' => 'nullable|email',
         ]);
         if ($validator->fails()) { 
             return response()->json(
@@ -301,6 +302,7 @@ class AgentController extends Controller
         $name = $request->name;
         $ville = $request->ville;      
         $pays = $request->pays; 
+        $email = $request->email; 
         $description = $request->description;
         $adresse = $request->adresse;
          
@@ -316,6 +318,7 @@ class AgentController extends Controller
 		
 		$user = User::find($agent->id_user);
 		$user->name = $name;
+		$user->email = $email;
 		$user->adresse = $adresse;
 		$user->description = $description;
  

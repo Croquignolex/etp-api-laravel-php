@@ -196,16 +196,6 @@ class DemandeflotteController extends Controller
     {
         //On recupere toutes 'demande de flotte'
         $demandes_flote = Demande_flote::all();
-     
-        if ($demandes_flote->count() == 0) {
-            return response()->json(
-                [
-                    'message' => 'aucune demande trouvée',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
-        }
 
         $demandes_flotes = [];
 
