@@ -29,7 +29,8 @@ class AgentController extends Controller
     {
         $superviseur = Roles::SUPERVISEUR;
         $recouvreur = Roles::RECOUVREUR;
-        $this->middleware("permission:$recouvreur|$superviseur");
+        $ges_flotte = Roles::GESTION_FLOTTE;
+        $this->middleware("permission:$recouvreur|$superviseur|$ges_flotte");
     }
 
     /**

@@ -24,8 +24,7 @@ class DemandeflotteController extends Controller
         $recouvreur = Roles::RECOUVREUR;
         $agent = Roles::AGENT;
         $superviseur = Roles::SUPERVISEUR;
-        $ges_flotte = Roles::GESTION_FLOTTE;
-        
+        $ges_flotte = Roles::GESTION_FLOTTE; 
         $this->middleware("permission:$recouvreur|$agent|$superviseur|$ges_flotte");       
     }
   
@@ -105,8 +104,7 @@ class DemandeflotteController extends Controller
             );
         } 
     }
-	
-	
+	 
 	/**
      * //modifier une demande de Flotte
      */
@@ -130,6 +128,53 @@ class DemandeflotteController extends Controller
 		$demande_flote = Demande_flote::find($id);
 		$demande_flote->montant = $request->montant;
 		$demande_flote->id_puce = $request->id_puce;
+
+        // update de La demande
+        if ($demande_flote->save()) {
+			$user = $demande_flote->user;
+			$agent = Agent::where('id_user', $user->id)->first();
+			$demandeur = User::Find($demande_flote->add_by);
+            // Renvoyer un message de succès
+            return response()->json(
+                [
+                    'message' => '',
+                    'status' => true,
+                    'data' => ['demande_flote' => $demande_flote, 'demandeur' => $demandeur, 'agent' => $agent, 'user' => $user, 'puce' => $demande_flote->puce]
+                ]
+            );
+        } else {
+            // Renvoyer une erreur
+            return response()->json(
+                [
+                    'message' => 'erreur lors de la demande',
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        } 
+    }
+	
+	/**
+     * //modifier une demande de Flotte (gestionnaire de flotte ou les admin)
+     */
+    public function modifier_general(Request $request, $id)
+    {
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [ 
+            'reference' => ['required', 'string'], 
+        ]);
+        if ($validator->fails()) { 
+            return response()->json(
+                [
+                    'message' => ['error'=>$validator->errors()],
+                    'status' => false,
+                    'data' => null
+                ]
+            );            
+        } 
+          
+		$demande_flote = Demande_flote::find($id);
+		$demande_flote->reference = $request->reference; 
 
         // update de La demande
         if ($demande_flote->save()) {
