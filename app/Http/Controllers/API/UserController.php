@@ -293,6 +293,8 @@ class UserController extends Controller
      */
     public function delete($id)
     {
+
+
         if (Auth::user()->id == $id) {
             // Renvoyer une erreur
             return response()->json(
@@ -303,12 +305,23 @@ class UserController extends Controller
                 ]
             );
         }
+
+        if (!User::find($id)) { 
+            // Renvoyer une erreur
+            return response()->json(
+                [
+                    'message' => "L'utilisateur que vous tentez de supprimer n'existe pas",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+
         if (Auth::check()) {
-            $userDB = User::find($id);
-            $userDB->deleted_at = now();
-            if ($userDB->save()) {
+
+            if (User::find($id)->delete()) {
 				 
-				$users = User::where('deleted_at', null)->get();
+				$users = User::get();
 				$returenedUers = [];
 				foreach($users as $user) {
 	 

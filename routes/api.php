@@ -28,7 +28,7 @@ Route::group(['middleware' => 'auth:api'], function(){
      ///////////////////////GESTION DES UTILISATEURS/////////////////////////
     */
 
-        /////////////////User sur un user 
+        /////////////////User sur un user
 
             //Modification de l'utilisateur
             Route::post('edit_user/{id}', 'API\UserController@edit_user')
@@ -55,19 +55,19 @@ Route::group(['middleware' => 'auth:api'], function(){
             //Approuver ou desapprouver un utilisateur
             Route::post('edit_user_status/{id}', 'API\UserController@edit_user_status')
             ->where('id', '[0-9]+');
-			
+
 			 //Creation d'un agent de recouvrement
             Route::post('create_recouvreur', 'API\UserController@create_recouvreur');
-			
+
 			 //Changer la zone d'un utilisateur
             Route::post('edit_zone_user/{id}', 'API\UserController@edit_zone_user')
             ->where('id', '[0-9]+');
-        
+
         /////////////////User sur lui meme
 
             //details de l'utilisateur
             Route::get('details', 'API\LoginController@details');
-			
+
 			//details de l'utilisateur
             Route::post('update_profile', 'API\LoginController@edit_profile');
 
@@ -79,10 +79,10 @@ Route::group(['middleware' => 'auth:api'], function(){
 
             //Changer mon avatar
             Route::post('edit_avatar', 'API\LoginController@update_picture');
-			
+
 			//setting update
             Route::post('edit_setting', 'API\LoginController@update_setting');
-			
+
 
     /*
      /////////////////////GESTION DES AGENTS///////////////////////////
@@ -111,19 +111,19 @@ Route::group(['middleware' => 'auth:api'], function(){
         //supprimer un Agents
         Route::post('delete_agent/{id}', 'API\AgentController@delete')
         ->where('id', '[0-9]+');
-		
+
 		//Approuver ou desapprouver un agent
 		Route::post('edit_agent_status/{id}', 'API\AgentController@edit_agent_status')
 		->where('id', '[0-9]+');
-			
+
 		 //Changer la zone d'un agent
 		Route::post('edit_zone_agent/{id}', 'API\AgentController@edit_zone_agent')
 		->where('id', '[0-9]+');
-		
+
 		// ajouter une puce à un agent
         Route::post('ajouter_puce_agent/{id}', 'API\AgentController@ajouter_puce')
         ->where('id', '[0-9]+');
-		
+
 		// supprimer une puce depuis un agent
         Route::post('delete_puce_agent/{id}', 'API\AgentController@delete_puce')
         ->where('id', '[0-9]+');
@@ -131,7 +131,7 @@ Route::group(['middleware' => 'auth:api'], function(){
     /*
       ///////////////GESTION DES ROLES DES UTILISATEURS///////////////////
     */
-	
+
         //liste des permisions
         Route::get('permisions_list', 'API\RoleController@permisions_list');
 
@@ -153,7 +153,7 @@ Route::group(['middleware' => 'auth:api'], function(){
     /*
     //////////////////////GESTION DES FLOTES/////////////////////
     */
-    
+
         //Creer une flote
         Route::post('store_flote', 'API\FloteController@store');
 
@@ -171,11 +171,11 @@ Route::group(['middleware' => 'auth:api'], function(){
         //supprimer une flote
         Route::post('delete_flote/{id}', 'API\FloteController@destroy')
         ->where('id', '[0-9]+');
-		
+
 		// ajouter une puce à une flotte
         Route::post('ajouter_puce_flote/{id}', 'API\FloteController@ajouter_puce')
         ->where('id', '[0-9]+');
-		
+
 		// supprimer une puce à une flotte
         Route::post('delete_puce_flote/{id}', 'API\FloteController@delete_puce')
         ->where('id', '[0-9]+');
@@ -185,7 +185,7 @@ Route::group(['middleware' => 'auth:api'], function(){
     */
 		//liste des types de puces
         Route::get('types_puces_list', 'API\PuceController@types_puces_list');
-    
+
         //Creer une puce
         Route::post('store_puce', 'API\PuceController@store');
 
@@ -199,11 +199,11 @@ Route::group(['middleware' => 'auth:api'], function(){
         //modification d'une puce
         Route::post('edit_puce/{id}', 'API\PuceController@update')
         ->where('id', '[0-9]+');
-		
+
 		//modification de l'operateur d'une puce
         Route::post('edit_puce_flote/{id}', 'API\PuceController@update_flote')
         ->where('id', '[0-9]+');
-		
+
 		//modification de l'agent d'une puce
         Route::post('edit_puce_agent/{id}', 'API\PuceController@update_agent')
         ->where('id', '[0-9]+');
@@ -212,7 +212,7 @@ Route::group(['middleware' => 'auth:api'], function(){
         Route::post('delete_puce/{id}', 'API\PuceController@destroy')
         ->where('id', '[0-9]+');
 
-        //lister les puces d'une flotte 
+        //lister les puces d'une flotte
         Route::post('list_puce_flotte/{id}', 'API\PuceController@list_puce_flotte')
         ->where('id', '[0-9]+');
 
@@ -224,18 +224,18 @@ Route::group(['middleware' => 'auth:api'], function(){
     //////////////////////Demande de Flotte/////////////////////
     */
 
-          //par un Agent     
+          //par un Agent
             //Details d'une demande de flote
-            Route::get('detail_demandes_flote/{id}', 'API\DemandeflotteController@show') 
+            Route::get('detail_demandes_flote/{id}', 'API\DemandeflotteController@show')
             ->where('id', '[0-9]+');
-			
+
 			//Details d'une demande de flote
             Route::post('modifier_demandes_flote/{id}', 'API\DemandeflotteController@modifier')
             ->where('id', '[0-9]+');
-			
+
 			Route::post('annuler_demandes_flote/{id}', 'API\DemandeflotteController@annuler')
             ->where('id', '[0-9]+');
-			 
+
             //Creer une demande de flote
             Route::post('demande_flote', 'API\DemandeflotteController@store');
 
@@ -245,14 +245,14 @@ Route::group(['middleware' => 'auth:api'], function(){
         //pour un Agent
 			Route::post('annuler_demandes_flote_agent/{id}', 'API\Demande_flote_recouvreurController@annuler')
 			->where('id', '[0-9]+');
-			
+
 			//Details d'une demande de flote
             Route::post('modifier_demandes_flote_agent/{id}', 'API\Demande_flote_recouvreurController@modifier')
             ->where('id', '[0-9]+');
 
             //Creer une demande de flote pour un Agent
             Route::post('demande_flote_agent', 'API\Demande_flote_recouvreurController@store');
-			
+
 			//Details d'une demande de flote
             Route::get('detail_demandes_flote_agent/{id}', 'API\Demande_flote_recouvreurController@show')
             ->where('id', '[0-9]+');
@@ -281,17 +281,17 @@ Route::group(['middleware' => 'auth:api'], function(){
     //////////////////////Demande de destockage/////////////////////
     */
 
-        //pour tous les deux cas 
-        
+        //pour tous les deux cas
+
             //Details d'une demande de destockage
             Route::get('detail_demandes_destockage/{id}', 'API\DemandedestockageController@show')
-            ->where('id', '[0-9]+'); 
+            ->where('id', '[0-9]+');
 
         //par un Agent
 
             //Creer une demande de destockage
-            Route::post('demande_destockage', 'API\DemandedestockageController@store');   
-            
+            Route::post('demande_destockage', 'API\DemandedestockageController@store');
+
             //lister mes demandes de destockage peu importe le statut
             Route::get('list_all_mes_demandes_destockages', 'API\DemandedestockageController@list_all_status');
 
@@ -315,11 +315,15 @@ Route::group(['middleware' => 'auth:api'], function(){
 
             //lister les demandes de destockage en attente
             Route::get('list_demandes_destockage_agent', 'API\Demande_destockage_recouvreurController@list');
-            
+
+
+
+
+
     /*
     //////////////////////GESTION DES ZONES DE RECOUVREMENT /////////////////////
     */
-    
+
         //Creer une zone
         Route::post('store_zone', 'API\ZoneController@store');
 
@@ -340,11 +344,11 @@ Route::group(['middleware' => 'auth:api'], function(){
 
         //Attribuer une zonne à un utilisateur
         Route::post('give_zone', 'API\ZoneController@give_zone');
-		
+
 		// ajouter une puce à une flotte
         Route::post('give_zone/{id}', 'API\FloteController@ajouter_puce')
         ->where('id', '[0-9]+');
-		
+
 		// supprimer un agent à une zone
         Route::post('delete_agent_zone/{id}', 'API\ZoneController@delete_agent')
         ->where('id', '[0-9]+');
@@ -360,26 +364,27 @@ Route::group(['middleware' => 'auth:api'], function(){
         // ajouter un recouvreur à une zone
         Route::post('ajouter_recouvreur_zone/{id}', 'API\ZoneController@ajouter_recouvreur')
         ->where('id', '[0-9]+');
-        
+
         /*
     //////////////////////Flottage/////////////////////
     */
-        
+
         //Details d'un Flottage
         Route::get('detail_flottage/{id}', 'API\FlotageController@show')
-        ->where('id', '[0-9]+'); 
+        ->where('id', '[0-9]+');
 
         //lister les Flottages peu importe le statut
         Route::get('list_all_flottage', 'API\FlotageController@list_all');
 
-        //Creer un Flottage 
-        Route::post('flottage', 'API\FlotageController@store'); 
-        
-        //lister les Flottages relatifs à une demande precise 
-        Route::post('list_flottage', 'API\FlotageController@list_flottage');
+        //Creer un Flottage
+        Route::post('flottage', 'API\FlotageController@store');
 
+        //lister les Flottages relatifs à une demande precise
+        Route::get('list_flottage/{id}', 'API\FlotageController@list_flottage')
+        ->where('id', '[0-9]+');
 
-
+        //Creer un Flottage pour un agent present à l'agence
+        Route::post('flottage_express', 'API\FlotageController@flottage_express');
 
 
         /*
@@ -388,22 +393,22 @@ Route::group(['middleware' => 'auth:api'], function(){
 
 
         //traitement d'une demande de destockage (juste pour signaler au système que je traite totalement ou en partie une demande)
-        Route::post('traiter_demande', 'API\ApprovisionnementEtpController@traiter_demande');
-        
+        Route::post('traiter_demande', 'API\ApprovisionnementEtpController@traitement_demande_flotte');
+
         //Approvisionnement.  faite par le responsable de zone, l'Approvisionnement est de 3 types. par un Agant, le digital partner ou la banque
-        Route::post('approvisionnement', 'API\ApprovisionnementEtpController@store');
+        Route::post('approvisionnement_etp', 'API\ApprovisionnementEtpController@store');
 
 
-        //approbation par le gestionnaire de flotte, elle atteste avoir recu la flotte
-        Route::get('approuve', 'API\ApprovisionnementEtpController@approuve');
+        //Confirmation par le gestionnaire de flotte, elle atteste avoir recu la flotte
+        Route::post('approuve', 'API\ApprovisionnementEtpController@approuve');
 
 
         //Details d'un approvisionnement
-        Route::get('detail/{id}', 'API\ApprovisionnementEtpController@show')
-        ->where('id', '[0-9]+'); 
+        Route::get('detail_destockage/{id}', 'API\ApprovisionnementEtpController@detail')
+        ->where('id', '[0-9]+');
 
-        //lister les Flottages peu approvisionnement le statut
-        Route::get('list_all', 'API\ApprovisionnementEtpController@list_all');
-                
+        //lister les approvisionnement
+        Route::get('list_destockage', 'API\ApprovisionnementEtpController@list_all');
+
 
 });
