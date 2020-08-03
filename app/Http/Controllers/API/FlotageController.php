@@ -35,17 +35,10 @@ class FlotageController extends Controller
     Public function store(Request $request) {
 
         // Valider données envoyées
-<<<<<<< .mine
         $validator = Validator::make($request->all(), [ 
             'montant' => ['required', 'numeric'], 
             'id_demande_flotte' => ['required', 'numeric'],
             'id_puce' => ['required', 'numeric']
-=======
-        $validator = Validator::make($request->all(), [
-            'montant' => ['required', 'Numeric'],
-            'id_demande_flotte' => ['required', 'Numeric'],
-            'id_puce' => ['required', 'Numeric']
->>>>>>> .theirs
         ]);
         if ($validator->fails()) {
             return response()->json(
