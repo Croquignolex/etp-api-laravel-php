@@ -310,6 +310,10 @@ Route::group(['middleware' => 'auth:api'], function(){
             //lister les demandes de destockage en attente
             Route::get('list_demandes_destockage_agent', 'API\Demande_destockage_recouvreurController@list');
 
+
+
+
+
     /*
     //////////////////////GESTION DES ZONES DE RECOUVREMENT /////////////////////
     */
@@ -373,8 +377,8 @@ Route::group(['middleware' => 'auth:api'], function(){
         Route::get('list_flottage/{id}', 'API\FlotageController@list_flottage')
         ->where('id', '[0-9]+');
 
-
-
+        //Creer un Flottage pour un agent present à l'agence
+        Route::post('flottage_express', 'API\FlotageController@flottage_express');
 
 
         /*

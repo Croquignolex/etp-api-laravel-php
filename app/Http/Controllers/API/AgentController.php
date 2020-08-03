@@ -622,41 +622,45 @@ class AgentController extends Controller
      * @return \Illuminate\Http\Response 
      */ 
     public function delete($id)
-    {
-        if (Agent::find($id)) {
-            $agentDB = Agent::find($id);
-            $agentDB->deleted_at = now();
-            if ($agentDB->save()) {
+    { 
+        if (!Agent::find($id)) { 
+            // Renvoyer une erreur
+            return response()->json(
+                [
+                    'message' => "L'agent que vous tentez de supprimer n'existe pas",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
 
-                $userDB = User::find($agentDB->id_user);
-                $userDB->deleted_at = now();
-                $userDB->save();
-				
-				$agents = Agent::where('deleted_at', null)->get();
-				$returenedAgents = [];
-					
-				foreach($agents as $agent) {
+
+        if (Agent::find($id)->delete()) {
+            
+            $agents = Agent::get();
+            $returenedAgents = [];
+                
+            foreach($agents as $agent) {
 
                 $user = User::find($agent->id_user);
-				 
-				$puces = is_null($agent) ? [] : $agent->puces;
+                
+                $puces = is_null($agent) ? [] : $agent->puces;
 
                 $returenedAgents[] = [ 
-					'zone' => $user->zone,
-					'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']), 
-					'agent' => $agent,
-					'puces' => $puces 
-				];
-
+                    'zone' => $user->zone,
+                    'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']), 
+                    'agent' => $agent,
+                    'puces' => $puces 
+                ];
+                
             } 
-
             return response()->json(
                 [
                     'message' => 'agent archivé',
                     'status' => true,
                     'data' => ['agents' => $returenedAgents]
                 ]
-            );
+            );  
  
 		} else {
 			// Renvoyer une erreur
@@ -667,16 +671,9 @@ class AgentController extends Controller
 					'data' => null
 				]
 			);
-		} 
-         }else{
-            return response()->json(
-                [
-                    'message' => 'cet agent n existe pas', 
-                    'status'=>false,
-                    'data' => null
-                ]
-            );
-         }
+        } 
+        
+         
         
     }
 

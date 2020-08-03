@@ -29,4 +29,19 @@ class Agent extends Model
         return $this->belongsTo('App\User', 'id_user');
     }
 
+    public static function boot()
+    {
+        parent::boot();        
+        static::deleting(function($agent)
+        {           
+
+            //on supprime ses puces
+            $agent->puces()->delete();
+
+            //on supprime l'utilisateur associé
+            $agent->user()->delete(); 
+            
+        });
+    }
+
 }
