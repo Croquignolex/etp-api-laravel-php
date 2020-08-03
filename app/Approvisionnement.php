@@ -15,7 +15,7 @@ class Approvisionnement extends Model
 
     protected $dates = ['deleted_at'];
     protected $fillable = array('id_demande_flote', 'id_user', 'reference', 'statut', 'note', 'montant');
-    protected $visible = array('id_demande_flote', 'id_user', 'reference', 'statut', 'note', 'montant');
+    protected $visible = array('id', 'id_demande_flote', 'id_user', 'reference', 'statut', 'note', 'montant', 'created_at');
 
     public function user()
     {

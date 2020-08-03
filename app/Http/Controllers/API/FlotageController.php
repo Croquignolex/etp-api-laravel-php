@@ -36,9 +36,9 @@ class FlotageController extends Controller
 
         // Valider données envoyées
         $validator = Validator::make($request->all(), [ 
-            'montant' => ['required', 'Numeric'], 
-            'id_demande_flotte' => ['required', 'Numeric'],
-            'id_puce' => ['required', 'Numeric']
+            'montant' => ['required', 'numeric'], 
+            'id_demande_flotte' => ['required', 'numeric'],
+            'id_puce' => ['required', 'numeric']
         ]);
         if ($validator->fails()) { 
             return response()->json(
@@ -72,8 +72,6 @@ class FlotageController extends Controller
                 ]
             ); 
         }
-
-
 
         // On verifi que la puce passée en paramettre existe
         if (Puce::find($request->id_puce)) {            
@@ -129,7 +127,7 @@ class FlotageController extends Controller
             'id_demande_flote' => $demande_flotte->id,
             'id_user' => $gestionnaire->id,
             'reference' => null,
-            'statut' => \App\Enums\Statut::EN_ATTENTE,
+            'statut' => \App\Enums\Statut::TERMINEE,
             'note' => null,
             'montant' => $montant
         ]);
@@ -167,13 +165,24 @@ class FlotageController extends Controller
 
                 //Enregistrer les oppérations
                 $demande_flotte->save();
+				
+				
+				$user = $demande_flotte->user; 
+				$demandeur = User::Find($demande_flotte->add_by);
 
                 // Renvoyer un message de succès
                 return response()->json(
                     [
                         'message' => "Le flottage c'est bien passé",
                         'status' => true,
-                        'data' => ['flottage' => $flottage, 'demande_flotte' => $demande_flotte]
+                        'data' => [
+							'demande_flote' => $demande_flotte,
+							'demandeur' => $demandeur, 
+							'agent' => $agent, 
+							'user' => $user, 
+							'approvisionnements' => $demande_flotte->approvisionnements,
+							'puce' => $demande_flotte->puce 
+						]
                     ]
                 );
 
