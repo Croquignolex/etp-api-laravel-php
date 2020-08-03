@@ -79,6 +79,35 @@ class User extends Authenticatable
     public function AauthAcessToken(){
         return $this->hasMany('\App\OauthAccessToken');
     }
+
+    public function agent()
+    {
+        return $this->hasMany('App\Agent', 'id_user');
+    }
+
+    public function caisse()
+    {
+        return $this->hasMany('App\Caisse', 'id_user');
+    }
 	
-	   
+       
+    
+    public static function boot()
+    {
+        parent::boot();        
+        static::deleting(function($user)
+        {
+            //on supprime ses puces
+            $user->agent()->first()->puces()->delete();
+            
+            //on supprime l'agent associé
+            $user->agent()->delete(); 
+            
+            //on supprime sa caisse
+            $user->caisse()->delete();
+
+            
+            
+        });
+    }
 }

@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Auth;
 
 class Demande_destockage_recouvreurController extends Controller
 {
-    
+
     /**
 
      * les conditions de lecture des methodes
@@ -37,39 +37,31 @@ class Demande_destockage_recouvreurController extends Controller
     public function store(Request $request)
     {
         // Valider données envoyées
-        $validator = Validator::make($request->all(), [ 
+        $validator = Validator::make($request->all(), [
             'montant' => ['required', 'Numeric'],
             'id_agent' => ['required', 'Numeric'],
             'id_puce' => ['required', 'Numeric'] //sous forme de select qui affiche juste les deux puces de type ETP
         ]);
-        if ($validator->fails()) { 
-            return response()->json(
-                [
-                    'message' => ['error'=>$validator->errors()],
-                    'status' => false,
-                    'data' => null
-                ]
-            );            
-        } 
 
-        if (!Puce::Find($request->id_puce)) { 
+
+        if (!Puce::Find($request->id_puce)) {
             return response()->json(
                 [
                     'message' => "Cette puce n'existe pas",
                     'status' => false,
                     'data' => null
                 ]
-            );            
+            );
         }
 
-        if (!Agent::Find($request->id_agent)) { 
+        if (!Agent::Find($request->id_agent)) {
             return response()->json(
                 [
                     'message' => "Cet Agent n'existe pas",
                     'status' => false,
                     'data' => null
                 ]
-            );            
+            );
         }
 
         //recuperer l'utilisateur connecté (c'est lui le recouvreur)
@@ -88,7 +80,7 @@ class Demande_destockage_recouvreurController extends Controller
 
 
         // Récupérer les données validées
-             
+
         $user = User::Find($agent->id_user);
         $add_by = $recouvreur->id;
         $reference = null;
@@ -130,7 +122,7 @@ class Demande_destockage_recouvreurController extends Controller
                     'data' => null
                 ]
             );
-        } 
+        }
     }
 
 
@@ -143,8 +135,8 @@ class Demande_destockage_recouvreurController extends Controller
 
         //On recupere les 'demande de destockage'
         $demandes_destockage = Demande_destockage::where('add_by', Auth::user()->id)
-        ->get();  
-        
+        ->get();
+
         if ($demandes_destockage->count() == 0) {
             return response()->json(
                 [
@@ -183,7 +175,7 @@ class Demande_destockage_recouvreurController extends Controller
                     'data' => ['demandes_flotes' => $demandes_destockages]
                 ]
             );
-            
+
          }else{
             return response()->json(
                 [
@@ -206,8 +198,8 @@ class Demande_destockage_recouvreurController extends Controller
         //On recupere les 'demande de destockage'
         $demandes_destockage = Demande_destockage::where('add_by', Auth::user()->id)
         ->where('statut', \App\Enums\Statut::EN_ATTENTE)
-        ->get();  
-        
+        ->get();
+
         if ($demandes_destockage->count() == 0) {
             return response()->json(
                 [
@@ -246,7 +238,7 @@ class Demande_destockage_recouvreurController extends Controller
                     'data' => ['demandes_flotes' => $demandes_destockages]
                 ]
             );
-            
+
          }else{
             return response()->json(
                 [
@@ -268,8 +260,8 @@ class Demande_destockage_recouvreurController extends Controller
 
         //On recupere les 'demande de destockage'
         $demandes_destockage = Demande_destockage::where('statut', \App\Enums\Statut::EN_ATTENTE)
-        ->get();  
-        
+        ->get();
+
         if ($demandes_destockage->count() == 0) {
             return response()->json(
                 [
@@ -308,7 +300,7 @@ class Demande_destockage_recouvreurController extends Controller
                     'data' => ['demandes_flotes' => $demandes_destockages]
                 ]
             );
-            
+
          }else{
             return response()->json(
                 [
@@ -329,8 +321,8 @@ class Demande_destockage_recouvreurController extends Controller
 
 
         //On recupere les 'demande de destockage'
-        $demandes_destockage = Demande_destockage::get();  
-        
+        $demandes_destockage = Demande_destockage::get();
+
         if ($demandes_destockage->count() == 0) {
             return response()->json(
                 [
@@ -369,7 +361,7 @@ class Demande_destockage_recouvreurController extends Controller
                     'data' => ['demandes_flotes' => $demandes_destockages]
                 ]
             );
-            
+
          }else{
             return response()->json(
                 [

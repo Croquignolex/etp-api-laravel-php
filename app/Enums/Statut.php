@@ -12,7 +12,7 @@ class Statut
     const APPROUVE = 'approuve';
     const ANNULE = 'annule';
     const DECLINE = 'decline';
-    const COMPLETER = 'completer';
+    const COMPLETER = 'complete';
     const ARCHIVER = 'archiver';
     const TERMINEE = 'terminee';
     const EFFECTUER = 'effectue';

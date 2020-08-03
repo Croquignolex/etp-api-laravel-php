@@ -35,19 +35,19 @@ class FlotageController extends Controller
     Public function store(Request $request) {
 
         // Valider données envoyées
-        $validator = Validator::make($request->all(), [ 
-            'montant' => ['required', 'Numeric'], 
+        $validator = Validator::make($request->all(), [
+            'montant' => ['required', 'Numeric'],
             'id_demande_flotte' => ['required', 'Numeric'],
             'id_puce' => ['required', 'Numeric']
         ]);
-        if ($validator->fails()) { 
+        if ($validator->fails()) {
             return response()->json(
                 [
                     'message' => ['error'=>$validator->errors()],
                     'status' => false,
                     'data' => null
                 ]
-            );             
+            );
         }
 
 
@@ -59,7 +59,7 @@ class FlotageController extends Controller
                     'status' => false,
                     'data' => null
                 ]
-            ); 
+            );
         }
 
         //On verifi que le montant n'est pas supperieur au montant demandé
@@ -70,19 +70,19 @@ class FlotageController extends Controller
                     'status' => false,
                     'data' => null
                 ]
-            ); 
+            );
         }
 
 
 
         // On verifi que la puce passée en paramettre existe
-        if (Puce::find($request->id_puce)) {            
+        if (Puce::find($request->id_puce)) {
 
             //On recupère la puce ETP qui va faire le depot
-            $puce_etp = Puce::find($request->id_puce);            
+            $puce_etp = Puce::find($request->id_puce);
 
-            //On recupère la demande à traiter 
-            $demande_flotte = Demande_flote::find($request->id_demande_flotte);            
+            //On recupère la demande à traiter
+            $demande_flotte = Demande_flote::find($request->id_demande_flotte);
 
             //On recupère la puce de l'Agent qui va etre approvisionné
             $puce_agent = Puce::find($demande_flotte->id_puce);
@@ -92,15 +92,15 @@ class FlotageController extends Controller
 
             //On se rassure que la puce passée en paramettre est reelement l'une des puces de flottage sollicités
             if ($type_puce == \App\Enums\Statut::AGENT || $type_puce == \App\Enums\Statut::ETP || $puce_etp->id_flotte != $puce_agent->id_flotte) {
-                return response()->json(  
+                return response()->json(
                     [
                         'message' => "cette puce n'est pas capable d'effectuer un flottagage",
                         'status' => false,
                         'data' => null
                     ]
-                ); 
-            }            
-            
+                );
+            }
+
         }else {
             return response()->json(
                 [
@@ -109,8 +109,8 @@ class FlotageController extends Controller
                     'data' => null
                 ]
             );
-        }        
-        
+        }
+
         //Montant du depot
         $montant = $request->montant;
 
@@ -136,7 +136,7 @@ class FlotageController extends Controller
 
         //si l'enregistrement du flottage a lieu
         if ($flottage->save()) {
-            
+
             ////ce que le flottage implique
 
                 //On debite la puce de ETP
@@ -154,13 +154,13 @@ class FlotageController extends Controller
                 //On calcule le reste de flotte à envoyer
                 $demande_flotte->reste = $demande_flotte->reste - $montant;
 
-                //On change le statut de la demande de flotte 
-                if ($demande_flotte->reste == 0) {  
-                    
+                //On change le statut de la demande de flotte
+                if ($demande_flotte->reste == 0) {
+
                     $demande_flotte->statut = \App\Enums\Statut::EFFECTUER ;
 
-                }else {        
-                    
+                }else {
+
                     $demande_flotte->statut = \App\Enums\Statut::EN_COURS ;
 
                 }
@@ -180,7 +180,7 @@ class FlotageController extends Controller
 
 
         }else {
-            
+
             // Renvoyer une erreur
             return response()->json(
                 [
@@ -201,7 +201,7 @@ class FlotageController extends Controller
     {
 
         //On recupere les Flottages
-        $flottages = Approvisionnement::get();  
+        $flottages = Approvisionnement::get();
 
         foreach($flottages as $flottage) {
 
@@ -239,7 +239,7 @@ class FlotageController extends Controller
         {
 
             //On recupere le Flottage
-            $flottage = Approvisionnement::find($id_flottage); 
+            $flottage = Approvisionnement::find($id_flottage);
 
             //recuperer la demande correspondante
             $demande = $flottage->demande_flote()->first();
@@ -266,5 +266,37 @@ class FlotageController extends Controller
             );
 
         }
+
+
+
+    /**
+     * ////lister les flottages d'une demande
+     */
+    public function list_flottage($id)
+    {
+        if (!Demande_flote::Find($id)){
+
+            return response()->json(
+                [
+                    'message' => "la demande specifiée n'existe pas",
+                    'status' => true,
+                    'data' => []
+                ]
+            );
+        }
+
+        //On recupere les Flottage
+        $flottages = Approvisionnement::where('id_demande_flote', $id)->get();
+
+
+        return response()->json(
+            [
+                'message' => '',
+                'status' => true,
+                'data' => ['flottages' => $flottages]
+            ]
+        );
+
+    }
 
 }
