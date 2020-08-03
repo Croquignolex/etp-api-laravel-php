@@ -399,6 +399,12 @@ class ZoneController extends Controller
         $input['id_zone'] = $id;  
 		$user = User::create($input);
 		
+		$user->setting()->create([
+			'bars' => '[0,1,2,3,4,5,6,7,8,9]',
+			'charts' => '[0,1,2,3,4,5,6,7,8,9]',
+			'cards' => '[0,1,2,3,4,5,6,7,8,9]',
+		]);
+		
 		if (isset($user)) {
             //On crée la caisse de l'utilisateur
             $caisse = new Caisse([
@@ -467,15 +473,23 @@ class ZoneController extends Controller
     {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [   
-			'name' => 'required',
-			'phone' => 'required|numeric|unique:users,phone',
-			'adresse' => 'nullable',
-			'description' => 'nullable', 
-			'email' => 'required|email|unique:users,email', 
-			'password' => 'required|string|min:6',   
-			'base_64_image' => 'nullable|string',
-			'base_64_image_back' => 'nullable|string',
-			'reference' => ['nullable', 'string', 'max:255'], 
+			//user informations
+                'name' => 'required',
+                'phone' => 'required|numeric|unique:users,phone',
+                'adresse' => 'nullable',
+                'description' => 'nullable',
+                //'poste' => ['nullable', 'string', 'max:255'],
+                'email' => 'nullable|email', 
+                'password' => 'required|string|min:6',   
+            //Agent informations
+                'base_64_image' => 'nullable|string',
+                'base_64_image_back' => 'nullable|string',
+                'document' => 'nullable|file|max:10000',
+                'reference' => ['nullable', 'string', 'max:255'],
+                //'taux_commission' => ['nullable', 'Numeric'],
+                'ville' => ['nullable', 'string', 'max:255'],
+                'pays' => ['nullable', 'string', 'max:255'],
+                //'point_de_vente' => ['nullable', 'string', 'max:255']   
         ]);
         if ($validator->fails()) { 
             return response()->json(
@@ -500,7 +514,12 @@ class ZoneController extends Controller
 		$ville = $request->ville;      
 		$pays = $request->pays;  
 		$img_cni = null; 
-		$img_cni_back = null;             
+		$img_cni_back = null;        
+
+		$dossier = null;
+		if ($request->hasFile('document') && $request->file('document')->isValid()) {
+			$dossier = $request->document->store('files/dossier/agents');
+		}
 
 		if (isset($request->base_64_image)) {
 			$img_cni = $request->base_64_image; 
@@ -528,6 +547,12 @@ class ZoneController extends Controller
 		]);
            
 		if ($user->save()) {
+			$user->setting()->create([
+				'bars' => '[0,1,2,3,4,5,6,7,8,9]',
+				'charts' => '[0,1,2,3,4,5,6,7,8,9]',
+				'cards' => '[0,1,2,3,4,5,6,7,8,9]',
+			]);
+			
             //On crée la caisse de l'utilisateur
             $caisse = new Caisse([
                 'nom' => 'Caisse ' . $request->name,
@@ -549,6 +574,7 @@ class ZoneController extends Controller
 				'id_creator' => $add_by_id,
 				'id_user' => $user->id,
 				'img_cni' => $img_cni,
+				'dossier' => $dossier,
 				'img_cni_back' => $img_cni_back,
 				'reference' => $reference,  
 				'ville' => $ville, 

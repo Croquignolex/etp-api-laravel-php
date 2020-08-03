@@ -57,11 +57,10 @@ class AgentController extends Controller
                 'base_64_image_back' => 'nullable|string',
                 'document' => 'nullable|file|max:10000',
                 'reference' => ['nullable', 'string', 'max:255'],
-                'taux_commission' => ['nullable', 'Numeric'],
+                //'taux_commission' => ['nullable', 'Numeric'],
                 'ville' => ['nullable', 'string', 'max:255'],
                 'pays' => ['nullable', 'string', 'max:255'],
-                'point_de_vente' => ['nullable', 'string', 'max:255']   
-
+                //'point_de_vente' => ['nullable', 'string', 'max:255']   
         ]);  
 
         

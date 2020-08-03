@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Validator;
 use App\Flote;
 use App\Puce;
 use Illuminate\Support\Facades\Auth;
+use App\Approvisionnement;
 
 class DemandeflotteController extends Controller
 { 
@@ -186,7 +187,14 @@ class DemandeflotteController extends Controller
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['demande_flote' => $demande_flote, 'demandeur' => $demandeur, 'agent' => $agent, 'user' => $user, 'puce' => $demande_flote->puce]
+                    'data' => [
+						'demande_flote' => $demande_flote,
+						'demandeur' => $demandeur, 
+						'agent' => $agent, 
+						'user' => $user, 
+						'approvisionnements' => $demande_flote->approvisionnements,
+						'puce' => $demande_flote->puce
+					]
                 ]
             );
         } else {
@@ -278,7 +286,6 @@ class DemandeflotteController extends Controller
          }
     }
 
-
     /**
      * //details d'une demande de flote'
      */
@@ -309,7 +316,14 @@ class DemandeflotteController extends Controller
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['demande_flote' => $demande_flote, 'demandeur' => $demandeur, 'agent' => $agent, 'user' => $user, 'puce' => $demande_flote->puce]
+                    'data' => [
+						'demande_flote' => $demande_flote, 
+						'demandeur' => $demandeur, 
+						'agent' => $agent, 
+						'user' => $user, 
+						'approvisionnements' => $demande_flote->approvisionnements,
+						'puce' => $demande_flote->puce
+					]
                 ]
             );
 
