@@ -28,9 +28,9 @@ class Demande_flote extends Model
     }
 
     //les approvisionnement enregistrées pour une demande precise
-    public function approvisionnement()
+    public function approvisionnements()
     {
-        return $this->hasMany('App\Approvisionnement', 'id_demande_destockage');
+        return $this->hasMany('App\Approvisionnement', 'id_demande_flote');
     }
 }
 

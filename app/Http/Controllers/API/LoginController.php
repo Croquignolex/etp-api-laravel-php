@@ -400,7 +400,7 @@ class LoginController extends Controller
             // 'statut' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:255'],
             'poste' => ['nullable', 'string', 'max:255'],
-            // 'email' => ['required', 'string', 'email'],
+            'email' => ['nullable', 'string', 'email'],
             'adresse' => ['nullable', 'string', 'max:255'],
             // 'roles' => ['required'],
             // 'phone' => ['required', 'numeric', 'max:255']
@@ -420,7 +420,7 @@ class LoginController extends Controller
         // Récupérer les données validées
         $name = $request->name;
         $description = $request->description;
-        // $email = $request->email;
+        $email = $request->email;
         $adresse = $request->adresse;
         // $status = $request->status;
         $poste = $request->poste;
@@ -434,7 +434,7 @@ class LoginController extends Controller
         $user->poste = $poste;
 
         $user->description = $description;
-        // $user->email = $email;
+        $user->email = $email;
         $user->adresse = $adresse;
 
         if ($user->save()) {

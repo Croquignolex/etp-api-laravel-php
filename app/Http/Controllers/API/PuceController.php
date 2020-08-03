@@ -22,7 +22,8 @@ class PuceController extends Controller
      function __construct(){
 
         $superviseur = Roles::SUPERVISEUR;
-        $this->middleware("permission:$superviseur");
+        $ges_flotte = Roles::GESTION_FLOTTE;
+        $this->middleware("permission:$superviseur|$ges_flotte");
 
     }
 

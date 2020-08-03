@@ -47,8 +47,8 @@ class UserController extends Controller
             'adresse' => 'nullable',
             //'id_zone' => ['nullable', 'array'], 
             'description' => 'nullable',
+            'email' => 'nullable|email', 
             'poste' => ['nullable', 'string', 'max:255'],
-            'email' => 'required|email|unique:users,email', 
             'password' => 'required|string|min:6', 
             'id_role' => 'required',
         ]);
@@ -392,7 +392,7 @@ class UserController extends Controller
             'adresse' => ['nullable', 'string', 'max:255'],
             // 'roles' => ['required'],
             // 'phone' => ['required', 'numeric', 'max:255']
-
+			'email' => 'nullable|email', 
         ]);
         if ($validator->fails()) { 
             return response()->json(
@@ -409,10 +409,10 @@ class UserController extends Controller
         // Récupérer les données validées
         $name = $request->name;
         $description = $request->description;
-        // $email = $request->email;
+        $email = $request->email;
         $adresse = $request->adresse;
         // $status = $request->status;
-        $poste = $request->poste;
+        $poste = $request->poste; 
         // $phone = $request->phone;
 
         // Modifier le profil de l'utilisateur
@@ -423,7 +423,7 @@ class UserController extends Controller
         $user->poste = $poste;
 
         $user->description = $description;
-        // $user->email = $email;
+        $user->email = $email;
         $user->adresse = $adresse;
 
         if ($user->save()) {
@@ -617,7 +617,7 @@ class UserController extends Controller
             'adresse' => 'nullable',
             'id_zone' => ['required'], 
             'description' => 'nullable',
-            'email' => 'required|email|unique:users,email', 
+            'email' => 'nullable|email', 
             'password' => 'required|string|min:6',  
         ]);
         if ($validator->fails()) { 
