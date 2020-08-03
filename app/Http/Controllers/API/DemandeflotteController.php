@@ -90,7 +90,7 @@ class DemandeflotteController extends Controller
                 [
                     'message' => 'Demande de Flote créée',
                     'status' => true,
-                    'data' => ['demande_flote' => $demande_flote]
+                    'data' => ['demande' => $demande_flote]
                 ]
             );
         } else {
@@ -140,7 +140,7 @@ class DemandeflotteController extends Controller
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['demande_flote' => $demande_flote, 'demandeur' => $demandeur, 'agent' => $agent, 'user' => $user, 'puce' => $demande_flote->puce]
+                    'data' => ['demande' => $demande_flote, 'demandeur' => $demandeur, 'agent' => $agent, 'user' => $user, 'puce' => $demande_flote->puce]
                 ]
             );
         } else {
@@ -188,7 +188,7 @@ class DemandeflotteController extends Controller
                     'message' => '',
                     'status' => true,
                     'data' => [
-						'demande_flote' => $demande_flote,
+						'demande' => $demande_flote,
 						'demandeur' => $demandeur, 
 						'agent' => $agent, 
 						'user' => $user, 
@@ -229,14 +229,14 @@ class DemandeflotteController extends Controller
             //recuperer le demandeur 
 			$demandeur = User::Find($demande_flote->add_by);
 
-            $demandes_flotes[] = ['demande_flote' => $demande_flote, 'demandeur' => $demandeur, 'agent' => $agent, 'user' => $user, 'puce' => $demande_flote->puce]; 
+            $demandes_flotes[] = ['demande' => $demande_flote, 'demandeur' => $demandeur, 'agent' => $agent, 'user' => $user, 'puce' => $demande_flote->puce]; 
         }
 		
 		return response()->json(
 			[
 				'message' => '',
 				'status' => true,
-				'data' => ['demandes_flotes' => $demandes_flotes]
+				'data' => ['demandes' => $demandes_flotes]
 			]
 		);
  
@@ -262,7 +262,7 @@ class DemandeflotteController extends Controller
             //recuperer le demandeur 
 			$demandeur = User::Find($demande_flote->add_by);
 
-            $demandes_flotes[] = ['demande_flote' => $demande_flote, 'demandeur' => $demandeur, 'agent' => $agent, 'user' => $user, 'puce' => $demande_flote->puce]; 
+            $demandes_flotes[] = ['demande' => $demande_flote, 'demandeur' => $demandeur, 'agent' => $agent, 'user' => $user, 'puce' => $demande_flote->puce]; 
         }
 
         if (!empty($demandes_flote)) {
@@ -271,7 +271,7 @@ class DemandeflotteController extends Controller
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['demandes_flotes' => $demandes_flotes]
+                    'data' => ['demandes' => $demandes_flotes]
                 ]
             );
             
@@ -317,7 +317,7 @@ class DemandeflotteController extends Controller
                     'message' => '',
                     'status' => true,
                     'data' => [
-						'demande_flote' => $demande_flote, 
+						'demande' => $demande_flote, 
 						'demandeur' => $demandeur, 
 						'agent' => $agent, 
 						'user' => $user, 
@@ -364,7 +364,7 @@ class DemandeflotteController extends Controller
 				//recuperer le demandeur 
 				$demandeur = User::Find($demande_flote->add_by);
 
-				$demandes_flotes[] = ['demande_flote' => $demande_flote, 'demandeur' => $demandeur, 'agent' => $agent, 'user' => $user, 'puce' => $demande_flote->puce]; 
+				$demandes_flotes[] = ['demande' => $demande_flote, 'demandeur' => $demandeur, 'agent' => $agent, 'user' => $user, 'puce' => $demande_flote->puce]; 
 			}
 		
             // Renvoyer un message de succès
@@ -372,7 +372,7 @@ class DemandeflotteController extends Controller
                 [
                     'message' => 'Demande de Flote annulée',
                     'status' => true,
-                    'data' => ['demandes_flotes' => $demandes_flotes]
+                    'data' => ['demandes' => $demandes_flotes]
                 ]
             );
         } else { 

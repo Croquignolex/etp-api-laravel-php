@@ -24,7 +24,7 @@ class Demande_destockage extends Model
 
     public function puce()
     {
-        return $this->belongsTo('App\Puce', 'id_puce');
+        return $this->belongsTo('App\Puce', 'puce_destination');
     }
 
     //les destockages enregistrées pour une demande precise

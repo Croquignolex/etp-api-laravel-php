@@ -14,7 +14,7 @@ class Destockage extends Model
 
     protected $dates = ['deleted_at'];
     protected $fillable = array('id_recouvreur','type','id_puce','id_agent','fournisseur','recu', 'reference', 'statut', 'note', 'montant');
-    protected $visible = array('id_recouvreur','type','id_puce','id_agent','fournisseur','recu', 'reference', 'statut', 'note', 'montant','created_at');
+    protected $visible = array('id', 'id_recouvreur','type','id_puce','id_agent','fournisseur','recu', 'reference', 'statut', 'note', 'montant','created_at');
 
     public function user()
     {
