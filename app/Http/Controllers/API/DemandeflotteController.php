@@ -36,8 +36,8 @@ class DemandeflotteController extends Controller
     {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [ 
-            'montant' => ['required', 'Numeric'],
-            'id_puce' => ['required', 'Numeric']
+            'montant' => ['required', 'numeric'],
+            'id_puce' => ['required', 'numeric']
         ]);
         if ($validator->fails()) { 
             return response()->json(
@@ -128,6 +128,7 @@ class DemandeflotteController extends Controller
           
 		$demande_flote = Demande_flote::find($id);
 		$demande_flote->montant = $request->montant;
+		$demande_flote->reste = $request->montant;
 		$demande_flote->id_puce = $request->id_puce;
 
         // update de La demande

@@ -67,7 +67,7 @@ class Demande_destockage_recouvreurController extends Controller
         $add_by = Auth::user();
 
         //recuperer l'agent concerné
-        $agent = Agent::Find($request->id_agent);
+        $agent = Agent::find($request->id_agent);
 		
 		$user = User::find($agent->id_user);
 
@@ -76,7 +76,7 @@ class Demande_destockage_recouvreurController extends Controller
         $reference = null;
         $montant = $request->montant;
         $statut = \App\Enums\Statut::EN_ATTENTE;
-        $source = null;
+        $destination = null;
         //recuperer l'id de puce de l'agent
         $id_puce = $request->id_puce;
 		
@@ -88,8 +88,8 @@ class Demande_destockage_recouvreurController extends Controller
             'montant' => $montant,
             'reste' => $montant,
             'statut' => $statut,
-            'puce_destination' => $id_puce,
-            'puce_source' => $source
+            'puce_destination' => $destination,
+            'puce_source' => $id_puce 
         ]);
 
         // creation de La demande
@@ -128,7 +128,7 @@ class Demande_destockage_recouvreurController extends Controller
 		foreach($demandes_destockage as $demande_destockage) {
 
             //recuperer l'utilisateur concerné
-                $user = User::Find($demande_destockage->id_user);
+                $user = $demande_destockage->user;
 
             //recuperer l'agent concerné
                 $agent = Agent::where('id_user', $user->id)->first();
@@ -249,7 +249,8 @@ class Demande_destockage_recouvreurController extends Controller
 
 		$demande_destockage = Demande_destockage::find($id);
 		$demande_destockage->montant = $request->montant;
-		$demande_destockage->puce_destination = $request->id_puce;
+		$demande_destockage->reste = $request->montant;
+		$demande_destockage->puce_source = $request->id_puce;
 		$agent = Agent::find($request->id_agent);
 		$demande_destockage->id_user = $agent->id_user;
 

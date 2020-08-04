@@ -259,6 +259,7 @@ class Demande_flote_recouvreurController extends Controller
 
 		$demande_flote = Demande_flote::find($id);
 		$demande_flote->montant = $request->montant;
+		$demande_flote->reste = $request->montant;
 		$demande_flote->id_puce = $request->id_puce;
 		$agent = Agent::find($request->id_agent);
 		$demande_flote->id_user = $agent->id_user;
