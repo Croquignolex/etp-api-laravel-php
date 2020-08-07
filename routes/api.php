@@ -407,4 +407,31 @@ Route::group(['middleware' => 'auth:api'], function(){
         Route::get('list_destockage', 'API\ApprovisionnementEtpController@list_all');
 
 
+
+
+
+
+        /*
+    //////////////////////Recouvrement/////////////////////
+    */
+
+
+        //Creer un Recouvrement
+        Route::post('recouvrement', 'API\RecouvrementController@store');
+
+        //Creer un Retour flotte
+        Route::post('retour_flotte', 'API\RecouvrementController@retour');
+
+        //Details d'un Recouvrement
+        Route::get('detail_recouvrement/{id}', 'API\RecouvrementController@show')
+        ->where('id', '[0-9]+');
+
+        //lister les Recouvrement peu importe le statut
+        Route::get('list_all_recouvrement', 'API\RecouvrementController@list_all');
+
+        //lister les Recouvrements relatifs à un flottage precis
+        Route::get('list_recouvrement/{id}', 'API\RecouvrementController@list_recouvrement')
+        ->where('id', '[0-9]+');
+
+
 });

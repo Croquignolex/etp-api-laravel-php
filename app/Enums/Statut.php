@@ -35,6 +35,13 @@ class Statut
     const BY_BANK = "De la Banque";
 
 
+
+    //types de recouvrement
+    const RECOUVREMENT = "Un recouvrement";
+    const RETOUR_FLOTTE = "Retour de flotte";
+
+
+
     /**
      * Returns the list of all enum variants
      * @return array
