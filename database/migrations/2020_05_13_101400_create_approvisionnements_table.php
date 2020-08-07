@@ -16,6 +16,7 @@ class CreateApprovisionnementsTable extends Migration {
 			$table->string('statut')->nullable();
 			$table->string('note')->nullable();
 			$table->integer('montant')->nullable();
+			$table->integer('reste')->nullable();
 			$table->timestamps();
 			$table->softDeletes();
 			

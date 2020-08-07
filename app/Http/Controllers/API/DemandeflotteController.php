@@ -49,7 +49,7 @@ class DemandeflotteController extends Controller
             );            
         } 
         
-        if (!Puce::Find($request->id_puce)) { 
+        if (!($puce = Puce::Find($request->id_puce))) { 
             return response()->json(
                 [
                     'message' => "Cette puce n'existe pas",
@@ -61,6 +61,16 @@ class DemandeflotteController extends Controller
 
         //recuperer l'utilisateur connecté (c'est lui l'agent)
         $user = Auth::user();
+
+        if (!($puce->agent->user->id ==  $user->id)) { 
+            return response()->json(
+                [
+                    'message' => "La puce selectionnée doit vous appartenir",
+                    'status' => false,
+                    'data' => null
+                ]
+            );            
+        }
 
         // Récupérer les données validées
         $id_user = $user->id;

@@ -43,6 +43,16 @@ class Demande_destockage_recouvreurController extends Controller
             'id_puce' => ['required', 'Numeric'] //sous forme de select qui affiche juste les deux puces de type ETP
         ]);
 
+        if ($validator->fails()) {
+            return response()->json(
+                [
+                    'message' => ['error'=>$validator->errors()],
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+
 
         if (!Puce::Find($request->id_puce)) {
             return response()->json(

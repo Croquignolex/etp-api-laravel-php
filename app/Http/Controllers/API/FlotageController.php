@@ -131,7 +131,8 @@ class FlotageController extends Controller
             'reference' => null,
             'statut' => \App\Enums\Statut::EN_ATTENTE,
             'note' => null,
-            'montant' => $montant
+            'montant' => $montant,
+            'reste' => $montant
         ]);
 
         //si l'enregistrement du flottage a lieu
@@ -153,6 +154,8 @@ class FlotageController extends Controller
 
                 //On calcule le reste de flotte à envoyer
                 $demande_flotte->reste = $demande_flotte->reste - $montant;
+
+                $demande_flotte->source = $puce_etp->id;
 
                 //On change le statut de la demande de flotte
                 if ($demande_flotte->reste == 0) {
@@ -332,7 +335,8 @@ class FlotageController extends Controller
                 'reference' => null,
                 'statut' => \App\Enums\Statut::EN_ATTENTE,
                 'note' => null,
-                'montant' => $montant
+                'montant' => $montant,
+                'reste' => $montant
             ]);
            
             //si l'enregistrement du flottage a lieu

@@ -13,6 +13,7 @@ class CreateRecouvrementsTable extends Migration {
 			$table->integer('id_user')->unsigned()->nullable()->index();
 			$table->integer('id_versement')->unsigned()->nullable()->index();
 			$table->integer('id_transaction')->unsigned()->nullable()->index();
+			$table->integer('id_flottage')->unsigned()->nullable()->index();
 			$table->integer('montant')->unsigned()->default('0');
 			$table->integer('reste')->unsigned()->nullable()->default('0');
 			$table->string('type_transaction')->nullable();
