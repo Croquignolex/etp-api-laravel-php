@@ -35,8 +35,8 @@ class FlotageController extends Controller
     Public function store(Request $request) {
 
         // Valider données envoyées
-        $validator = Validator::make($request->all(), [ 
-            'montant' => ['required', 'numeric'], 
+        $validator = Validator::make($request->all(), [
+            'montant' => ['required', 'numeric'],
             'id_demande_flotte' => ['required', 'numeric'],
             'id_puce' => ['required', 'numeric']
         ]);
@@ -49,7 +49,6 @@ class FlotageController extends Controller
                 ]
             );
         }
-
 
         //On verifi si la demande passée existe réellement
         if (!Demande_flote::find($request->id_demande_flotte)) {
@@ -165,9 +164,9 @@ class FlotageController extends Controller
 
                 //Enregistrer les oppérations
                 $demande_flotte->save();
-				
-				
-				$user = $demande_flotte->user; 
+
+
+				$user = $demande_flotte->user;
 				$demandeur = User::Find($demande_flotte->add_by);
 
                 // Renvoyer un message de succès
@@ -177,11 +176,11 @@ class FlotageController extends Controller
                         'status' => true,
                         'data' => [
 							'demande_flote' => $demande_flotte,
-							'demandeur' => $demandeur, 
-							'agent' => $agent, 
-							'user' => $user, 
+							'demandeur' => $demandeur,
+							'agent' => $agent,
+							'user' => $user,
 							'approvisionnements' => $demande_flotte->approvisionnements,
-							'puce' => $demande_flotte->puce 
+							'puce' => $demande_flotte->puce
 						]
                     ]
                 );
@@ -240,43 +239,39 @@ class FlotageController extends Controller
 
     }
 
-
     /**
-         * ////lister tous les flottages
-         */
-        public function show($id_flottage)
-        {
+     * ////lister tous les flottages
+     */
+    public function show($id_flottage)
+    {
+        //On recupere le Flottage
+        $flottage = Approvisionnement::find($id_flottage);
 
-            //On recupere le Flottage
-            $flottage = Approvisionnement::find($id_flottage);
+        //recuperer la demande correspondante
+        $demande = $flottage->demande_flote()->first();
 
-            //recuperer la demande correspondante
-            $demande = $flottage->demande_flote()->first();
+        //recuperer celui qui a éffectué le flottage
+            $user = User::Find($flottage->id_user);
 
-            //recuperer celui qui a éffectué le flottage
-                $user = User::Find($flottage->id_user);
+        //recuperer l'agent concerné
+            $agent = Agent::where('id_user', $demande->id_user)->get();
 
-            //recuperer l'agent concerné
-                $agent = Agent::where('id_user', $demande->id_user)->get();
+        //recuperer la puce de l'agent
+            $puce_receptrice = Puce::Find($demande->id_puce);
 
-            //recuperer la puce de l'agent
-                $puce_receptrice = Puce::Find($demande->id_puce);
-
-            $approvisionnements[] = ['approvisionnement' => $flottage,'demande' => $demande, 'user' => $user, 'agent' => $agent, 'puce_receptrice' => $puce_receptrice,];
-
+        $approvisionnements[] = ['approvisionnement' => $flottage,'demande' => $demande, 'user' => $user, 'agent' => $agent, 'puce_receptrice' => $puce_receptrice,];
 
 
-            return response()->json(
-                [
-                    'message' => '',
-                    'status' => true,
-                    'data' => ['flottages' => $approvisionnements]
-                ]
-            );
 
-        }
+        return response()->json(
+            [
+                'message' => '',
+                'status' => true,
+                'data' => ['flottages' => $approvisionnements]
+            ]
+        );
 
-
+    }
 
     /**
      * ////lister les flottages d'une demande
@@ -307,5 +302,4 @@ class FlotageController extends Controller
         );
 
     }
-
 }
