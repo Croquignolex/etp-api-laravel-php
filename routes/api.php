@@ -223,7 +223,6 @@ Route::group(['middleware' => 'auth:api'], function(){
         /*
     //////////////////////Demande de Flotte/////////////////////
     */
-
           //par un Agent
             //Details d'une demande de flote
             Route::get('detail_demandes_flote/{id}', 'API\DemandeflotteController@show')
@@ -241,7 +240,7 @@ Route::group(['middleware' => 'auth:api'], function(){
 
             //lister mes demandes de flotes peu importe le statut
             Route::get('list_all_demandes_flote', 'API\DemandeflotteController@list_all_status');
- 
+
         //pour un Agent
 			Route::post('annuler_demandes_flote_agent/{id}', 'API\Demande_flote_recouvreurController@annuler')
 			->where('id', '[0-9]+');
@@ -257,69 +256,66 @@ Route::group(['middleware' => 'auth:api'], function(){
             Route::get('detail_demandes_flote_agent/{id}', 'API\Demande_flote_recouvreurController@show')
             ->where('id', '[0-9]+');
 
-            //lister toutes les demandes de flotes
-            Route::get('list_all_status_demande_flote', 'API\Demande_flote_recouvreurController@list_all_status_all_user');
-
-            //lister toutes les demandes de flotes non traitées
-            Route::get('list_all_demande_flote', 'API\Demande_flote_recouvreurController@list_all');
-
             //lister mes demandes de flotes peu importe le statut
             Route::get('list_demandes_flote', 'API\Demande_flote_recouvreurController@list_all_status');
 
-            //lister mes demandes de flotes en attente
-            Route::get('list_mes_demandes_flote_agent', 'API\Demande_flote_recouvreurController@list');
-			
 		//----
 			//lister mes demandes de flotes (gestionnaire de flotte ou les admin)
             Route::get('list_demandes_flote_general', 'API\DemandeflotteController@list_demandes_flote_general');
-			 
+
 			//modifier d'une demande de flote (gestionnaire de flotte ou les admin)
             Route::post('modifier_demandes_flote_general/{id}', 'API\DemandeflotteController@modifier_general')
             ->where('id', '[0-9]+');
         /*
-		
+
     //////////////////////Demande de destockage/////////////////////
     */
-
-        //pour tous les deux cas
-
-            //Details d'une demande de destockage
+        //par un Agent
+			//Details d'une demande de destockage
             Route::get('detail_demandes_destockage/{id}', 'API\DemandedestockageController@show')
             ->where('id', '[0-9]+');
 
-        //par un Agent
+			//Details d'une demande de destockage
+            Route::post('modifier_demandes_destockage/{id}', 'API\DemandedestockageController@modifier')
+            ->where('id', '[0-9]+');
+
+			Route::post('annuler_demandes_destockage/{id}', 'API\DemandedestockageController@annuler')
+            ->where('id', '[0-9]+');
 
             //Creer une demande de destockage
             Route::post('demande_destockage', 'API\DemandedestockageController@store');
 
-            //lister mes demandes de destockage peu importe le statut
-            Route::get('list_all_mes_demandes_destockages', 'API\DemandedestockageController@list_all_status');
-
-            //Lister mes demandes de destockage en attente
-            Route::get('list_mes_demandes_destockages', 'API\DemandedestockageController@list');
-
+            //lister mes demandes de destockages peu importe le statut
+            Route::get('list_all_demandes_destockage', 'API\DemandedestockageController@list_all_status');
 
         //pour un Agent
+			Route::post('annuler_demandes_destockage_agent/{id}', 'API\Demande_destockage_recouvreurController@annuler')
+			->where('id', '[0-9]+');
+
+			//Details d'une demande de destockage
+            Route::post('modifier_demandes_destockage_agent/{id}', 'API\Demande_destockage_recouvreurController@modifier')
+            ->where('id', '[0-9]+');
 
             //Creer une demande de destockage pour un Agent
             Route::post('demande_destockage_agent', 'API\Demande_destockage_recouvreurController@store');
 
-            //lister toutes mes demandes de destockage
-            Route::get('list_all_mes_demande_destockage', 'API\Demande_destockage_recouvreurController@list_all_status');
+			//Details d'une demande de destockage
+            Route::get('detail_demandes_destockage_agent/{id}', 'API\Demande_destockage_recouvreurController@show')
+            ->where('id', '[0-9]+');
 
-            //lister toutes mes demandes de destockage non traitées
-            Route::get('list_mes_demande_destockage', 'API\Demande_destockage_recouvreurController@list_all');
+            //lister mes demandes de destockage peu importe le statut
+            Route::get('list_demandes_destockage', 'API\Demande_destockage_recouvreurController@list_all_status');
 
-            //lister les demandes de destockage peu importe le statut
-            Route::get('list_all_status_demandes_destockage', 'API\Demande_destockage_recouvreurController@list_all_status_all_user');
+            //reponse d'un responsable a une demande
+            Route::post('reponse_demandes_destockage/{id}', 'API\Demande_destockage_recouvreurController@reponse');
+        //----
+			//lister mes demandes de déstockage (gestionnaire de flotte ou les admin)
+            Route::get('list_demandes_destockage_general', 'API\DemandedestockageController@list_demandes_flote_general');
 
-            //lister les demandes de destockage en attente
-            Route::get('list_demandes_destockage_agent', 'API\Demande_destockage_recouvreurController@list');
-
-
-
-
-
+			//modifier d'une demande de déstockage (gestionnaire de flotte ou les admin)
+            Route::post('modifier_demandes_destockage_general/{id}', 'API\DemandedestockageController@modifier_general')
+            ->where('id', '[0-9]+');
+        /*
     /*
     //////////////////////GESTION DES ZONES DE RECOUVREMENT /////////////////////
     */
