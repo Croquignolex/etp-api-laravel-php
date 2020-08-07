@@ -114,8 +114,8 @@ class DemandedestockageController extends Controller
     {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
-            'montant' => ['required', 'Numeric'],
-            'id_puce' => ['required', 'Numeric'] //sous forme de select qui affiche juste les deux puces MTN et ORANGE créé par seed
+            'montant' => ['required', 'numeric'],
+            'id_puce' => ['required', 'numeric'] //sous forme de select qui affiche juste les deux puces MTN et ORANGE créé par seed
         ]);
         if ($validator->fails()) {
             return response()->json(
@@ -127,75 +127,32 @@ class DemandedestockageController extends Controller
             );
         }
 
-		$demande_flote = Demande_flote::find($id);
-		$demande_flote->montant = $request->montant;
-		$demande_flote->id_puce = $request->id_puce;
+        $demande_destockage = Demande_destockage::find($id);
+        $demande_destockage->montant = $request->montant;
+        $demande_destockage->reste = $request->montant;
+        $demande_destockage->puce_source = $request->id_puce;
 
         // update de La demande
-        if ($demande_flote->save()) {
-			$user = $demande_flote->user;
-			$agent = Agent::where('id_user', $user->id)->first();
-			$demandeur = User::Find($demande_flote->add_by);
-            // Renvoyer un message de succès
-            return response()->json(
-                [
-                    'message' => '',
-                    'status' => true,
-                    'data' => ['demande' => $demande_flote, 'demandeur' => $demandeur, 'agent' => $agent, 'user' => $user, 'puce' => $demande_flote->puce]
-                ]
-            );
-        } else {
-            // Renvoyer une erreur
-            return response()->json(
-                [
-                    'message' => 'erreur lors de la demande',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
-        }
-    }
+        if ($demande_destockage->save()) {
+            //recuperer l'utilisateur concerné
+            $user = $demande_destockage->user;
 
-	/**
-     * //modifier une demande de Flotte (gestionnaire de flotte ou les admin)
-     */
-    public function modifier_general(Request $request, $id)
-    {
-        // Valider données envoyées
-        $validator = Validator::make($request->all(), [
-            'reference' => ['required', 'string'],
-        ]);
-        if ($validator->fails()) {
-            return response()->json(
-                [
-                    'message' => ['error'=>$validator->errors()],
-                    'status' => false,
-                    'data' => null
-                ]
-            );
-        }
+            //recuperer l'agent concerné
+            $agent = Agent::where('id_user', $user->id)->first();
 
-		$demande_flote = Demande_flote::find($id);
-		$demande_flote->reference = $request->reference;
+            $demandeur = User::find($demande_destockage->add_by);
 
-        // update de La demande
-        if ($demande_flote->save()) {
-			$user = $demande_flote->user;
-			$agent = Agent::where('id_user', $user->id)->first();
-			$demandeur = User::Find($demande_flote->add_by);
-            // Renvoyer un message de succès
             return response()->json(
                 [
                     'message' => '',
                     'status' => true,
                     'data' => [
-						'demande' => $demande_flote,
-						'demandeur' => $demandeur,
-						'agent' => $agent,
-						'user' => $user,
-						'approvisionnements' => $demande_flote->approvisionnements,
-						'puce' => $demande_flote->puce
-					]
+                        'demande' => $demande_destockage,
+                        'demandeur' => $demandeur,
+                        'agent' => $agent,
+                        'user' => $user,
+                        'puce' => $demande_destockage->puce
+                    ]
                 ]
             );
         } else {
@@ -242,50 +199,6 @@ class DemandedestockageController extends Controller
 		);
     }
 
-    /**
-     * //lister mes demandes de flotes (gestionnaire de flotte ou les admin)
-     */
-    public function list_demandes_flote_general()
-    {
-        //On recupere toutes 'demande de flotte'
-        $demandes_flote = Demande_flote::all();
-
-        $demandes_flotes = [];
-
-        foreach($demandes_flote as $demande_flote) {
-			//recuperer l'utilisateur concerné
-            $user = $demande_flote->user;
-
-            //recuperer l'agent concerné
-            $agent = Agent::where('id_user', $user->id)->first();
-
-            //recuperer le demandeur
-			$demandeur = User::Find($demande_flote->add_by);
-
-            $demandes_flotes[] = ['demande' => $demande_flote, 'demandeur' => $demandeur, 'agent' => $agent, 'user' => $user, 'puce' => $demande_flote->puce];
-        }
-
-        if (!empty($demandes_flote)) {
-
-            return response()->json(
-                [
-                    'message' => '',
-                    'status' => true,
-                    'data' => ['demandes' => $demandes_flotes]
-                ]
-            );
-
-         }else{
-            return response()->json(
-                [
-                    'message' => 'pas de dmande de flote à lister',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
-         }
-    }
-
 	/**
      * //details d'une demande de flote'
      */
@@ -303,7 +216,7 @@ class DemandedestockageController extends Controller
             //recuperer l'agent concerné
                 $agent = Agent::where('id_user', $user->id)->first();
 
-			$demandeur = User::Find($demande_destockage->add_by);
+			$demandeur = User::find($demande_destockage->add_by);
 
             return response()->json(
                 [
@@ -314,7 +227,6 @@ class DemandedestockageController extends Controller
 						'demandeur' => $demandeur,
 						'agent' => $agent,
 						'user' => $user,
-						//'approvisionnements' => $demande_destockage->approvisionnements,
 						'puce' => $demande_destockage->puce
 					]
                 ]
