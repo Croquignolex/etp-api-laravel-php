@@ -112,7 +112,7 @@ class ApprovisionnementEtpController extends Controller
                 'fournisseur' => ['nullable', 'string', 'max:255'], // si le type est BY_DIGIT_PARTNER ou BY_BANK
                 'id_agent' => ['nullable', 'Numeric'],       // obligatoire si le type est BY_AGENT 
                 'id_puce' => ['required', 'Numeric'],        
-                'recu' => ['nullable', 'file', 'max:10000'],
+                'recu' => ['required', 'file', 'max:10000'],
                 'montant' => ['required', 'Numeric'],
             ]);
 
@@ -174,15 +174,16 @@ class ApprovisionnementEtpController extends Controller
             ]);
 
             if ($destockage->save()) {
+
+                //la puce de ETP concernée et on credite
+                $puce_etp = Puce::find($request->id_puce);
+                $puce_etp->solde = $puce_etp->solde + $montant;                    
+                $puce_etp->save();
                 
                 if (isset($request->id_agent)) {
+                    
                     //recherche de la flotte concerné
                     $id_flotte = Puce::find($request->id_puce)->flote->id;
-
-                    //la puce de ETP concernée et on credite
-                    $puce_etp = Puce::find($request->id_puce);
-                    $puce_etp->solde = $puce_etp->solde + $montant;                    
-                    $puce_etp->save();
                     
                     //On recupère la puce de l'agent concerné et on debite
                     $puce_agent = Puce::where('id_agent', $request->id_agent)->where('id_flotte', $id_flotte)->first();
@@ -193,6 +194,7 @@ class ApprovisionnementEtpController extends Controller
                     $caisse = Caisse::where('id_user', $agent->user->id)->first();
                     $caisse->solde = $caisse->solde + $montant;
                     $caisse->save();
+
                 }
 
                 return new DestockageResource($destockage);
