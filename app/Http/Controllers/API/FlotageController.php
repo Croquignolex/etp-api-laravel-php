@@ -2,19 +2,19 @@
 
 namespace App\Http\Controllers\API;
 
-use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
-use App\Agent;
-use App\Approvisionnement;
-use App\Demande_flote;
 use App\User;
-use App\Enums\Roles;
-use Illuminate\Support\Facades\Validator;
-use App\Flote;
-use App\Type_puce;
 use App\Puce;
+use App\Agent;
 use App\Caisse;
+use App\Type_puce;
+use App\Enums\Roles;
+use App\Demande_flote;
+use App\Approvisionnement;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Validator;
+
 class FlotageController extends Controller
 {
     /**
@@ -175,7 +175,7 @@ class FlotageController extends Controller
                         'message' => "Le flottage c'est bien passé",
                         'status' => true,
                         'data' => [
-							'demande_flote' => $demande_flotte,
+							'demande' => $demande_flotte,
 							'demandeur' => $demandeur,
 							'agent' => $agent,
 							'user' => $user,
