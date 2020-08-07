@@ -308,13 +308,6 @@ Route::group(['middleware' => 'auth:api'], function(){
 
             //reponse d'un responsable a une demande
             Route::post('reponse_demandes_destockage/{id}', 'API\Demande_destockage_recouvreurController@reponse');
-        //----
-			//lister mes demandes de déstockage (gestionnaire de flotte ou les admin)
-            Route::get('list_demandes_destockage_general', 'API\DemandedestockageController@list_demandes_flote_general');
-
-			//modifier d'une demande de déstockage (gestionnaire de flotte ou les admin)
-            Route::post('modifier_demandes_destockage_general/{id}', 'API\DemandedestockageController@modifier_general')
-            ->where('id', '[0-9]+');
         /*
     /*
     //////////////////////GESTION DES ZONES DE RECOUVREMENT /////////////////////

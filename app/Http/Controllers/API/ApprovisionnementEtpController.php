@@ -39,7 +39,7 @@ class ApprovisionnementEtpController extends Controller
     public function traitement_demande_flotte(Request $request)
     {
 
-          
+
             // Valider données envoyées
             $validator = Validator::make($request->all(), [
                 'montant' => ['required', 'Numeric'],
@@ -54,7 +54,7 @@ class ApprovisionnementEtpController extends Controller
                     ]
                 );
             }
-            
+
             //si la demande n'existe pas
             if (!($demande = Demande_destockage::find($request->id_demande))) {
                 return response()->json(
@@ -63,7 +63,7 @@ class ApprovisionnementEtpController extends Controller
                         'status' => false,
                         'data' => null
                     ]
-                ); 
+                );
             }
 
             //on controle le montant
@@ -74,10 +74,10 @@ class ApprovisionnementEtpController extends Controller
                         'status' => false,
                         'data' => null
                     ]
-                ); 
-            }                  
-   
-            
+                );
+            }
+
+
             //on reduit le prix de la demande en fonction de ce qu'on veut destocker
             $demande->reste = $demande->reste - $request->montant;
 
@@ -85,7 +85,7 @@ class ApprovisionnementEtpController extends Controller
             if ($demande->reste == 0) {
                 $demande->statut = Statut::COMPLETER;
             }
-            
+
             //message de reussite
             if ($demande->save()) {
                 return response()->json(
@@ -94,10 +94,9 @@ class ApprovisionnementEtpController extends Controller
                         'status' => true,
                         'data' => $demande
                     ]
-                ); 
+                );
             }
     }
-
 
     /**
      * ////traiter une demande de destockage
@@ -105,13 +104,13 @@ class ApprovisionnementEtpController extends Controller
     public function store(Request $request)
     {
 
-          
+
             // Valider données envoyées
             $validator = Validator::make($request->all(), [
-                'type' => ['required', 'string', 'max:255'], //BY_AGENT, BY_DIGIT_PARTNER or BY_BANK                
+                'type' => ['required', 'string', 'max:255'], //BY_AGENT, BY_DIGIT_PARTNER or BY_BANK
                 'fournisseur' => ['nullable', 'string', 'max:255'], // si le type est BY_DIGIT_PARTNER ou BY_BANK
-                'id_agent' => ['nullable', 'Numeric'],       // obligatoire si le type est BY_AGENT 
-                'id_puce' => ['required', 'Numeric'],        
+                'id_agent' => ['nullable', 'Numeric'],       // obligatoire si le type est BY_AGENT
+                'id_puce' => ['required', 'Numeric'],
                 'recu' => ['required', 'file', 'max:10000'],
                 'montant' => ['required', 'Numeric'],
             ]);
@@ -126,12 +125,12 @@ class ApprovisionnementEtpController extends Controller
                     ]
                 );
             }
-            
+
             //au cas ou le type est BY_AGENT, on est sencé recevoir l'id de l'agent. on verifi que l'id recu est bien un Agent
             if (isset($request->id_agent)) {
 
-                //on verifi si le recouvreur existe 
-                
+                //on verifi si le recouvreur existe
+
                     if (!($agent = Agent::find($request->id_agent))) {
                         return response()->json(
                             [
@@ -139,14 +138,14 @@ class ApprovisionnementEtpController extends Controller
                                 'status' => false,
                                 'data' => null
                             ]
-                        ); 
-                    }                    
-                
-                
+                        );
+                    }
+
+
             }
-            
+
             //On recupère les données validés
-            
+
                 //enregistrer le recu
                 $recu = null;
                 if ($request->hasFile('recu') && $request->file('recu')->isValid()) {
@@ -156,9 +155,9 @@ class ApprovisionnementEtpController extends Controller
                 $fournisseur = $request->fournisseur;
                 $id_agent = $request->id_agent;
                 $id_puce = $request->id_puce;
-                $montant = $request->montant;           
-                
-                
+                $montant = $request->montant;
+
+
             //initier le destockage encore appelé approvisionnement de ETP
             $destockage = new Destockage([
                 'id_recouvreur' => isset($request->id_recouvreur) ? $request->id_recouvreur : Auth::user()->id,
@@ -177,19 +176,19 @@ class ApprovisionnementEtpController extends Controller
 
                 //la puce de ETP concernée et on credite
                 $puce_etp = Puce::find($request->id_puce);
-                $puce_etp->solde = $puce_etp->solde + $montant;                    
+                $puce_etp->solde = $puce_etp->solde + $montant;
                 $puce_etp->save();
-                
+
                 if (isset($request->id_agent)) {
-                    
+
                     //recherche de la flotte concerné
                     $id_flotte = Puce::find($request->id_puce)->flote->id;
-                    
+
                     //On recupère la puce de l'agent concerné et on debite
                     $puce_agent = Puce::where('id_agent', $request->id_agent)->where('id_flotte', $id_flotte)->first();
                     $puce_agent->solde = $puce_agent->solde - $montant;
                     $puce_agent->save();
-                    
+
                     //On recupère la caisse de l'agent concerné et on credite
                     $caisse = Caisse::where('id_user', $agent->user->id)->first();
                     $caisse->solde = $caisse->solde + $montant;
@@ -204,7 +203,7 @@ class ApprovisionnementEtpController extends Controller
                 // Renvoyer une erreur
                 return response()->json(
                     [
-                        'message' => 'erreur lors du destockage', 
+                        'message' => 'erreur lors du destockage',
                         'status'=>false,
                         'data' => null
                     ]
@@ -212,10 +211,9 @@ class ApprovisionnementEtpController extends Controller
 
             }
 
-            
+
 
     }
-
 
     /**
      * ////approuver une demande de destockage
@@ -223,7 +221,7 @@ class ApprovisionnementEtpController extends Controller
     public function approuve(Request $request)
     {
 
-          
+
             // Valider données envoyées
             $validator = Validator::make($request->all(), [
                 'id_destockage' => ['required', 'Numeric']
@@ -246,12 +244,12 @@ class ApprovisionnementEtpController extends Controller
                         'status' => false,
                         'data' => null
                     ]
-                ); 
+                );
             }
 
             //on approuve le destockage
             $destockage->statut = Statut::COMPLETER;
-            
+
             //message de reussite
             if ($destockage->save()) {
 
@@ -262,7 +260,7 @@ class ApprovisionnementEtpController extends Controller
                 // Renvoyer une erreur
                 return response()->json(
                     [
-                        'message' => 'erreur lors de la confirmation', 
+                        'message' => 'erreur lors de la confirmation',
                         'status'=>false,
                         'data' => null
                     ]
@@ -270,7 +268,6 @@ class ApprovisionnementEtpController extends Controller
 
             }
     }
-
 
     /**
      * ////details d'une demande de destockage
@@ -286,25 +283,25 @@ class ApprovisionnementEtpController extends Controller
                         'status' => false,
                         'data' => null
                     ]
-                ); 
+                );
             }
 
             return new DestockageResource($destockage);
 
-            
-    }
 
+    }
 
     /**
      * ////lister les destockages
      */
     public function list_all()
     {
-
-            //les destockages
-            return DestockageResource::collection(Destockage::all());
+        return response()->json(
+            [
+                'message' => "liste",
+                'status' => true,
+                'data' => DestockageResource::collection(Destockage::all())
+            ]
+        );
     }
-
-
-
 }
