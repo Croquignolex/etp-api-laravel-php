@@ -129,7 +129,7 @@ class FlotageController extends Controller
             'statut' => \App\Enums\Statut::TERMINEE,
             'note' => null,
             'montant' => $montant,
-            'reste' => $montant
+            //'reste' => $montant
         ]);
 
         //si l'enregistrement du flottage a lieu
@@ -170,7 +170,7 @@ class FlotageController extends Controller
 
 
 				$user = $demande_flotte->user;
-				$demandeur = User::Find($demande_flotte->add_by);
+				$demandeur = User::find($demande_flotte->add_by);
 
                 // Renvoyer un message de succès
                 return response()->json(
@@ -237,7 +237,7 @@ class FlotageController extends Controller
                 ]
             );
         }
-        
+
         //On verifi si la puce agent passée existe réellement
         if (!Puce::Find($request->id_puce_agent)) {
             return response()->json(
@@ -248,7 +248,7 @@ class FlotageController extends Controller
                 ]
             );
         }
-        
+
         //On verifi si la puce de  flottage passée existe réellement
         if (!Puce::Find($request->id_puce_flottage)) {
             return response()->json(
@@ -267,7 +267,7 @@ class FlotageController extends Controller
         $agent = Agent::Find($request->id_agent);
         $user = $agent->user;
 
-        
+
         // Récupérer les données pour la création d'une demande fictive de flotte
             $id_user = $user->id;
             $add_by = $add_by->id;
@@ -278,7 +278,7 @@ class FlotageController extends Controller
             //recuperer l'id de puce de l'agent
             $id_puce = $request->id_puce_agent;
 
-        // Nouvelle demande fictive de flotte 
+        // Nouvelle demande fictive de flotte
         $demande_flotte = new Demande_flote([
             'id_user' => $id_user,
             'add_by' => $add_by,
@@ -325,7 +325,7 @@ class FlotageController extends Controller
                     ]
                 );
             }
-            
+
             //Montant du depot
             $montant = $request->montant;
 
@@ -346,7 +346,7 @@ class FlotageController extends Controller
                 'montant' => $montant,
                 'reste' => $montant
             ]);
-           
+
             //si l'enregistrement du flottage a lieu
             if ($flottage->save()) {
 
@@ -419,7 +419,7 @@ class FlotageController extends Controller
             );
         }
 
-           
+
     }
 
     /**
