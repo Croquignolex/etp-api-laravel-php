@@ -23,8 +23,8 @@ class CreateForeingnKeys extends Migration
                 ->on('demande_flotes')
 				->onDelete('cascade')
 				->onUpdate('no action');
-				
-				
+
+
 			$table->foreign('id_user')
                 ->references('id')
                 ->on('users')
@@ -61,7 +61,7 @@ class CreateForeingnKeys extends Migration
                 ->on('versements')
 				->onDelete('cascade')
 				->onUpdate('no action');
-        });      
+        });
 
 
 
@@ -80,7 +80,7 @@ class CreateForeingnKeys extends Migration
 				->onDelete('cascade')
 				->onUpdate('no action');
         });
-        
+
 
         // pour la table agents
 		Schema::table('agents', function(Blueprint $table) {
@@ -97,7 +97,7 @@ class CreateForeingnKeys extends Migration
 				->onDelete('cascade')
 				->onUpdate('no action');
         });
-        
+
 
         // pour la table operations
 		Schema::table('operations', function(Blueprint $table) {
@@ -108,21 +108,21 @@ class CreateForeingnKeys extends Migration
 				->onDelete('cascade')
 				->onUpdate('no action');
 
-				
+
 			$table->foreign('id_motif')
                 ->references('id')
                 ->on('motif_operations')
 				->onDelete('cascade')
 				->onUpdate('no action');
 
-				
+
 			$table->foreign('id_user')
                 ->references('id')
                 ->on('users')
 				->onDelete('cascade')
 				->onUpdate('no action');
         });
-        
+
 
         // pour la table versements
         Schema::table('versements', function(Blueprint $table) {
@@ -133,14 +133,14 @@ class CreateForeingnKeys extends Migration
 				->onDelete('cascade')
 				->onUpdate('no action');
 
-				
+
 			$table->foreign('id_agent')
                 ->references('id')
                 ->on('agents')
 				->onDelete('cascade')
 				->onUpdate('no action');
 
-				
+
 			$table->foreign('id_flote')
                 ->references('id')
                 ->on('flotes')
@@ -158,14 +158,14 @@ class CreateForeingnKeys extends Migration
                 ->on('users')
 				->onDelete('cascade')
 				->onUpdate('no action');
-				
+
 			 $table->foreign('id_zone')
                 ->references('id')
                 ->on('zones')
 				->onDelete('cascade')
 				->onUpdate('no action');
         });
-  
+
         // pour la table puces
         Schema::table('puces', function(Blueprint $table) {
 			//migrations des clés
@@ -174,7 +174,7 @@ class CreateForeingnKeys extends Migration
                 ->on('flotes')
                 ->onDelete('cascade')
 				->onUpdate('no action');
-                
+
             $table->foreign('id_agent')
                 ->references('id')
                 ->on('agents')
@@ -182,7 +182,7 @@ class CreateForeingnKeys extends Migration
     			->onUpdate('no action');
         });
 
-        
+
 
         // pour la table demande_flotes
         Schema::table('demande_flotes', function(Blueprint $table) {
@@ -197,17 +197,17 @@ class CreateForeingnKeys extends Migration
                 ->references('id')
                 ->on('users')
                 ->onDelete('cascade')
-                ->onUpdate('no action');   
-                
+                ->onUpdate('no action');
+
             $table->foreign('add_by')
                 ->references('id')
                 ->on('users')
 				->onDelete('cascade')
                 ->onUpdate('no action');
-                
+
             $table->foreign('source')
                 ->references('id')
-                ->on('flotes')
+                ->on('puces')
 				->onDelete('cascade')
                 ->onUpdate('no action');
 
@@ -217,14 +217,14 @@ class CreateForeingnKeys extends Migration
 
         // pour la table demande_destockages
         Schema::table('demande_destockages', function(Blueprint $table) {
-            
-			//migrations des clés                
+
+			//migrations des clés
             $table->foreign('puce_source')
                 ->references('id')
                 ->on('puces')
                 ->onDelete('cascade')
                 ->onUpdate('no action');
-                
+
             $table->foreign('puce_destination')
                 ->references('id')
                 ->on('puces')
@@ -236,7 +236,7 @@ class CreateForeingnKeys extends Migration
                 ->on('users')
                 ->onDelete('cascade')
                 ->onUpdate('no action');
-                
+
             $table->foreign('add_by')
                 ->references('id')
                 ->on('users')

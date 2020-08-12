@@ -8,9 +8,11 @@ use App\Agent;
 use App\Caisse;
 use App\Type_puce;
 use App\Enums\Roles;
+use App\Enums\Statut;
 use App\Demande_flote;
 use App\Approvisionnement;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
@@ -22,7 +24,6 @@ class FlotageController extends Controller
      * les conditions de lecture des methodes
 
      */
-
     function __construct(){
 
         $recouvreur = Roles::RECOUVREUR;
@@ -32,6 +33,10 @@ class FlotageController extends Controller
 
     }
 
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
     Public function store(Request $request) {
 
         // Valider données envoyées
@@ -88,7 +93,7 @@ class FlotageController extends Controller
             $type_puce = Type_puce::find($puce_etp->type)->name;
 
             //On se rassure que la puce passée en paramettre est reelement l'une des puces de flottage sollicités
-            if ($type_puce == \App\Enums\Statut::AGENT || $type_puce == \App\Enums\Statut::ETP || $puce_etp->id_flotte != $puce_agent->id_flotte) {
+            if ($type_puce == Statut::AGENT || $type_puce == Statut::ETP || $puce_etp->id_flotte != $puce_agent->id_flotte) {
                 return response()->json(
                     [
                         'message' => "cette puce n'est pas capable d'effectuer un flottagage",
@@ -120,13 +125,12 @@ class FlotageController extends Controller
         //La gestionnaire concernée
         $gestionnaire = Auth::user();
 
-
         // Nouveau flottage
         $flottage = new Approvisionnement([
             'id_demande_flote' => $demande_flotte->id,
             'id_user' => $gestionnaire->id,
             'reference' => null,
-            'statut' => \App\Enums\Statut::TERMINEE,
+            'statut' => Statut::TERMINEE,
             'note' => null,
             'montant' => $montant,
             //'reste' => $montant
@@ -156,18 +160,13 @@ class FlotageController extends Controller
 
                 //On change le statut de la demande de flotte
                 if ($demande_flotte->reste == 0) {
-
-                    $demande_flotte->statut = \App\Enums\Statut::EFFECTUER ;
-
+                    $demande_flotte->statut = Statut::EFFECTUER ;
                 }else {
-
-                    $demande_flotte->statut = \App\Enums\Statut::EN_COURS ;
-
+                    $demande_flotte->statut = Statut::EN_COURS ;
                 }
 
                 //Enregistrer les oppérations
                 $demande_flotte->save();
-
 
 				$user = $demande_flotte->user;
 				$demandeur = User::find($demande_flotte->add_by);
@@ -187,9 +186,6 @@ class FlotageController extends Controller
 						]
                     ]
                 );
-
-
-
         }else {
 
             // Renvoyer une erreur
@@ -205,8 +201,10 @@ class FlotageController extends Controller
 
     }
 
-
-
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
     Public function flottage_express(Request $request) {
 
         // Valider données envoyées
@@ -225,7 +223,6 @@ class FlotageController extends Controller
                 ]
             );
         }
-
 
         //On verifi si l'agent passé existe réellement
         if (!Agent::Find($request->id_agent)) {
@@ -260,21 +257,17 @@ class FlotageController extends Controller
             );
         }
 
-        //recuperer l'utilisateur connecté (c'est lui l'agent)
-        $add_by = Auth::user();
-
         //recuperer l'agent concerné
         $agent = Agent::Find($request->id_agent);
         $user = $agent->user;
 
-
         // Récupérer les données pour la création d'une demande fictive de flotte
             $id_user = $user->id;
-            $add_by = $add_by->id;
+            $add_by = $user->id;
             $reference = null;
             $montant = $request->montant;
-            $statut = \App\Enums\Statut::EN_ATTENTE;
-            $source = null;
+            $statut = Statut::EFFECTUER;
+            $source = $request->id_puce_flottage;
             //recuperer l'id de puce de l'agent
             $id_puce = $request->id_puce_agent;
 
@@ -284,47 +277,45 @@ class FlotageController extends Controller
             'add_by' => $add_by,
             'reference' => $reference,
             'montant' => $montant,
-            'reste' => $montant,
+            'reste' => 0,
             'statut' => $statut,
             'id_puce' => $id_puce,
             'source' => $source
         ]);
 
-        // creation de La demande fictive de flotte
-        if ($demande_flotte->save()) {
+        // On verifi que la puce passée en paramettre existe
+        if (Puce::find($request->id_puce_flottage)) {
+            //On recupère la puce de l'Agent qui va etre approvisionné
+            $puce_agent = Puce::find($request->id_puce_agent);
 
-             // On verifi que la puce passée en paramettre existe
-             if (Puce::find($request->id_puce_flottage)) {
+            //On recupère la puce ETP qui va faire le depot
+            $puce_etp = Puce::find($request->id_puce_flottage);
 
-                //On recupère la puce ETP qui va faire le depot
-                $puce_etp = Puce::find($request->id_puce_flottage);
+            //on recupère le typ de la puce
+            $type_puce = Type_puce::find($puce_etp->type)->name;
 
-                //On recupère la puce de l'Agent qui va etre approvisionné
-                $puce_agent = Puce::find($request->id_puce_agent);
-
-                //on recupère le typ de la puce
-                $type_puce = Type_puce::find($puce_etp->type)->name;
-
-                //On se rassure que la puce passée en paramettre est reelement l'une des puces de flottage sollicités
-                if ($type_puce == \App\Enums\Statut::AGENT || $type_puce == \App\Enums\Statut::ETP || $puce_etp->id_flotte != $puce_agent->id_flotte) {
-                    return response()->json(
-                        [
-                            'message' => "cette puce n'est pas capable d'effectuer un flottagage",
-                            'status' => false,
-                            'data' => null
-                        ]
-                    );
-                }
-
-            }else {
+            //On se rassure que la puce passée en paramettre est reelement l'une des puces de flottage sollicités
+            if ($type_puce == Statut::AGENT || $type_puce == Statut::ETP || $puce_etp->id_flotte != $puce_agent->id_flotte) {
                 return response()->json(
                     [
-                        'message' => "la puce n'existe pas",
+                        'message' => "cette puce n'est pas capable d'effectuer un flottagage",
                         'status' => false,
                         'data' => null
                     ]
                 );
             }
+        } else {
+            return response()->json(
+                [
+                    'message' => "la puce n'existe pas",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+
+        // creation de La demande fictive de flotte
+        if ($demande_flotte->save()) {
 
             //Montant du depot
             $montant = $request->montant;
@@ -341,10 +332,10 @@ class FlotageController extends Controller
                 'id_demande_flote' => $demande_flotte->id,
                 'id_user' => $gestionnaire->id,
                 'reference' => null,
-                'statut' => \App\Enums\Statut::EN_ATTENTE,
+                'statut' => Statut::TERMINEE,
                 'note' => null,
                 'montant' => $montant,
-                'reste' => $montant
+                'reste' => 0
             ]);
 
             //si l'enregistrement du flottage a lieu
@@ -364,34 +355,32 @@ class FlotageController extends Controller
                     //$caisse->solde = $caisse->solde - $montant;
                    //$caisse->save();
 
-                    //On calcule le reste de flotte à envoyer
-                    $demande_flotte->reste = $demande_flotte->reste - $montant;
+                    //On recupere les 'demande de flotte'
+                    $demandes_flote = Demande_flote::all();
 
-                    //On change le statut de la demande de flotte
-                    if ($demande_flotte->reste == 0) {
+                    $demandes_flotes = [];
 
-                        $demande_flotte->statut = \App\Enums\Statut::EFFECTUER ;
+                    foreach($demandes_flote as $demande_flote) {
+                        //recuperer l'utilisateur concerné
+                        $user = $demande_flote->user;
 
-                    }else {
+                        //recuperer l'agent concerné
+                        $agent = Agent::where('id_user', $user->id)->first();
 
-                        $demande_flotte->statut = \App\Enums\Statut::EN_COURS ;
+                        //recuperer le demandeur
+                        $demandeur = User::Find($demande_flote->add_by);
 
+                        $demandes_flotes[] = ['demande' => $demande_flote, 'demandeur' => $demandeur, 'agent' => $agent, 'user' => $user, 'puce' => $demande_flote->puce];
                     }
-
-                    //Enregistrer les oppérations
-                    $demande_flotte->save();
 
                     // Renvoyer un message de succès
                     return response()->json(
                         [
                             'message' => "Le flottage c'est bien passé",
                             'status' => true,
-                            'data' => ['flottage' => $flottage, 'demande_flotte' => $demande_flotte]
+                            'data' => ['demandes' => $demandes_flotes]
                         ]
                     );
-
-
-
             }else {
 
                 // Renvoyer une erreur
@@ -404,10 +393,6 @@ class FlotageController extends Controller
                 );
 
             }
-
-
-
-
         } else {
             // Renvoyer une erreur
             return response()->json(
@@ -418,8 +403,6 @@ class FlotageController extends Controller
                 ]
             );
         }
-
-
     }
 
     /**
