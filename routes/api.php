@@ -399,8 +399,8 @@ Route::group(['middleware' => 'auth:api'], function(){
         //lister les approvisionnement
         Route::get('list_destockage', 'API\ApprovisionnementEtpController@list_all');
 
-
-
+        // Par un responsable de zone
+        Route::get('list_destockage_responsable', 'API\ApprovisionnementEtpController@list_all_responsable');
 
 
 

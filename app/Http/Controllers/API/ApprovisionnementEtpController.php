@@ -304,4 +304,19 @@ class ApprovisionnementEtpController extends Controller
             ]
         );
     }
+
+    // BY_AGENT
+    /**
+     * ////lister les destockages
+     */
+    public function list_all_responsable()
+    {
+        return response()->json(
+            [
+                'message' => "liste",
+                'status' => true,
+                'data' => DestockageResource::collection(Destockage::where('type', Statut::BY_AGENT)->get())
+            ]
+        );
+    }
 }

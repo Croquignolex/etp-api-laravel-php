@@ -19,6 +19,7 @@ class Destockage extends JsonResource
 
         return [
             'id' => $this->id,
+            'note' => $this->note,
             'type' => $this->type,
             'fournisseur' => $this->fournisseur,
             'recu' => $this->recu,
