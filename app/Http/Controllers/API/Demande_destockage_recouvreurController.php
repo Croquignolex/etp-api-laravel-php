@@ -131,7 +131,9 @@ class Demande_destockage_recouvreurController extends Controller
     public function list_all_status()
     {
         //On recupere les 'demande de destockage'
-        $demandes_destockage = Demande_destockage::where('add_by', Auth::user()->id)->get();
+//        $demandes_destockage = Demande_destockage::where('add_by', Auth::user()->id)->get();
+        // tous lister car le responsable de zone peut voir toutes les démande de déstockage et agir en conséquence
+        $demandes_destockage = Demande_destockage::all();
 
 		$demandes_destockages = [];
 
@@ -143,7 +145,10 @@ class Demande_destockage_recouvreurController extends Controller
             //recuperer l'agent concerné
                 $agent = Agent::where('id_user', $user->id)->first();
 
-            $demandes_destockages[] = ['demande' => $demande_destockage, 'agent' => $agent, 'user' => $user, 'puce' => $demande_destockage->puce];
+            //recuperer le demandeur
+            $demandeur = User::find($demande_destockage->add_by);
+
+            $demandes_destockages[] = ['demande' => $demande_destockage, 'demandeur' => $demandeur, 'agent' => $agent, 'user' => $user, 'puce' => $demande_destockage->puce];
         }
 
         return response()->json(
@@ -202,8 +207,9 @@ class Demande_destockage_recouvreurController extends Controller
         // creation de La demande
         if ($demande_destockageDB->save()) {
 			//On recupere les 'demande de flotte'
-			$demandes_destockage = Demande_destockage::where('add_by', Auth::user()->id)->get();
-
+//			$demandes_destockage = Demande_destockage::where('add_by', Auth::user()->id)->get();
+            // tous lister car le responsable de zone peut voir toutes les démande de déstockage et agir en conséquence
+            $demandes_destockage = Demande_destockage::all();
 			$demandes_destockages = [];
 
 			foreach($demandes_destockage as $demande_destockage) {
@@ -213,7 +219,10 @@ class Demande_destockage_recouvreurController extends Controller
 				//recuperer l'agent concerné
 				$agent = Agent::where('id_user', $user->id)->first();
 
-				$demandes_destockages[] = ['demande' => $demande_destockage, 'agent' => $agent, 'user' => $user, 'puce' => $demande_destockage->puce];
+                //recuperer le demandeur
+                $demandeur = User::find($demande_destockage->add_by);
+
+				$demandes_destockages[] = ['demande' => $demande_destockage, 'demandeur' => $demandeur, 'agent' => $agent, 'user' => $user, 'puce' => $demande_destockage->puce];
 			}
 
             // Renvoyer un message de succès
@@ -329,8 +338,9 @@ class Demande_destockage_recouvreurController extends Controller
         // update de La demande
         if ($demande_destockage->save()) {
             //On recupere les 'demande de destockage'
-            $demandes_destockage = Demande_destockage::where('add_by', Auth::user()->id)->get();
-
+//            $demandes_destockage = Demande_destockage::where('add_by', Auth::user()->id)->get();
+            // tous lister car le responsable de zone peut voir toutes les démande de déstockage et agir en conséquence
+            $demandes_destockage = Demande_destockage::all();
             $demandes_destockages = [];
 
             foreach($demandes_destockage as $demande_destockage) {
@@ -341,7 +351,10 @@ class Demande_destockage_recouvreurController extends Controller
                 //recuperer l'agent concerné
                 $agent = Agent::where('id_user', $user->id)->first();
 
-                $demandes_destockages[] = ['demande' => $demande_destockage, 'agent' => $agent, 'user' => $user, 'puce' => $demande_destockage->puce];
+                //recuperer le demandeur
+                $demandeur = User::find($demande_destockage->add_by);
+
+                $demandes_destockages[] = ['demande' => $demande_destockage, 'demandeur' => $demandeur, 'agent' => $agent, 'user' => $user, 'puce' => $demande_destockage->puce];
             }
 
             return response()->json(

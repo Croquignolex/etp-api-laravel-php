@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\User;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class Destockage extends JsonResource
@@ -18,9 +19,7 @@ class Destockage extends JsonResource
 
         return [
             'id' => $this->id,
-            'id_recouvreur' => $this->id_recouvreur,
-            'puce' => $this->puce,
-            'agent' => $this->agent,
+            'note' => $this->note,
             'type' => $this->type,
             'fournisseur' => $this->fournisseur,
             'recu' => $this->recu,
@@ -28,6 +27,10 @@ class Destockage extends JsonResource
             'statut' => $this->statut,
             'montant' => $this->montant,
             'created_at' => $this->created_at,
+            'recouvreur' => User::find($this->id_recouvreur),
+            'puce' => $this->puce,
+            'agent' => $this->agent,
+            'user' => User::find($this->agent->id_user),
         ];
 
     }
