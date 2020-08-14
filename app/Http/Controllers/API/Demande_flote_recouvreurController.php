@@ -101,7 +101,7 @@ class Demande_flote_recouvreurController extends Controller
             'id_puce' => $id_puce,
             'source' => $source
         ]);
- 
+
         // creation de La demande
         if ($demande_flote->save()) {
 
@@ -124,7 +124,7 @@ class Demande_flote_recouvreurController extends Controller
             );
         }
     }
-  
+
     /**
      * //lister mes demandes de flotes peu importe le statut
      */
@@ -132,7 +132,7 @@ class Demande_flote_recouvreurController extends Controller
     {
         //On recupere les 'demande de flotte'
         $demandes_flote = Demande_flote::where('add_by', Auth::user()->id)->get();
- 
+
 		$demandes_flotes = [];
 
         foreach($demandes_flote as $demande_flote) {
@@ -145,16 +145,16 @@ class Demande_flote_recouvreurController extends Controller
 
             $demandes_flotes[] = ['demande' => $demande_flote, 'agent' => $agent, 'user' => $user, 'puce' => $demande_flote->puce];
         }
-  
+
 		return response()->json(
 			[
 				'message' => '',
 				'status' => true,
 				'data' => ['demandes' => $demandes_flotes]
 			]
-		); 
+		);
     }
- 
+
     /**
      * //details d'une demande de flote'
      */
@@ -176,9 +176,16 @@ class Demande_flote_recouvreurController extends Controller
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['demande' => $demande_flote, 'demandeur' => $user, 'agent' => $agent, 'user' => $user, 'puce' => $demande_flote->puce]
+                    'data' => [
+                        'demande' => $demande_flote,
+                        'demandeur' => $user,
+                        'agent' => $agent,
+                        'user' => $user,
+                        'approvisionnements' => $demande_flote->approvisionnements,
+                        'puce' => $demande_flote->puce
+                    ]
                 ]
-            ); 
+            );
         }else{
 
             return response()->json(
@@ -190,7 +197,7 @@ class Demande_flote_recouvreurController extends Controller
             );
         }
     }
-  
+
 	/**
      * //Annuler une demande de flotte
      */
@@ -272,7 +279,14 @@ class Demande_flote_recouvreurController extends Controller
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['demande' => $demande_flote, 'demandeur' => $user, 'agent' => $agent, 'user' => $user, 'puce' => $demande_flote->puce]
+                    'data' => [
+                        'demande' => $demande_flote,
+                        'demandeur' => $user,
+                        'agent' => $agent,
+                        'user' => $user,
+                        'approvisionnements' => $demande_flote->approvisionnements,
+                        'puce' => $demande_flote->puce
+                    ]
                 ]
             );
         } else {
