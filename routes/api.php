@@ -427,4 +427,41 @@ Route::group(['middleware' => 'auth:api'], function(){
         ->where('id', '[0-9]+');
 
 
+         /*//////////////////////gestion des corporates/////////////////////*/
+
+        //liste des corporates
+        Route::get('corporate_list', 'API\CorporateController@list');
+
+        //Creer un corporate
+        Route::post('store_corporate', 'API\CorporateController@store');
+
+        //details d'un corporate
+        Route::get('show_corporate/{id}', 'API\CorporateController@show')
+        ->where('id', '[0-9]+');
+
+        //modification d'un corporate
+        Route::post('edit_corporate/{id}', 'API\CorporateController@update')
+        ->where('id', '[0-9]+');
+
+        //supprimer un corporate
+        Route::post('delete_corporate/{id}', 'API\CorporateController@destroy')
+        ->where('id', '[0-9]+');
+
+        //Modifier le dossier d'un corporate
+        Route::post('edit_corporate_folder/{id}', 'API\CorporateController@edit_folder')
+        ->where('id', '[0-9]+');
+
+
+        //liste des puce d'une corporate
+        Route::get('list_puces_corporate/{id}', 'API\CorporateController@list_puces')
+        ->where('id', '[0-9]+');
+
+
+
+
+         /*//////////////////////Importer les fichiers excels/////////////////////*/
+
+        //importer les fichier excell
+        Route::post('importer', 'API\ImportFlottageController@import');
+
 });
