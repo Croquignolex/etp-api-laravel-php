@@ -365,6 +365,14 @@ Route::group(['middleware' => 'auth:api'], function(){
         //lister les Flottages peu importe le statut
         Route::get('list_all_flottage', 'API\FlotageController@list_all');
 
+        //lister les Flottages peu importe le statut pour un agent
+        Route::get('list_all_flottage_agent/{id}', 'API\FlotageController@list_all_agent')
+            ->where('id', '[0-9]+');
+
+        //lister les Flottages peu importe le statut pour un responsable de zone
+        Route::get('list_all_flottage_collector/{id}', 'API\FlotageController@list_all_collector')
+            ->where('id', '[0-9]+');
+
         //Creer un Flottage
         Route::post('flottage', 'API\FlotageController@store');
 

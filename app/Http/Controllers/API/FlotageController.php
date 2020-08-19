@@ -26,10 +26,11 @@ class FlotageController extends Controller
      */
     function __construct(){
 
+        $agent = Roles::AGENT;
         $recouvreur = Roles::RECOUVREUR;
         $superviseur = Roles::SUPERVISEUR;
         $ges_flotte = Roles::GESTION_FLOTTE;
-        $this->middleware("permission:$recouvreur|$superviseur|$ges_flotte");
+        $this->middleware("permission:$recouvreur|$superviseur|$ges_flotte|$agent");
 
     }
 
@@ -343,44 +344,54 @@ class FlotageController extends Controller
 
                 ////ce que le flottage implique
 
-                    //On debite la puce de ETP
-                    $puce_etp->solde = $puce_etp->solde - $montant;
-                    $puce_etp->save();
+                //On debite la puce de ETP
+                $puce_etp->solde = $puce_etp->solde - $montant;
+                $puce_etp->save();
 
-                    //On credite la puce de l'Agent
-                    $puce_agent->solde = $puce_agent->solde + $montant;
-                    $puce_agent->save();
+                //On credite la puce de l'Agent
+                $puce_agent->solde = $puce_agent->solde + $montant;
+                $puce_agent->save();
 
-                    //On debite la caisse de l'Agent pour le paiement de la flotte envoyée, ce qui implique qu'il doit à ETP
-                    //$caisse->solde = $caisse->solde - $montant;
-                   //$caisse->save();
+                //On debite la caisse de l'Agent pour le paiement de la flotte envoyée, ce qui implique qu'il doit à ETP
+                //$caisse->solde = $caisse->solde - $montant;
+               //$caisse->save();
 
-                    //On recupere les 'demande de flotte'
-                    $demandes_flote = Demande_flote::all();
+                $flottages = Approvisionnement::get();
 
-                    $demandes_flotes = [];
+                foreach($flottages as $flottage) {
 
-                    foreach($demandes_flote as $demande_flote) {
-                        //recuperer l'utilisateur concerné
-                        $user = $demande_flote->user;
+                    //recuperer la demande correspondante
+                    $demande = $flottage->demande_flote;
 
-                        //recuperer l'agent concerné
-                        $agent = Agent::where('id_user', $user->id)->first();
+                    //recuperer l'agent concerné
+                    $user = $demande->user;
 
-                        //recuperer le demandeur
-                        $demandeur = User::Find($demande_flote->add_by);
+                    //recuperer l'agent concerné
+                    $agent = Agent::where('id_user', $user->id)->first();
 
-                        $demandes_flotes[] = ['demande' => $demande_flote, 'demandeur' => $demandeur, 'agent' => $agent, 'user' => $user, 'puce' => $demande_flote->puce];
-                    }
+                    // recuperer celui qui a éffectué le flottage
+                    $gestionnaire = User::find($flottage->id_user);
 
-                    // Renvoyer un message de succès
-                    return response()->json(
-                        [
-                            'message' => "Le flottage c'est bien passé",
-                            'status' => true,
-                            'data' => ['demandes' => $demandes_flotes]
-                        ]
-                    );
+                    //recuperer la puce de l'agent
+                    $puce_receptrice = Puce::find($demande->id_puce);
+
+                    $approvisionnements[] = [
+                        'approvisionnement' => $flottage,
+                        'demande' => $demande,
+                        'user' => $user,
+                        'agent' => $agent,
+                        'gestionnaire' => $gestionnaire,
+                        'puce' => $puce_receptrice
+                    ];
+                }
+
+                return response()->json(
+                    [
+                        'message' => '',
+                        'status' => true,
+                        'data' => ['flottages' => $approvisionnements]
+                    ]
+                );
             }else {
 
                 // Renvoyer une erreur
@@ -410,26 +421,34 @@ class FlotageController extends Controller
      */
     public function list_all()
     {
-
         //On recupere les Flottages
         $flottages = Approvisionnement::get();
 
         foreach($flottages as $flottage) {
 
             //recuperer la demande correspondante
-            $demande = $flottage->demande_flote()->first();
-
-            //recuperer celui qui a éffectué le flottage
-                $user = User::Find($flottage->id_user);
+            $demande = $flottage->demande_flote;
 
             //recuperer l'agent concerné
-                $agent = Agent::where('id_user', $demande->id_user)->get();
+                $user = $demande->user;
+
+            //recuperer l'agent concerné
+                $agent = Agent::where('id_user', $user->id)->first();
+
+            // recuperer celui qui a éffectué le flottage
+                $gestionnaire = User::find($flottage->id_user);
 
             //recuperer la puce de l'agent
-                $puce_receptrice = Puce::Find($demande->id_puce);
+                $puce_receptrice = Puce::find($demande->id_puce);
 
-            $approvisionnements[] = ['approvisionnement' => $flottage,'demande' => $demande, 'user' => $user, 'agent' => $agent, 'puce_receptrice' => $puce_receptrice,];
-
+            $approvisionnements[] = [
+                'approvisionnement' => $flottage,
+                'demande' => $demande,
+                'user' => $user,
+                'agent' => $agent,
+                'gestionnaire' => $gestionnaire,
+                'puce' => $puce_receptrice
+            ];
         }
 
         return response()->json(
@@ -439,7 +458,100 @@ class FlotageController extends Controller
                 'data' => ['flottages' => $approvisionnements]
             ]
         );
+    }
 
+    /**
+     * ////lister tous les flottages pour un agent
+     */
+    public function list_all_agent($id)
+    {
+        //On recupere les Flottages
+        $flottages = Approvisionnement::get()->filter(function(Approvisionnement $approvisionnement) use ($id) {
+            $demande_de_flotte = $approvisionnement->demande_flote;
+            return ($demande_de_flotte->user->id == $id);
+        });
+
+        foreach($flottages as $flottage) {
+
+            //recuperer la demande correspondante
+            $demande = $flottage->demande_flote;
+
+            //recuperer l'agent concerné
+            $user = $demande->user;
+
+            //recuperer l'agent concerné
+            $agent = Agent::where('id_user', $user->id)->first();
+
+            // recuperer celui qui a éffectué le flottage
+            $gestionnaire = User::find($flottage->id_user);
+
+            //recuperer la puce de l'agent
+            $puce_receptrice = Puce::find($demande->id_puce);
+
+            $approvisionnements[] = [
+                'approvisionnement' => $flottage,
+                'demande' => $demande,
+                'user' => $user,
+                'agent' => $agent,
+                'gestionnaire' => $gestionnaire,
+                'puce' => $puce_receptrice
+            ];
+        }
+
+        return response()->json(
+            [
+                'message' => '',
+                'status' => true,
+                'data' => ['flottages' => $approvisionnements]
+            ]
+        );
+    }
+
+    /**
+     * ////lister tous les flottages pour responsable de zone
+     */
+    public function list_all_collector($id)
+    {
+        //On recupere les Flottages
+        $flottages = Approvisionnement::get()->filter(function(Approvisionnement $approvisionnement) use ($id) {
+            $demande_de_flotte = $approvisionnement->demande_flote;
+            return ($demande_de_flotte->add_by == $id);
+        });
+
+        foreach($flottages as $flottage) {
+
+            //recuperer la demande correspondante
+            $demande = $flottage->demande_flote;
+
+            //recuperer l'agent concerné
+            $user = $demande->user;
+
+            //recuperer l'agent concerné
+            $agent = Agent::where('id_user', $user->id)->first();
+
+            // recuperer celui qui a éffectué le flottage
+            $gestionnaire = User::find($flottage->id_user);
+
+            //recuperer la puce de l'agent
+            $puce_receptrice = Puce::find($demande->id_puce);
+
+            $approvisionnements[] = [
+                'approvisionnement' => $flottage,
+                'demande' => $demande,
+                'user' => $user,
+                'agent' => $agent,
+                'gestionnaire' => $gestionnaire,
+                'puce' => $puce_receptrice
+            ];
+        }
+
+        return response()->json(
+            [
+                'message' => '',
+                'status' => true,
+                'data' => ['flottages' => $approvisionnements]
+            ]
+        );
     }
 
     /**
