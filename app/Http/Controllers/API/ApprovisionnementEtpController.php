@@ -25,9 +25,10 @@ class ApprovisionnementEtpController extends Controller
     function __construct()
     {
         $recouvreur = Roles::RECOUVREUR;
+        $agent = Roles::AGENT;
         $superviseur = Roles::SUPERVISEUR;
         $ges_flotte = Roles::GESTION_FLOTTE;
-        $this->middleware("permission:$recouvreur|$superviseur|$ges_flotte");
+        $this->middleware("permission:$recouvreur|$superviseur|$ges_flotte|$agent");
     }
 
     /**
@@ -35,8 +36,6 @@ class ApprovisionnementEtpController extends Controller
      */
     public function traitement_demande_flotte(Request $request)
     {
-
-
             // Valider données envoyées
             $validator = Validator::make($request->all(), [
                 'montant' => ['required', 'Numeric'],
@@ -73,7 +72,6 @@ class ApprovisionnementEtpController extends Controller
                     ]
                 );
             }
-
 
             //on reduit le prix de la demande en fonction de ce qu'on veut destocker
             $demande->reste = $demande->reste - $request->montant;
@@ -173,9 +171,9 @@ class ApprovisionnementEtpController extends Controller
                 $id_flotte = Puce::find($request->id_puce)->flote->id;
 
                 //On recupère la puce de l'agent concerné et on debite
-                $puce_agent = Puce::where('id_agent', $request->id_agent)->where('id_flotte', $id_flotte)->first();
-                $puce_agent->solde = $puce_agent->solde - $montant;
-                $puce_agent->save();
+//                $puce_agent = Puce::where('id_agent', $request->id_agent)->where('id_flotte', $id_flotte)->first();
+//                $puce_agent->solde = $puce_agent->solde - $montant;
+//                $puce_agent->save();
 
                 //On recupère la caisse de l'agent concerné et on credite
                 $caisse = Caisse::where('id_user', $agent->user->id)->first();
@@ -184,8 +182,17 @@ class ApprovisionnementEtpController extends Controller
 
             }
 
-            return new DestockageResource($destockage);
-
+            $recouvreur_id = Auth::user()->id;
+            $destockages = Destockage::where('type', Statut::BY_AGENT)->get();
+            return response()->json(
+                [
+                    'message' => "liste",
+                    'status' => true,
+                    'data' => DestockageResource::collection($destockages->filter(function(Destockage $destockage) use ($recouvreur_id) {
+                        return ($destockage->id_recouvreur == $recouvreur_id);
+                    }))
+                ]
+            );
         }else {
 
             // Renvoyer une erreur
@@ -202,24 +209,24 @@ class ApprovisionnementEtpController extends Controller
     /**
      * ////approuver une demande de destockage
      */
-    public function approuve(Request $request)
+    public function approuve($id)
     {
         // Valider données envoyées
-        $validator = Validator::make($request->all(), [
-            'id_destockage' => ['required', 'Numeric']
-        ]);
-        if ($validator->fails()) {
-            return response()->json(
-                [
-                    'message' => ['error'=>$validator->errors()],
-                    'status' => false,
-                    'data' => null
-                ]
-            );
-        }
+//        $validator = Validator::make($request->all(), [
+//            'id_destockage' => ['required', 'Numeric']
+//        ]);
+//        if ($validator->fails()) {
+//            return response()->json(
+//                [
+//                    'message' => ['error'=>$validator->errors()],
+//                    'status' => false,
+//                    'data' => null
+//                ]
+//            );
+//        }
 
         //si le destockage n'existe pas
-        if (!($destockage = Destockage::find($request->id_destockage))) {
+        if (!($destockage = Destockage::find($id))) {
             return response()->json(
                 [
                     'message' => "le destockage n'existe pas",
@@ -230,15 +237,18 @@ class ApprovisionnementEtpController extends Controller
         }
 
         //on approuve le destockage
-        $destockage->statut = Statut::COMPLETER;
+        $destockage->statut = Statut::EFFECTUER;
 
         //message de reussite
         if ($destockage->save()) {
-
-            return new DestockageResource($destockage);
-
+            return response()->json(
+                [
+                    'message' => "liste",
+                    'status' => true,
+                    'data' => DestockageResource::collection(Destockage::all())
+                ]
+            );
         }else {
-
             // Renvoyer une erreur
             return response()->json(
                 [
@@ -247,7 +257,6 @@ class ApprovisionnementEtpController extends Controller
                     'data' => null
                 ]
             );
-
         }
     }
 
@@ -293,12 +302,49 @@ class ApprovisionnementEtpController extends Controller
      */
     public function list_all_destockage()
     {
+        $destockages = Destockage::where('type', Statut::BY_AGENT)->get();
         return response()->json(
             [
                 'message' => "liste",
                 'status' => true,
-                'data' => DestockageResource::collection(Destockage::where('type', Statut::BY_AGENT)->get())
+                'data' => DestockageResource::collection($destockages)
             ]
         );
     }
+
+    /**
+     * ////lister les destockages
+     */
+    public function list_all_destockage_collector($id)
+    {
+        $destockages = Destockage::where('type', Statut::BY_AGENT)->get();
+        return response()->json(
+            [
+                'message' => "liste",
+                'status' => true,
+                'data' => DestockageResource::collection($destockages->filter(function(Destockage $destockage) use ($id) {
+                    return ($destockage->id_recouvreur == $id);
+                }))
+            ]
+        );
+    }
+
+    /**
+     * ////lister les destockages
+     */
+    public function list_all_destockage_agent($id)
+    {
+        $destockages = Destockage::where('type', Statut::BY_AGENT)->get();
+        $agent = Agent::where(['id_user' => $id])->first();
+        return response()->json(
+            [
+                'message' => "liste",
+                'status' => true,
+                'data' => DestockageResource::collection($destockages->filter(function(Destockage $destockage) use ($agent) {
+                    return ($destockage->id_agent == $agent->id);
+                }))
+            ]
+        );
+    }
+
 }
