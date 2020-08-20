@@ -424,6 +424,8 @@ class FlotageController extends Controller
         //On recupere les Flottages
         $flottages = Approvisionnement::get();
 
+        $approvisionnements = [];
+
         foreach($flottages as $flottage) {
 
             //recuperer la demande correspondante
@@ -470,6 +472,8 @@ class FlotageController extends Controller
             $demande_de_flotte = $approvisionnement->demande_flote;
             return ($demande_de_flotte->user->id == $id);
         });
+
+        $approvisionnements = [];
 
         foreach($flottages as $flottage) {
 
