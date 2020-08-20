@@ -275,7 +275,7 @@ Route::group(['middleware' => 'auth:api'], function(){
             Route::get('detail_demandes_destockage/{id}', 'API\DemandedestockageController@show')
             ->where('id', '[0-9]+');
 
-			//Details d'une demande de destockage
+			//modifier une demande de destockage
             Route::post('modifier_demandes_destockage/{id}', 'API\DemandedestockageController@modifier')
             ->where('id', '[0-9]+');
 
@@ -412,9 +412,6 @@ Route::group(['middleware' => 'auth:api'], function(){
         //Creer un Recouvrement
         Route::post('recouvrement', 'API\RecouvrementController@store');
 
-        //Creer un Retour flotte
-        Route::post('retour_flotte', 'API\RecouvrementController@retour');
-
         //Details d'un Recouvrement
         Route::get('detail_recouvrement/{id}', 'API\RecouvrementController@show')
         ->where('id', '[0-9]+');
@@ -424,6 +421,42 @@ Route::group(['middleware' => 'auth:api'], function(){
 
         //lister les Recouvrements relatifs à un flottage precis
         Route::get('list_recouvrement/{id}', 'API\RecouvrementController@list_recouvrement')
+        ->where('id', '[0-9]+');
+
+        //lister les Recouvrements d'un responsable de zone precis
+        Route::get('list_recouvrement_by_rz/{id}', 'API\RecouvrementController@list_recouvrement_by_rz')
+        ->where('id', '[0-9]+');
+
+        //lister les Recouvrements d'un agent precis
+        Route::get('list_recouvrement_by_agent/{id}', 'API\RecouvrementController@list_recouvrement_by_agent')
+        ->where('id', '[0-9]+');
+
+
+        /*
+    //////////////////////Retour de flote/////////////////////
+    */
+
+
+        //Creer un Retour flotte
+        Route::post('retour_flotte', 'API\Retour_flotteController@retour');
+
+        //Details d'un Retour flotte
+        Route::get('detail_retour_flotte/{id}', 'API\Retour_flotteController@show')
+        ->where('id', '[0-9]+');
+
+        //lister les Retour flotte peu importe le statut
+        Route::get('list_all_retour_flotte', 'API\Retour_flotteController@list_all');
+
+        //lister les Retour flotte relatifs à un flottage precis
+        Route::get('list_retour_flotte/{id}', 'API\Retour_flotteController@list_retour_flotte')
+        ->where('id', '[0-9]+');
+
+        //lister les Retour flotte d'une puce precis
+        Route::get('list_retour_flotte_by_sim/{id}', 'API\Retour_flotteController@list_retour_flotte_by_sim')
+        ->where('id', '[0-9]+');
+
+        //lister les Retour flotte d'un agent precis
+        Route::get('list_retour_flotte_by_agent/{id}', 'API\Retour_flotteController@list_retour_flotte_by_agent')
         ->where('id', '[0-9]+');
 
 
@@ -461,7 +494,10 @@ Route::group(['middleware' => 'auth:api'], function(){
 
          /*//////////////////////Importer les fichiers excels/////////////////////*/
 
-        //importer les fichier excell
-        Route::post('importer', 'API\ImportFlottageController@import');
+        //importer et comparer le listing pour une puce de flottage
+        Route::post('import_flotage', 'API\ImportFlottageController@import_flotage');
+
+        //importer et comparer le listing pour une puce Agent
+        Route::post('import_agent', 'API\ImportFlottageController@import_agent');
 
 });

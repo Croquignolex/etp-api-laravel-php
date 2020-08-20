@@ -21,4 +21,9 @@ class Retour_flote extends Model
     {
         return $this->belongsTo('App\User', 'id_user');
     }
+
+    public function flotage()
+    {
+        return $this->belongsTo('App\Approvisionnement', 'id_approvisionnement');
+    }
 }

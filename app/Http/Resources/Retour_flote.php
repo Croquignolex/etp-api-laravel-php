@@ -4,7 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class Recouvrement extends JsonResource
+class Retour_flote extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -14,19 +14,16 @@ class Recouvrement extends JsonResource
      */
     public function toArray($request)
     {
-        //return parent::toArray($request);
-
         return [
             'id' => $this->id,
             'id_user' => $this->id_user,
+            'reference' => $this->reference,
             'montant' => $this->montant,
             'reste' => $this->reste,
-            'id_flottage' => $this->id_flottage,
+            'id_approvisionnement' => $this->id_approvisionnement,
             'statut' => $this->statut,
-            'destination' => $this->user_destination,
-            'source' => $this->user_source,
-            'recu' => $this->recu            
+            'user_destination' => $this->user_destination,
+            'user_source' => $this->user_source            
         ];
     }
 }
-

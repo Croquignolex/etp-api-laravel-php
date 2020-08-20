@@ -29,6 +29,7 @@ class ApprovisionnementEtpController extends Controller
         $recouvreur = Roles::RECOUVREUR;
         $superviseur = Roles::SUPERVISEUR;
         $ges_flotte = Roles::GESTION_FLOTTE;
+
         $this->middleware("permission:$recouvreur|$superviseur|$ges_flotte");
     }
 
@@ -186,6 +187,18 @@ class ApprovisionnementEtpController extends Controller
 
                     //On recupère la puce de l'agent concerné et on debite
                     $puce_agent = Puce::where('id_agent', $request->id_agent)->where('id_flotte', $id_flotte)->first();
+
+                    //si on ne trouve pas la puce
+                    if ($puce_agent == null) {
+                        return response()->json(
+                            [
+                                'message' => "la puce ne correspond pas à l'agent",
+                                'status'=>false,
+                                'data' => null
+                            ]
+                        );
+                    }
+
                     $puce_agent->solde = $puce_agent->solde - $montant;
                     $puce_agent->save();
 
