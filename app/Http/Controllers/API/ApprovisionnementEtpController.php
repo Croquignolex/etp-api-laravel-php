@@ -2,19 +2,18 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Puce;
 use App\Agent;
 use App\Caisse;
-use App\Demande_destockage;
 use App\Destockage;
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Enums\Roles;
 use App\Enums\Statut;
-use App\Puce;
-use App\Role;
+use App\Demande_destockage;
+use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
-use App\Http\Resources\Destockage as DestockageResource;
 use Illuminate\Support\Facades\Validator;
+use App\Http\Resources\Destockage as DestockageResource;
 
 class ApprovisionnementEtpController extends Controller
 {
@@ -183,7 +182,9 @@ class ApprovisionnementEtpController extends Controller
             }
 
             $recouvreur_id = Auth::user()->id;
-            $destockages = Destockage::where('type', Statut::BY_AGENT)->get();
+            if($type == Statut::BY_AGENT) $destockages = Destockage::where('type', Statut::BY_AGENT)->get();
+            else $destockages = Destockage::where('type', Statut::BY_DIGIT_PARTNER)->orWhere('type', Statut::BY_BANK)->get();
+
             return response()->json(
                 [
                     'message' => "liste",
@@ -211,20 +212,6 @@ class ApprovisionnementEtpController extends Controller
      */
     public function approuve($id)
     {
-        // Valider données envoyées
-//        $validator = Validator::make($request->all(), [
-//            'id_destockage' => ['required', 'Numeric']
-//        ]);
-//        if ($validator->fails()) {
-//            return response()->json(
-//                [
-//                    'message' => ['error'=>$validator->errors()],
-//                    'status' => false,
-//                    'data' => null
-//                ]
-//            );
-//        }
-
         //si le destockage n'existe pas
         if (!($destockage = Destockage::find($id))) {
             return response()->json(
@@ -241,11 +228,55 @@ class ApprovisionnementEtpController extends Controller
 
         //message de reussite
         if ($destockage->save()) {
+            $destockages = Destockage::where('type', Statut::BY_AGENT)->get();
+
             return response()->json(
                 [
                     'message' => "liste",
                     'status' => true,
-                    'data' => DestockageResource::collection(Destockage::all())
+                    'data' => DestockageResource::collection($destockages)
+                ]
+            );
+        }else {
+            // Renvoyer une erreur
+            return response()->json(
+                [
+                    'message' => 'erreur lors de la confirmation',
+                    'status'=>false,
+                    'data' => null
+                ]
+            );
+        }
+    }
+
+    /**
+     * ////approuver un approvisionnement
+     */
+    public function approuve_approvisionnement($id)
+    {
+        //si le destockage n'existe pas
+        if (!($destockage = Destockage::find($id))) {
+            return response()->json(
+                [
+                    'message' => "le destockage n'existe pas",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+
+        //on approuve le destockage
+        $destockage->statut = Statut::EFFECTUER;
+
+        //message de reussite
+        if ($destockage->save()) {
+            $destockages = Destockage::where('type', Statut::BY_DIGIT_PARTNER)->orWhere('type', Statut::BY_BANK)->get();
+
+            return response()->json(
+                [
+                    'message' => "liste",
+                    'status' => true,
+                    'data' => DestockageResource::collection($destockages)
                 ]
             );
         }else {
@@ -283,15 +314,33 @@ class ApprovisionnementEtpController extends Controller
     }
 
     /**
-     * ////lister les destockages
+     * ////lister les approvisionnements
      */
     public function list_all()
     {
+        $destockages = Destockage::where('type', Statut::BY_DIGIT_PARTNER)->orWhere('type', Statut::BY_BANK)->get();
         return response()->json(
             [
                 'message' => "liste",
                 'status' => true,
-                'data' => DestockageResource::collection(Destockage::all())
+                'data' => DestockageResource::collection($destockages)
+            ]
+        );
+    }
+
+    /**
+     * ////lister les approvisionnements par un responsable de zone
+     */
+    public function list_all_collector($id)
+    {
+        $destockages = Destockage::where('type', Statut::BY_DIGIT_PARTNER)->orWhere('type', Statut::BY_BANK)->get();
+        return response()->json(
+            [
+                'message' => "liste",
+                'status' => true,
+                'data' => DestockageResource::collection($destockages->filter(function(Destockage $destockage) use ($id) {
+                    return ($destockage->id_recouvreur == $id);
+                }))
             ]
         );
     }
@@ -313,7 +362,7 @@ class ApprovisionnementEtpController extends Controller
     }
 
     /**
-     * ////lister les destockages
+     * ////lister les destockages par un responsable de zone
      */
     public function list_all_destockage_collector($id)
     {
@@ -330,7 +379,7 @@ class ApprovisionnementEtpController extends Controller
     }
 
     /**
-     * ////lister les destockages
+     * ////lister les destockages par un agent
      */
     public function list_all_destockage_agent($id)
     {
