@@ -97,7 +97,7 @@ class FlotageController extends Controller
             if ($type_puce == Statut::AGENT || $type_puce == Statut::ETP || $puce_etp->id_flotte != $puce_agent->id_flotte) {
                 return response()->json(
                     [
-                        'message' => "cette puce n'est pas capable d'effectuer un flottagage",
+                        'message' => "cette puce n'est pas capable d'effectuer ce flottagage",
                         'status' => false,
                         'data' => null
                     ]
@@ -129,12 +129,13 @@ class FlotageController extends Controller
         // Nouveau flottage
         $flottage = new Approvisionnement([
             'id_demande_flote' => $demande_flotte->id,
+            'from' => $puce_etp->id,
             'id_user' => $gestionnaire->id,
             'reference' => null,
             'statut' => Statut::TERMINEE,
             'note' => null,
             'montant' => $montant,
-            //'reste' => $montant
+            'reste' => $montant
         ]);
 
         //si l'enregistrement du flottage a lieu

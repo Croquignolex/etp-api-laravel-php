@@ -27,11 +27,6 @@ Route::resource('agent', 'AgentController');
 Route::resource('versement', 'VersementController');
 Route::resource('motif_operation', 'Motif_operationController');
 
-Auth::routes();
-
-
-
-
 
 
 Route::get('/home', 'HomeController@index')->name('home');

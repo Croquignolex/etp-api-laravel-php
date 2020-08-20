@@ -14,8 +14,8 @@ class Approvisionnement extends Model
     use SoftDeletes;
 
     protected $dates = ['deleted_at'];
-    protected $fillable = array('id', 'id_demande_flote', 'id_user', 'reste', 'reference', 'statut', 'note', 'montant');
-    protected $visible = array('id', 'id_demande_flote', 'id_user', 'reste', 'reference', 'statut', 'note', 'montant', 'created_at');
+    protected $fillable = array('id', 'id_demande_flote', 'from', 'id_user', 'reste', 'reference', 'statut', 'note', 'montant');
+    protected $visible = array('id', 'id_demande_flote', 'from', 'id_user', 'reste', 'reference', 'statut', 'note', 'montant', 'created_at');
 
     public function user()
     {

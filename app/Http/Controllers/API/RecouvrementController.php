@@ -16,6 +16,7 @@ use App\Puce;
 use App\Caisse;
 use App\Recouvrement;
 use App\Http\Resources\Recouvrement as RecouvrementResource;
+use App\Retour_flote;
 use Illuminate\Support\Facades\Auth;
 
 class RecouvrementController extends Controller
@@ -95,6 +96,10 @@ class RecouvrementController extends Controller
         $user = User::Find($flottage->demande_flote->id_user);
         $agent = Agent::Where('id_user', $user->id)->first();
 
+
+        //la puce de L'agent concerné
+        $puce_agent = Puce::Find($flottage->demande_flote->id_puce);
+
         //Caisse de l'agent concerné
         $caisse = $user->caisse->first();        
 
@@ -115,9 +120,9 @@ class RecouvrementController extends Controller
             'id_flottage' => $request->id_flottage,
             'statut' => \App\Enums\Statut::EFFECTUER,
             'user_destination' => $recouvreur->id,
-            'user_source' => $agent->id
+            'user_source' => $user->id
         ]);
-        
+
         //si l'enregistrement du recouvrement a lieu
         if ($recouvrement->save()) {
 
@@ -126,6 +131,10 @@ class RecouvrementController extends Controller
                 //On credite la caisse de l'Agent pour le remboursement de la flotte recu, ce qui implique qu'il rembource ses detes à ETP
                 $caisse->solde = $caisse->solde + $montant;
                 $caisse->save();
+
+                //On recupère la puce de l'agent concerné et on debite
+                $puce_agent->solde = $puce_agent->solde - $montant;
+                $puce_agent->save();
 
                 //On calcule le reste à recouvrir
                 $flottage->reste = $flottage->reste - $montant;
@@ -170,179 +179,6 @@ class RecouvrementController extends Controller
 
     }
 
-
-
-    /**
-     * ////Faire un retour de flotte
-     */
-    public function retour(Request $request)
-    {
-        
-        // Valider données envoyées
-        $validator = Validator::make($request->all(), [       
-            'puce_agent' => ['required', 'Numeric'], 
-            'puce_flottage' => ['required', 'Numeric'], 
-            'id_flottage' => ['required', 'Numeric'],        
-            'recu' => ['required', 'file', 'max:10000'],
-            'montant' => ['required', 'Numeric'],
-        ]);
-
-
-        if ($validator->fails()) {
-            return response()->json(
-                [
-                    'message' => ['error'=>$validator->errors()],
-                    'status' => false,
-                    'data' => null
-                ]
-            );
-        }
-        
-        
-        //On verifi si le flottage passée existe réellement
-            if (!Approvisionnement::find($request->id_flottage)) {
-                return response()->json(
-                    [
-                        'message' => "le flottage n'existe pas",
-                        'status' => false,
-                        'data' => null
-                    ]
-                );
-            }
-            
-
-        //On verifi que le montant n'est pas supperieur au montant demandé
-            $flottage = Approvisionnement::find($request->id_flottage);
-            if ($flottage->reste < $request->montant) {
-                return response()->json(
-                    [
-                        'message' => "Vous essayez de recouvrir plus d'argent que prevu",
-                        'status' => false,
-                        'data' => null
-                    ]
-                );
-            }
-
-            
-
-        //On verifi si la puce passée appartien à l'agent concerné
-            //L'agent concerné
-
-            $user = User::Find($flottage->demande_flote->id_user);
-            $agent = Agent::Where('id_user', $user->id)->first();
-            $puce_agent = Puce::Find($request->puce_agent);
- 
-            //On verifi que le montant n'est pas supperieur au montant demandé
-            if ($puce_agent == null) {
-                return response()->json(
-                    [
-                        'message' => "Vous avez entré un agent qui n'existe pas",
-                        'status' => false,
-                        'data' => null
-                    ]
-                );
-            }
-
-            if ($agent->id != $puce_agent->id_agent) {
-                return response()->json(
-                    [
-                        'message' => "Vous devez renvoyer la flotte avec une puce appartenant à l'agent qui a été flotté",
-                        'status' => false,
-                        'data' => null
-                    ]
-                );
-            }
-            
-        //On verifi si les puce passée appartien à au meme oppérateur de flotte
-            
-            $puce_flottage = Puce::Find($request->puce_flottage);
-            if ($puce_flottage->flote->nom != $puce_agent->flote->nom) {
-                return response()->json(
-                    [
-                        'message' => "Vous devez renvoyer la flotte à une puce du meme opérateur",
-                        'status' => false,
-                        'data' => null
-                    ]
-                );
-            }
-        
-           
-        
-        //On recupère les données validés
-        
-            //enregistrer le recu
-            $recu = null;
-            if ($request->hasFile('recu') && $request->file('recu')->isValid()) {
-                $recu = $request->recu->store('recu');
-            }
-            $montant = $request->montant; 
-                
-            //recouvreur
-            $recouvreur = Auth::user();       
-            
-            
-        //initier le retour flotte 
-        $retour_flotte = new Recouvrement([
-            'id_user' => $recouvreur->id,
-            'id_transaction' => null,
-            'id_versement' => null,
-            'type_transaction' => \App\Enums\Statut::RETOUR_FLOTTE,
-            'reference' => null,
-            'montant' => $montant,
-            'reste' => $montant,
-            'recu' => $recu,
-            'id_flottage' => $request->id_flottage,
-            'statut' => \App\Enums\Statut::EN_COURS,
-            'user_destination' => $puce_flottage->id,
-            'user_source' => $puce_agent->id
-        ]);
-
-        if ($retour_flotte->save()) {
-
-            //on credite la puce de ETP concernée 
-            $puce_flottage->solde = $puce_flottage->solde + $montant;                    
-            $puce_flottage->save();
-            
-            //On recupère la puce de l'agent concerné et on debite
-            $puce_agent->solde = $puce_agent->solde - $montant;
-            $puce_agent->save();
-            
-            //On calcule le reste à recouvrir
-            $flottage->reste = $flottage->reste - $montant;
-
-            //On change le statut du flottage
-            if ($flottage->reste == 0) {
-
-                $flottage->statut = \App\Enums\Statut::TERMINEE ;
-
-            }else {
-
-                $flottage->statut = \App\Enums\Statut::EN_COURS ;
-
-            }
-
-            //Enregistrer les oppérations
-            $flottage->save();               
-
-            //Renvoyer les données de succes
-            return new RecouvrementResource($retour_flotte);
-
-        }else {
-
-            // Renvoyer une erreur
-            return response()->json(
-                [
-                    'message' => 'erreur lors du destockage', 
-                    'status'=>false,
-                    'data' => null
-                ]
-            );
-
-        }
-
-            
-
-    }
 
     /**
      * ////details d'un recouvrement
@@ -404,6 +240,8 @@ class RecouvrementController extends Controller
 
     }
 
+
+
     /**
      * ////lister les recouvrements d'un flottage
      */
@@ -422,6 +260,66 @@ class RecouvrementController extends Controller
 
         //On recupere les recouvrements
         $recouvrements = Recouvrement::where('id_flottage', $id)->get();
+
+        
+        return response()->json(
+            [
+                'message' => '',
+                'status' => true,
+                'data' => ['recouvrements' => $recouvrements]
+            ]
+        );
+
+    }
+
+    /**
+     * ////lister les recouvrements d'un RZ
+     */
+    public function list_recouvrement_by_rz($id)
+    {
+        if (!User::Find($id)){
+
+            return response()->json(
+                [
+                    'message' => "le Responsable de zonne n'existe pas",
+                    'status' => true,
+                    'data' => []
+                ]
+            );
+        }
+
+        //On recupere les recouvrements
+        $recouvrements = Recouvrement::where('id_user', $id)->get();
+
+        
+        return response()->json(
+            [
+                'message' => '',
+                'status' => true,
+                'data' => ['recouvrements' => $recouvrements]
+            ]
+        );
+
+    }
+
+    /**
+     * ////lister les recouvrements d'un Agent precis
+     */
+    public function list_recouvrement_by_agent($id)
+    {
+        if (!User::Find($id)){
+
+            return response()->json(
+                [
+                    'message' => "l'agent' n'existe pas",
+                    'status' => true,
+                    'data' => []
+                ]
+            );
+        }
+
+        //On recupere les recouvrements
+        $recouvrements = Recouvrement::where('user_source', $id)->get();
 
         
         return response()->json(

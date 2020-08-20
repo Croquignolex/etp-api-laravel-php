@@ -4,7 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class Puce extends JsonResource
+class Corporate extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -18,16 +18,13 @@ class Puce extends JsonResource
 
         return [
             'id' => $this->id,
-            'name' => $this->nom,
-            'id_flotte' => $this->id_flotte,
-            'id_agent' => $this->id_agent,
-            'numero' => $this->numero,
-            'reference' => $this->reference,
-            'type' => $this->type,
-            'corporate' => $this->corporate,
+            'nom' => $this->nom,
+            'phone' => $this->phone,
+            'responsable' => $this->responsable,
+            'dossier' => $this->dossier,
+            'adresse' => $this->adresse,
+            'numeros_agents' => $this->numeros_agents,
             'description' => $this->description,
-            'created_at' => $this->created_at,
         ];
-
     }
 }
