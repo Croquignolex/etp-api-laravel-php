@@ -3,6 +3,8 @@
 namespace App\Http\Resources;
 
 use App\User;
+use App\Agent;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class Destockage extends JsonResource
@@ -10,12 +12,14 @@ class Destockage extends JsonResource
     /**
      * Transform the resource into an array.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  Request  $request
      * @return array
      */
     public function toArray($request)
     {
         //return parent::toArray($request);
+        $agent =  $this->id_agent === null ? $this->id_agent : $this->agent;
+        $user =  $this->id_agent === null ? $this->id_agent : User::find($this->agent->id_user);
 
         return [
             'id' => $this->id,
@@ -29,8 +33,8 @@ class Destockage extends JsonResource
             'created_at' => $this->created_at,
             'recouvreur' => User::find($this->id_recouvreur),
             'puce' => $this->puce,
-            'agent' => $this->agent,
-            'user' => User::find($this->agent->id_user),
+            'agent' => $agent,
+            'user' => $user,
         ];
 
     }

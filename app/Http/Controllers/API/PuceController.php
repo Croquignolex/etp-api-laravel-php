@@ -20,10 +20,10 @@ class PuceController extends Controller
      */
 
      function __construct(){
-
+        $responsable = Roles::RECOUVREUR;
         $superviseur = Roles::SUPERVISEUR;
         $ges_flotte = Roles::GESTION_FLOTTE;
-        $this->middleware("permission:$superviseur|$ges_flotte");
+        $this->middleware("permission:$superviseur|$ges_flotte|$responsable");
 
     }
 
@@ -33,7 +33,7 @@ class PuceController extends Controller
     public function store(Request $request)
     {
         // Valider données envoyées
-        $validator = Validator::make($request->all(), [ 
+        $validator = Validator::make($request->all(), [
             'numero' => ['required', 'string', 'max:255', 'unique:puces,numero'],
             'reference' => ['nullable', 'string', 'max:255','unique:puces,reference'],
             'id_flotte' => ['required', 'Numeric'],
@@ -43,15 +43,15 @@ class PuceController extends Controller
 			'type' => ['required', 'numeric'],
         ]);
 
-        if ($validator->fails()) { 
+        if ($validator->fails()) {
             return response()->json(
                 [
                     'message' => ['error'=>$validator->errors()],
                     'status' => false,
                     'data' => null
                 ]
-            );            
-        }  
+            );
+        }
 
         // Récupérer les données validées
         $nom = $request->nom;
@@ -92,7 +92,7 @@ class PuceController extends Controller
                     'data' => null
                 ]
             );
-        } 
+        }
     }
 
     /**
@@ -104,18 +104,18 @@ class PuceController extends Controller
         $puce = Puce::find($id);
 
         //Envoie des information
-        if(puce::find($id)){ 
-			$id_agent = $puce->id_agent; 
+        if(puce::find($id)){
+			$id_agent = $puce->id_agent;
 			$agent = is_null($id_agent) ? $id_agent : $puce->agent;
-			$user = is_null($id_agent) ? $id_agent : User::find($puce->agent->id_user); 
+			$user = is_null($id_agent) ? $id_agent : User::find($puce->agent->id_user);
             return response()->json(
                 [
                     'message' => '',
-                    'status' => true, 
+                    'status' => true,
                     'data' => ['puce' => $puce, 'flote' => $puce->flote, 'type' => $puce->type_puce, 'agent' => $agent, 'user' => $user]
                 ]
-            ); 
-        }else{ 
+            );
+        }else{
             return response()->json(
                 [
                     'message' => "Cette puce n'existe pas",
@@ -132,7 +132,7 @@ class PuceController extends Controller
     public function update(Request $request, $id)
     {
         // Valider données envoyées
-        $validator = Validator::make($request->all(), [ 
+        $validator = Validator::make($request->all(), [
             //'reference' => ['nullable', 'string', 'max:255', 'unique:puces,reference'],
             'reference' => ['nullable', 'string', 'max:255'],
             //'id_flotte' => ['required', 'Numeric'],
@@ -140,18 +140,18 @@ class PuceController extends Controller
             'nom' => ['required', 'string'],
             'description' => ['nullable', 'string']
         ]);
-        if ($validator->fails()) { 
+        if ($validator->fails()) {
             return response()->json(
                 [
                     'message' => ['error'=>$validator->errors()],
                     'status' => false,
                     'data' => null
                 ]
-            );             
+            );
         }
 
         // Récupérer les données validées
-            
+
         //$numero = $request->numero;
         $nom = $request->nom;
         $reference = $request->reference;
@@ -172,9 +172,9 @@ class PuceController extends Controller
 
 
         if ($puce->save()) {
-			$id_agent = $puce->id_agent; 
+			$id_agent = $puce->id_agent;
 			$agent = is_null($id_agent) ? $id_agent : $puce->agent;
-			$user = is_null($id_agent) ? $id_agent : User::find($puce->agent->id_user); 
+			$user = is_null($id_agent) ? $id_agent : User::find($puce->agent->id_user);
             // Renvoyer un message de succès
             return response()->json(
                 [
@@ -192,7 +192,7 @@ class PuceController extends Controller
                     'data' => null
                 ]
             );
-        } 
+        }
     }
 
     /**
@@ -201,17 +201,17 @@ class PuceController extends Controller
     public function update_flote(Request $request, $id)
     {
         // Valider données envoyées
-        $validator = Validator::make($request->all(), [ 
+        $validator = Validator::make($request->all(), [
             'id_flotte' => ['required', 'Numeric']
         ]);
-        if ($validator->fails()) { 
+        if ($validator->fails()) {
             return response()->json(
                 [
                     'message' => ['error'=>$validator->errors()],
                     'status' => false,
                     'data' => null
                 ]
-            );             
+            );
         }
 
         // Récupérer les données validées
@@ -224,9 +224,9 @@ class PuceController extends Controller
         $puce->id_flotte = $id_flotte;
 
         if ($puce->save()) {
-			$id_agent = $puce->id_agent; 
+			$id_agent = $puce->id_agent;
 			$agent = is_null($id_agent) ? $id_agent : $puce->agent;
-			$user = is_null($id_agent) ? $id_agent : User::find($puce->agent->id_user); 
+			$user = is_null($id_agent) ? $id_agent : User::find($puce->agent->id_user);
             // Renvoyer un message de succès
             return response()->json(
                 [
@@ -244,26 +244,26 @@ class PuceController extends Controller
                     'data' => null
                 ]
             );
-        } 
+        }
     }
-	
+
 	/**
      * modification de l'agent de la puce
      */
     public function update_agent(Request $request, $id)
     {
         // Valider données envoyées
-        $validator = Validator::make($request->all(), [ 
+        $validator = Validator::make($request->all(), [
             'id_agent' => ['required', 'Numeric'],
         ]);
-        if ($validator->fails()) { 
+        if ($validator->fails()) {
             return response()->json(
                 [
                     'message' => ['error'=>$validator->errors()],
                     'status' => false,
                     'data' => null
                 ]
-            );             
+            );
         }
 
         // Récupérer les données validées
@@ -276,9 +276,9 @@ class PuceController extends Controller
         $puce->id_agent = $id_agent;
 
         if ($puce->save()) {
-			$id_agent = $puce->id_agent; 
+			$id_agent = $puce->id_agent;
 			$agent = is_null($id_agent) ? $id_agent : $puce->agent;
-			$user = is_null($id_agent) ? $id_agent : User::find($puce->agent->id_user); 
+			$user = is_null($id_agent) ? $id_agent : User::find($puce->agent->id_user);
             // Renvoyer un message de succès
             return response()->json(
                 [
@@ -296,9 +296,9 @@ class PuceController extends Controller
                     'data' => null
                 ]
             );
-        } 
+        }
     }
-	
+
 	/**
      * //lister les puces
      */
@@ -306,18 +306,18 @@ class PuceController extends Controller
     {
         if (Puce::where('deleted_at', null)) {
             $puces = Puce::where('deleted_at', null)->get();
-			
+
 			$returenedPuces = [];
-			
+
             foreach($puces as $puce) {
 				$id_agent = $puce->id_agent;
-				$agent = is_null($id_agent) ? $id_agent : $puce->agent;  
-				$user = is_null($id_agent) ? $id_agent : User::find($puce->agent->id_user); 
+				$agent = is_null($id_agent) ? $id_agent : $puce->agent;
+				$user = is_null($id_agent) ? $id_agent : User::find($puce->agent->id_user);
 				//$flote = Flote::find($puce->id_flotte);
-				//$nom = $flote->nom;  
-                $returenedPuces[] = ['puce' => $puce, 'flote' => $puce->flote, 'type' => $puce->type_puce, 'agent' => $agent, 'user' => $user]; 
-            } 
-			
+				//$nom = $flote->nom;
+                $returenedPuces[] = ['puce' => $puce, 'flote' => $puce->flote, 'type' => $puce->type_puce, 'agent' => $agent, 'user' => $user];
+            }
+
             return response()->json(
                 [
                     'message' => '',
@@ -343,7 +343,7 @@ class PuceController extends Controller
     {
         $puce = Puce::where('id_agent', $id)->get();
         if ($puce->count() != 0) {
-            
+
             return response()->json(
                 [
                     'message' => '',
@@ -401,17 +401,17 @@ class PuceController extends Controller
             $puce->deleted_at = now();
             if ($puce->save()) {
 				$puces = Puce::where('deleted_at', null)->get();
-			
+
 				$returenedPuces = [];
-				
+
 				foreach($puces as $puce) {
 					$id_agent = $puce->id_agent;
-					$agent = is_null($id_agent) ? $id_agent : $puce->agent;  
-					$user = is_null($id_agent) ? $id_agent : User::find($puce->agent->id_user); 
+					$agent = is_null($id_agent) ? $id_agent : $puce->agent;
+					$user = is_null($id_agent) ? $id_agent : User::find($puce->agent->id_user);
 					//$flote = Flote::find($puce->id_flotte);
-					//$nom = $flote->nom;  
-					$returenedPuces[] = ['puce' => $puce, 'flote' => $puce->flote, 'type' => $puce->type_puce, 'agent' => $agent, 'user' => $user]; 
-				} 
+					//$nom = $flote->nom;
+					$returenedPuces[] = ['puce' => $puce, 'flote' => $puce->flote, 'type' => $puce->type_puce, 'agent' => $agent, 'user' => $user];
+				}
                 // Renvoyer un message de succès
                 return response()->json(
                     [
@@ -429,7 +429,7 @@ class PuceController extends Controller
                         'data' => null
                     ]
                 );
-            } 
+            }
          }else{
             return response()->json(
                 [
@@ -440,7 +440,7 @@ class PuceController extends Controller
             );
          }
     }
-	 
+
 	/**
 
      * Liste des types de puces
@@ -466,9 +466,9 @@ class PuceController extends Controller
                     'status' => false,
                     'data' => null
                 ]
-            ); 
+            );
          }
-         
+
 
     }
 

@@ -353,17 +353,23 @@ Route::group(['middleware' => 'auth:api'], function(){
         // ajouter un recouvreur à une zone
         Route::post('ajouter_recouvreur_zone/{id}', 'API\ZoneController@ajouter_recouvreur')
         ->where('id', '[0-9]+');
-
         /*
     //////////////////////Flottage/////////////////////
     */
-
         //Details d'un Flottage
         Route::get('detail_flottage/{id}', 'API\FlotageController@show')
         ->where('id', '[0-9]+');
 
         //lister les Flottages peu importe le statut
         Route::get('list_all_flottage', 'API\FlotageController@list_all');
+
+        //lister les Flottages peu importe le statut pour un agent
+        Route::get('list_all_flottage_agent/{id}', 'API\FlotageController@list_all_agent')
+            ->where('id', '[0-9]+');
+
+        //lister les Flottages peu importe le statut pour un responsable de zone
+        Route::get('list_all_flottage_collector/{id}', 'API\FlotageController@list_all_collector')
+            ->where('id', '[0-9]+');
 
         //Creer un Flottage
         Route::post('flottage', 'API\FlotageController@store');
@@ -374,41 +380,40 @@ Route::group(['middleware' => 'auth:api'], function(){
 
         //Creer un Flottage pour un agent present à l'agence
         Route::post('flottage_express', 'API\FlotageController@flottage_express');
-
-
         /*
     //////////////////////Approvisionnement des Puces de ETP/////////////////////
     */
-
-
         //traitement d'une demande de destockage (juste pour signaler au système que je traite totalement ou en partie une demande)
         Route::post('traiter_demande', 'API\ApprovisionnementEtpController@traitement_demande_flotte');
 
         //Approvisionnement.  faite par le responsable de zone, l'Approvisionnement est de 3 types. par un Agant, le digital partner ou la banque
         Route::post('approvisionnement_etp', 'API\ApprovisionnementEtpController@store');
 
-
         //Confirmation par le gestionnaire de flotte, elle atteste avoir recu la flotte
-        Route::post('approuve', 'API\ApprovisionnementEtpController@approuve');
-
+        Route::post('approuve_destockage/{id}', 'API\ApprovisionnementEtpController@approuve')
+            ->where('id', '[0-9]+');
+        //Confirmation par le gestionnaire de flotte, elle atteste avoir recu l'approviionnement
+        Route::post('approuve_approvisionnement/{id}', 'API\ApprovisionnementEtpController@approuve_approvisionnement')
+            ->where('id', '[0-9]+');
 
         //Details d'un approvisionnement
         Route::get('detail_destockage/{id}', 'API\ApprovisionnementEtpController@detail')
         ->where('id', '[0-9]+');
 
         //lister les approvisionnement
-        Route::get('list_destockage', 'API\ApprovisionnementEtpController@list_all');
+        Route::get('list_approvisionnement', 'API\ApprovisionnementEtpController@list_all');
+        Route::get('list_approvisionnement_collector/{id}', 'API\ApprovisionnementEtpController@list_all_collector')
+            ->where('id', '[0-9]+');
 
-        // Par un responsable de zone
-        Route::get('list_destockage_responsable', 'API\ApprovisionnementEtpController@list_all_responsable');
-
-
-
+        // lister les destockage
+        Route::get('list_destockage', 'API\ApprovisionnementEtpController@list_all_destockage');
+        Route::get('list_destockage_collector/{id}', 'API\ApprovisionnementEtpController@list_all_destockage_collector')
+            ->where('id', '[0-9]+');
+        Route::get('list_destockage_agent/{id}', 'API\ApprovisionnementEtpController@list_all_destockage_agent')
+            ->where('id', '[0-9]+');
         /*
     //////////////////////Recouvrement/////////////////////
     */
-
-
         //Creer un Recouvrement
         Route::post('recouvrement', 'API\RecouvrementController@store');
 
