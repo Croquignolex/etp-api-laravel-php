@@ -220,7 +220,7 @@ class RecouvrementController extends Controller
                 $user = User::find($recouvrement->id_user);
 
             //recuperer l'agent concerné
-                $user = User::find($flottage->demande_flote->id_user);
+                $user = User::find($recouvrement->user_source);
                 $agent = Agent::Where('id_user', $user->id)->first();
 
                 $recouvreur = User::find($recouvrement->user_destination);
@@ -236,7 +236,6 @@ class RecouvrementController extends Controller
                 'recouvreur' => $recouvreur,
 //                'puce_agent' => $puce_agent
             ];
-
         }
 
         return response()->json(
@@ -246,7 +245,6 @@ class RecouvrementController extends Controller
                 'data' => ['recouvrements' => $approvisionnements]
             ]
         );
-
     }
 
     /**
@@ -284,7 +282,7 @@ class RecouvrementController extends Controller
      */
     public function list_recouvrement_by_rz($id)
     {
-        if (!User::Find($id)){
+        if (!User::find($id)){
 
             return response()->json(
                 [
@@ -296,17 +294,44 @@ class RecouvrementController extends Controller
         }
 
         //On recupere les recouvrements
-        $recouvrements = Recouvrement::where('id_user', $id)->get();
+        $recouvrements = Recouvrement::where('user_destination', $id)->get();
 
+        $approvisionnements = [];
+
+        foreach($recouvrements as $recouvrement) {
+
+            //recuperer le flottage correspondant
+            $flottage = Approvisionnement::find($recouvrement->id_flottage);
+
+            //recuperer celui qui a éffectué le recouvrement
+            $user = User::find($recouvrement->id_user);
+
+            //recuperer l'agent concerné
+            $user = User::find($recouvrement->user_source);
+            $agent = Agent::Where('id_user', $user->id)->first();
+
+            $recouvreur = User::find($recouvrement->user_destination);
+
+            //recuperer la puce de l'agent
+            $puce_agent = Puce::find($flottage->demande_flote->id_puce);
+
+            $approvisionnements[] = [
+                'recouvrement' => $recouvrement,
+                'flottage' => $flottage,
+                'user' => $user,
+                'agent' => $agent,
+                'recouvreur' => $recouvreur,
+//                'puce_agent' => $puce_agent
+            ];
+        }
 
         return response()->json(
             [
                 'message' => '',
                 'status' => true,
-                'data' => ['recouvrements' => $recouvrements]
+                'data' => ['recouvrements' => $approvisionnements]
             ]
         );
-
     }
 
     /**
@@ -314,7 +339,7 @@ class RecouvrementController extends Controller
      */
     public function list_recouvrement_by_agent($id)
     {
-        if (!User::Find($id)){
+        if (!User::find($id)){
 
             return response()->json(
                 [
@@ -328,14 +353,41 @@ class RecouvrementController extends Controller
         //On recupere les recouvrements
         $recouvrements = Recouvrement::where('user_source', $id)->get();
 
+        $approvisionnements = [];
+
+        foreach($recouvrements as $recouvrement) {
+
+            //recuperer le flottage correspondant
+            $flottage = Approvisionnement::find($recouvrement->id_flottage);
+
+            //recuperer celui qui a éffectué le recouvrement
+            $user = User::find($recouvrement->id_user);
+
+            //recuperer l'agent concerné
+            $user = User::find($recouvrement->user_source);
+            $agent = Agent::Where('id_user', $user->id)->first();
+
+            $recouvreur = User::find($recouvrement->user_destination);
+
+            //recuperer la puce de l'agent
+            $puce_agent = Puce::find($flottage->demande_flote->id_puce);
+
+            $approvisionnements[] = [
+                'recouvrement' => $recouvrement,
+                'flottage' => $flottage,
+                'user' => $user,
+                'agent' => $agent,
+                'recouvreur' => $recouvreur,
+//                'puce_agent' => $puce_agent
+            ];
+        }
 
         return response()->json(
             [
                 'message' => '',
                 'status' => true,
-                'data' => ['recouvrements' => $recouvrements]
+                'data' => ['recouvrements' => $approvisionnements]
             ]
         );
-
     }
 }
