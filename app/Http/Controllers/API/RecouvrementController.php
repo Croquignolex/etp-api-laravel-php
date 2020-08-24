@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Enums\Statut;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Agent;
@@ -35,7 +36,6 @@ class RecouvrementController extends Controller
         $this->middleware("permission:$recouvreur|$superviseur|$ges_flotte");
 
     }
-
 
     Public function store(Request $request) {
 
@@ -88,10 +88,10 @@ class RecouvrementController extends Controller
 
         //On recupère le flottage à traiter
         $flottage = Approvisionnement::find($request->id_flottage);
-        
+
         //Montant du depot
         $montant = $request->montant;
-        
+
         //L'agent concerné
         $user = User::Find($flottage->demande_flote->id_user);
         $agent = Agent::Where('id_user', $user->id)->first();
@@ -101,24 +101,24 @@ class RecouvrementController extends Controller
         $puce_agent = Puce::Find($flottage->demande_flote->id_puce);
 
         //Caisse de l'agent concerné
-        $caisse = $user->caisse->first();        
+        $caisse = $user->caisse->first();
 
         //recouvreur
         $recouvreur = Auth::user();
-        
+
 
         // Nouveau recouvrement
         $recouvrement = new Recouvrement([
             'id_user' => $recouvreur->id,
             'id_transaction' => null,
             'id_versement' => null,
-            'type_transaction' => \App\Enums\Statut::RECOUVREMENT,
+            'type_transaction' => Statut::RECOUVREMENT,
             'reference' => null,
             'montant' => $montant,
             'reste' => $montant,
             'recu' => $recu,
             'id_flottage' => $request->id_flottage,
-            'statut' => \App\Enums\Statut::EFFECTUER,
+            'statut' => Statut::EN_COURS,
             'user_destination' => $recouvreur->id,
             'user_source' => $user->id
         ]);
@@ -126,8 +126,8 @@ class RecouvrementController extends Controller
         //si l'enregistrement du recouvrement a lieu
         if ($recouvrement->save()) {
 
-            ////ce que le recouvrement implique       
-                
+            ////ce que le recouvrement implique
+
                 //On credite la caisse de l'Agent pour le remboursement de la flotte recu, ce qui implique qu'il rembource ses detes à ETP
                 $caisse->solde = $caisse->solde + $montant;
                 $caisse->save();
@@ -179,7 +179,6 @@ class RecouvrementController extends Controller
 
     }
 
-
     /**
      * ////details d'un recouvrement
      */
@@ -194,12 +193,12 @@ class RecouvrementController extends Controller
                         'status' => false,
                         'data' => null
                     ]
-                ); 
+                );
             }
 
             return new RecouvrementResource($recouvrement);
 
-            
+
     }
 
     /**
@@ -207,9 +206,10 @@ class RecouvrementController extends Controller
      */
     public function list_all()
     {
-
         //On recupere les recouvrement
         $recouvrements = Recouvrement::get();
+
+        $approvisionnements = [];
 
         foreach($recouvrements as $recouvrement) {
 
@@ -217,16 +217,25 @@ class RecouvrementController extends Controller
             $flottage = Approvisionnement::find($recouvrement->id_flottage);
 
             //recuperer celui qui a éffectué le recouvrement
-                $user = User::Find($recouvrement->id_user);
+                $user = User::find($recouvrement->id_user);
 
             //recuperer l'agent concerné
-                $user = User::Find($flottage->demande_flote->id_user);
+                $user = User::find($flottage->demande_flote->id_user);
                 $agent = Agent::Where('id_user', $user->id)->first();
 
-            //recuperer la puce de l'agent
-                $puce_agent = Puce::Find($flottage->demande_flote->id_puce);
+                $recouvreur = User::find($recouvrement->user_destination);
 
-            $approvisionnements[] = ['recouvrements' => $recouvrement,'flottage' => $flottage, 'user' => $user, 'agent' => $agent, 'puce_agent' => $puce_agent,];
+            //recuperer la puce de l'agent
+                $puce_agent = Puce::find($flottage->demande_flote->id_puce);
+
+            $approvisionnements[] = [
+                'recouvrement' => $recouvrement,
+                'flottage' => $flottage,
+                'user' => $user,
+                'agent' => $agent,
+                'recouvreur' => $recouvreur,
+//                'puce_agent' => $puce_agent
+            ];
 
         }
 
@@ -234,13 +243,11 @@ class RecouvrementController extends Controller
             [
                 'message' => '',
                 'status' => true,
-                'data' => ['flottages' => $approvisionnements]
+                'data' => ['recouvrements' => $approvisionnements]
             ]
         );
 
     }
-
-
 
     /**
      * ////lister les recouvrements d'un flottage
@@ -261,7 +268,7 @@ class RecouvrementController extends Controller
         //On recupere les recouvrements
         $recouvrements = Recouvrement::where('id_flottage', $id)->get();
 
-        
+
         return response()->json(
             [
                 'message' => '',
@@ -291,7 +298,7 @@ class RecouvrementController extends Controller
         //On recupere les recouvrements
         $recouvrements = Recouvrement::where('id_user', $id)->get();
 
-        
+
         return response()->json(
             [
                 'message' => '',
@@ -321,7 +328,7 @@ class RecouvrementController extends Controller
         //On recupere les recouvrements
         $recouvrements = Recouvrement::where('user_source', $id)->get();
 
-        
+
         return response()->json(
             [
                 'message' => '',
