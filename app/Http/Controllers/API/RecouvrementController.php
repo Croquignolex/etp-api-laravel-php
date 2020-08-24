@@ -390,4 +390,76 @@ class RecouvrementController extends Controller
             ]
         );
     }
+
+    /**
+     * ////approuver un recouvrement en espèces
+     */
+    public function approuve($id)
+    {
+        //si le recouvrement n'existe pas
+        if (!($recouvrement = Recouvrement::find($id))) {
+            return response()->json(
+                [
+                    'message' => "le recouvrement n'existe pas",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+
+        //on approuve le destockage
+        $recouvrement->statut = Statut::EFFECTUER;
+
+        //message de reussite
+        if ($recouvrement->save()) {
+            //On recupere les recouvrement
+            $recouvrements = Recouvrement::get();
+
+            $approvisionnements = [];
+
+            foreach($recouvrements as $recouvrement) {
+
+                //recuperer le flottage correspondant
+                $flottage = Approvisionnement::find($recouvrement->id_flottage);
+
+                //recuperer celui qui a éffectué le recouvrement
+                $user = User::find($recouvrement->id_user);
+
+                //recuperer l'agent concerné
+                $user = User::find($recouvrement->user_source);
+                $agent = Agent::Where('id_user', $user->id)->first();
+
+                $recouvreur = User::find($recouvrement->user_destination);
+
+                //recuperer la puce de l'agent
+                $puce_agent = Puce::find($flottage->demande_flote->id_puce);
+
+                $approvisionnements[] = [
+                    'recouvrement' => $recouvrement,
+                    'flottage' => $flottage,
+                    'user' => $user,
+                    'agent' => $agent,
+                    'recouvreur' => $recouvreur,
+//                'puce_agent' => $puce_agent
+                ];
+            }
+
+            return response()->json(
+                [
+                    'message' => '',
+                    'status' => true,
+                    'data' => ['recouvrements' => $approvisionnements]
+                ]
+            );
+        }else {
+            // Renvoyer une erreur
+            return response()->json(
+                [
+                    'message' => 'erreur lors de la confirmation',
+                    'status'=>false,
+                    'data' => null
+                ]
+            );
+        }
+    }
 }

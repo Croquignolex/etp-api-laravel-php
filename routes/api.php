@@ -436,6 +436,12 @@ Route::group(['middleware' => 'auth:api'], function(){
         Route::get('list_recouvrement_by_agent/{id}', 'API\RecouvrementController@list_recouvrement_by_agent')
         ->where('id', '[0-9]+');
 
+        //Confirmation par le gestionnaire de flotte, elle atteste avoir recu les espèces
+        Route::post('approuve_recouvrement/{id}', 'API\RecouvrementController@approuve')
+        ->where('id', '[0-9]+');
+
+
+
 
         /*
     //////////////////////Retour de flote/////////////////////
