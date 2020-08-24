@@ -170,6 +170,7 @@ class ApprovisionnementEtpController extends Controller
                 $id_flotte = Puce::find($request->id_puce)->flote->id;
 
                 //On recupère la puce de l'agent concerné et on debite
+                //TODO: Check si puce correspondant de l'agent existe et renvoyer une erreur dans le cas echéant
 //                $puce_agent = Puce::where('id_agent', $request->id_agent)->where('id_flotte', $id_flotte)->first();
 //                $puce_agent->solde = $puce_agent->solde - $montant;
 //                $puce_agent->save();

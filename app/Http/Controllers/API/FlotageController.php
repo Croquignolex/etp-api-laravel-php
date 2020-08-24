@@ -336,6 +336,7 @@ class FlotageController extends Controller
                 'reference' => null,
                 'statut' => Statut::TERMINEE,
                 'note' => null,
+                'from' => $request->id_puce_flottage,
                 'montant' => $montant,
                 'reste' => 0
             ]);
@@ -376,13 +377,17 @@ class FlotageController extends Controller
                     //recuperer la puce de l'agent
                     $puce_receptrice = Puce::find($demande->id_puce);
 
+                    //recuperer la puce de ETP
+                    $puce_emetrice = Puce::find($flottage->from);
+
                     $approvisionnements[] = [
                         'approvisionnement' => $flottage,
                         'demande' => $demande,
                         'user' => $user,
                         'agent' => $agent,
                         'gestionnaire' => $gestionnaire,
-                        'puce' => $puce_receptrice
+                        'puce_emetrice' => $puce_emetrice,
+                        'puce_receptrice' => $puce_receptrice,
                     ];
                 }
 
@@ -444,13 +449,17 @@ class FlotageController extends Controller
             //recuperer la puce de l'agent
                 $puce_receptrice = Puce::find($demande->id_puce);
 
+            //recuperer la puce de ETP
+            $puce_emetrice = Puce::find($flottage->from);
+
             $approvisionnements[] = [
                 'approvisionnement' => $flottage,
                 'demande' => $demande,
                 'user' => $user,
                 'agent' => $agent,
                 'gestionnaire' => $gestionnaire,
-                'puce' => $puce_receptrice
+                'puce_emetrice' => $puce_emetrice,
+                'puce_receptrice' => $puce_receptrice,
             ];
         }
 
@@ -493,13 +502,17 @@ class FlotageController extends Controller
             //recuperer la puce de l'agent
             $puce_receptrice = Puce::find($demande->id_puce);
 
+            //recuperer la puce de ETP
+            $puce_emetrice = Puce::find($flottage->from);
+
             $approvisionnements[] = [
                 'approvisionnement' => $flottage,
                 'demande' => $demande,
                 'user' => $user,
                 'agent' => $agent,
                 'gestionnaire' => $gestionnaire,
-                'puce' => $puce_receptrice
+                'puce_emetrice' => $puce_emetrice,
+                'puce_receptrice' => $puce_receptrice,
             ];
         }
 
@@ -540,13 +553,17 @@ class FlotageController extends Controller
             //recuperer la puce de l'agent
             $puce_receptrice = Puce::find($demande->id_puce);
 
+            //recuperer la puce de ETP
+            $puce_emetrice = Puce::find($flottage->from);
+
             $approvisionnements[] = [
                 'approvisionnement' => $flottage,
                 'demande' => $demande,
                 'user' => $user,
                 'agent' => $agent,
                 'gestionnaire' => $gestionnaire,
-                'puce' => $puce_receptrice
+                'puce_emetrice' => $puce_emetrice,
+                'puce_receptrice' => $puce_receptrice,
             ];
         }
 
