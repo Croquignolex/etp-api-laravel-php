@@ -279,7 +279,7 @@ class FlotageController extends Controller
             'add_by' => $add_by,
             'reference' => $reference,
             'montant' => $montant,
-            'reste' => 0,
+            'reste' => $montant,
             'statut' => $statut,
             'id_puce' => $id_puce,
             'source' => $source
@@ -338,7 +338,7 @@ class FlotageController extends Controller
                 'note' => null,
                 'from' => $request->id_puce_flottage,
                 'montant' => $montant,
-                'reste' => 0
+                'reste' => $montant
             ]);
 
             //si l'enregistrement du flottage a lieu

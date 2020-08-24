@@ -37,15 +37,14 @@ class RecouvrementController extends Controller
 
     }
 
-    Public function store(Request $request) {
-
+    Public function store(Request $request)
+    {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
             'montant' => ['required', 'Numeric'],
             'id_flottage' => ['required', 'Numeric'],
             'recu' => ['required', 'file', 'max:10000']
         ]);
-
 
         if ($validator->fails()) {
             return response()->json(
@@ -106,7 +105,6 @@ class RecouvrementController extends Controller
         //recouvreur
         $recouvreur = Auth::user();
 
-
         // Nouveau recouvrement
         $recouvrement = new Recouvrement([
             'id_user' => $recouvreur->id,
@@ -153,19 +151,46 @@ class RecouvrementController extends Controller
                 //Enregistrer les oppérations
                 $flottage->save();
 
-                // Renvoyer un message de succès
+                //On recupere les recouvrement
+                $recouvrements = Recouvrement::get();
+
+                $approvisionnements = [];
+
+                foreach($recouvrements as $recouvrement) {
+
+                    //recuperer le flottage correspondant
+                    $flottage = Approvisionnement::find($recouvrement->id_flottage);
+
+                    //recuperer celui qui a éffectué le recouvrement
+                    $user = User::find($recouvrement->id_user);
+
+                    //recuperer l'agent concerné
+                    $user = User::find($recouvrement->user_source);
+                    $agent = Agent::Where('id_user', $user->id)->first();
+
+                    $recouvreur = User::find($recouvrement->user_destination);
+
+                    //recuperer la puce de l'agent
+                    $puce_agent = Puce::find($flottage->demande_flote->id_puce);
+
+                    $approvisionnements[] = [
+                        'recouvrement' => $recouvrement,
+                        'flottage' => $flottage,
+                        'user' => $user,
+                        'agent' => $agent,
+                        'recouvreur' => $recouvreur,
+    //                'puce_agent' => $puce_agent
+                    ];
+                }
+
                 return response()->json(
                     [
-                        'message' => "Le recouvrement c'est bien passé",
+                        'message' => '',
                         'status' => true,
-                        'data' => ['flottage' => $flottage, 'recouvrement' => $recouvrement]
+                        'data' => ['recouvrements' => $approvisionnements]
                     ]
                 );
-
-
-
         }else {
-
             // Renvoyer une erreur
             return response()->json(
                 [
@@ -174,9 +199,7 @@ class RecouvrementController extends Controller
                     'data' => null
                 ]
             );
-
         }
-
     }
 
     /**
