@@ -93,7 +93,7 @@ class ApprovisionnementEtpController extends Controller
     }
 
     /**
-     * ////traiter une demande de destockage
+     * ////Effectuer un destockage
      */
     public function store(Request $request)
     {
@@ -119,7 +119,7 @@ class ApprovisionnementEtpController extends Controller
 
         //au cas ou le type est BY_AGENT, on est sencé recevoir l'id de l'agent. on verifi que l'id recu est bien un Agent
         if (isset($request->id_agent)) {
-            //on verifi si le recouvreur existe
+            //on verifi si l'agent existe
             if (!($agent = Agent::find($request->id_agent))) {
                 return response()->json(
                     [
@@ -169,11 +169,26 @@ class ApprovisionnementEtpController extends Controller
                 //recherche de la flotte concerné
                 $id_flotte = Puce::find($request->id_puce)->flote->id;
 
+
+
                 //On recupère la puce de l'agent concerné et on debite
-                //TODO: Check si puce correspondant de l'agent existe et renvoyer une erreur dans le cas echéant
-//                $puce_agent = Puce::where('id_agent', $request->id_agent)->where('id_flotte', $id_flotte)->first();
-//                $puce_agent->solde = $puce_agent->solde - $montant;
-//                $puce_agent->save();
+                $puce_agent = Puce::where('id_agent', $request->id_agent)->where('id_flotte', $id_flotte)->first();
+
+                if ($puce_agent == null){
+
+                    // Renvoyer une erreur
+                    return response()->json(
+                        [
+                            'message' => "cet agent n'a pas de puce abilité à effectuer un destockage vers la puce ETP selectionnée",
+                            'status'=>false,
+                            'data' => null
+                        ]
+                    );
+
+                }
+
+                $puce_agent->solde = $puce_agent->solde - $montant;
+                $puce_agent->save();
 
                 //On recupère la caisse de l'agent concerné et on credite
                 $caisse = Caisse::where('id_user', $agent->user->id)->first();
