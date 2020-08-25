@@ -440,14 +440,9 @@ Route::group(['middleware' => 'auth:api'], function(){
         Route::post('approuve_recouvrement/{id}', 'API\RecouvrementController@approuve')
         ->where('id', '[0-9]+');
 
-
-
-
         /*
     //////////////////////Retour de flote/////////////////////
     */
-
-
         //Creer un Retour flotte
         Route::post('retour_flotte', 'API\Retour_flotteController@retour');
 
@@ -466,10 +461,17 @@ Route::group(['middleware' => 'auth:api'], function(){
         Route::get('list_retour_flotte_by_sim/{id}', 'API\Retour_flotteController@list_retour_flotte_by_sim')
         ->where('id', '[0-9]+');
 
+        //lister les Recouvrements d'un responsable de zone precis
+        Route::get('list_retour_flotte_by_rz/{id}', 'API\Retour_flotteController@list_retour_flotte_by_rz')
+            ->where('id', '[0-9]+');
+
         //lister les Retour flotte d'un agent precis
         Route::get('list_retour_flotte_by_agent/{id}', 'API\Retour_flotteController@list_retour_flotte_by_agent')
         ->where('id', '[0-9]+');
 
+        //Confirmation par le gestionnaire de flotte, elle atteste avoir recu la flotte
+        Route::post('approuve_retour_flotte/{id}', 'API\Retour_flotteController@approuve')
+        ->where('id', '[0-9]+');
 
          /*//////////////////////gestion des corporates/////////////////////*/
 
