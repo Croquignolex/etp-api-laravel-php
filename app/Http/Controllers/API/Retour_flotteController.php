@@ -41,7 +41,6 @@ class Retour_flotteController extends Controller
             'puce_agent' => ['required', 'Numeric'],
             'puce_flottage' => ['required', 'Numeric'],
             'id_flottage' => ['required', 'Numeric'],
-//            'recu' => ['nullable', 'file', 'max:10000'],
             'montant' => ['required', 'Numeric'],
         ]);
 
@@ -131,30 +130,31 @@ class Retour_flotteController extends Controller
 
         //On recupère les données validés
 
-            //enregistrer le recu
-            $recu = null;
-            if ($request->hasFile('recu') && $request->file('recu')->isValid()) {
-                $recu = $request->recu->store('recu');
-            }
-            $montant = $request->montant;
+        //enregistrer le recu
+        $recu = null;
+        if ($request->hasFile('recu') && $request->file('recu')->isValid()) {
+            $recu = $request->recu->store('recu');
+        }
+        $montant = $request->montant;
 
-            //recouvreur
-            $recouvreur = Auth::user();
+        //recouvreur
+        $user = Auth::user();
+
+        $is_manager = $user->roles->first()->name === Roles::GESTION_FLOTTE;
 
         //initier le retour flotte
         $retour_flotte = new Retour_flote([
-            'id_user' => $recouvreur->id,
+            'id_user' => $user->id,
             'reference' => null,
             'montant' => $montant,
             'reste' => $montant,
             'id_approvisionnement' => $request->id_flottage,
-            'statut' => \App\Enums\Statut::EN_COURS,
+            'statut' => $is_manager ? Statut::EFFECTUER : Statut::EN_COURS,
             'user_destination' => $puce_flottage->id,
             'user_source' => $puce_agent->id
         ]);
 
         if ($retour_flotte->save()) {
-
             //on credite la puce de ETP concernée
             $puce_flottage->solde = $puce_flottage->solde + $montant;
             $puce_flottage->save();
@@ -174,20 +174,18 @@ class Retour_flotteController extends Controller
 
             //On change le statut du flottage
             if ($flottage->reste == 0) {
-
                 $flottage->statut = \App\Enums\Statut::TERMINEE ;
-
             }else {
-
                 $flottage->statut = \App\Enums\Statut::EN_COURS ;
-
             }
 
             //Enregistrer les oppérations
             $flottage->save();
 
             //On recupere les retour flotte
-            $retour_flotes = Retour_flote::get();
+            $retour_flotes = $is_manager
+                ? Retour_flote::get()
+                : Retour_flote::where('id_user', $user->id)->get();
 
             $retours_flotes = [];
 
@@ -233,9 +231,7 @@ class Retour_flotteController extends Controller
                     'data' => null
                 ]
             );
-
         }
-
     }
 
     /**

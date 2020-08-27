@@ -88,12 +88,11 @@ class RecouvrementController extends Controller
         $montant = $request->montant;
 
         //L'agent concerné
-        $user = User::Find($flottage->demande_flote->id_user);
-        $agent = Agent::Where('id_user', $user->id)->first();
-
+        $user = User::find($flottage->demande_flote->id_user);
+        //$agent = Agent::Where('id_user', $user->id)->first();
 
         //la puce de L'agent concerné
-        $puce_agent = Puce::Find($flottage->demande_flote->id_puce);
+        $puce_agent = Puce::find($flottage->demande_flote->id_puce);
 
         //Caisse de l'agent concerné
         $caisse = $user->caisse->first();
@@ -135,20 +134,16 @@ class RecouvrementController extends Controller
 
                 //On change le statut du flottage
                 if ($flottage->reste == 0) {
-
                     $flottage->statut = \App\Enums\Statut::TERMINEE ;
-
                 }else {
-
                     $flottage->statut = \App\Enums\Statut::EN_COURS ;
-
                 }
 
                 //Enregistrer les oppérations
                 $flottage->save();
 
                 //On recupere les recouvrement
-                $recouvrements = Recouvrement::get();
+                $recouvrements = Recouvrement::where('user_destination', $recouvreur->id)->get();
 
                 $approvisionnements = [];
 
