@@ -32,7 +32,7 @@ class Puce extends Model
         return $this->belongsTo('App\Type_puce', 'type');
     }
 
-    public function corporate()
+    public function company()
     {
         return $this->belongsTo('App\Corporate', 'corporate');
     }

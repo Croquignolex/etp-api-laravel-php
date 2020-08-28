@@ -26,6 +26,7 @@ class Statut
     const AGENT = 'AGENT';
     const ETP = 'AGENT ETP';
     const FLOTTAGE = 'FLOTTAGE';
+    const CORPORATE = 'CORPORATE';
     const FLOTTAGE_SECONDAIRE = 'MASTER SIM';
 
 

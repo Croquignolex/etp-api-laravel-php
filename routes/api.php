@@ -208,6 +208,10 @@ Route::group(['middleware' => 'auth:api'], function(){
         Route::post('edit_puce_agent/{id}', 'API\PuceController@update_agent')
         ->where('id', '[0-9]+');
 
+        //modification de l'entreprise d'une puce
+        Route::post('edit_puce_corporate/{id}', 'API\PuceController@update_corporate')
+        ->where('id', '[0-9]+');
+
         //supprimer une puce
         Route::post('delete_puce/{id}', 'API\PuceController@destroy')
         ->where('id', '[0-9]+');
