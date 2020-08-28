@@ -4,6 +4,9 @@ namespace App\Http\Controllers\API;
 
 use App\Corporate;
 use App\Enums\Roles;
+use App\Enums\Statut;
+use App\Puce;
+use App\Type_puce;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
@@ -296,6 +299,120 @@ class CorporateController extends Controller
                 'data' => null
             ]
         );
+    }
+
+    /**
+     * ajouter une puce à une entreprise
+     */
+    public function ajouter_puce(Request $request, $id)
+    {
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [
+            'numero' => ['required', 'string', 'max:255', 'unique:puces,numero'],
+            'reference' => ['nullable', 'string', 'max:255','unique:puces,reference'],
+            'id_flotte' => ['required', 'numeric'],
+            'nom' => ['required', 'string'],
+            'description' => ['nullable', 'string']
+        ]);
+        if ($validator->fails()) {
+            return response()->json(
+                [
+                    'message' => ['error'=>$validator->errors()],
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+
+        // Récupérer les données validées
+        $nom = $request->nom;
+        $type = $request->type;
+        $numero = $request->numero;
+        $id_flotte = $request->id_flotte;
+        $reference = $request->reference;
+        $description = $request->description;
+
+        // rechercher la flote
+        $corporate = Corporate::find($id);
+
+        // ajout de mla nouvelle puce
+        $puce = $corporate->puces()->create([
+            'nom' => $nom,
+            'numero' => $numero,
+            'reference' => $reference,
+            'id_flotte' => $id_flotte,
+            'description' => $description,
+            'type' => Type_puce::where('name', Statut::CORPORATE)->first()->id,
+        ]);
+
+        if ($puce !== null) {
+            // Renvoyer un message de succès
+            return response()->json(
+                [
+                    'message' => '',
+                    'status' => true,
+                    'data' => new CorporateResource($corporate)
+                ]
+            );
+        } else {
+            // Renvoyer une erreur
+            return response()->json(
+                [
+                    'message' => "Erreur l'ors de l'ajout de la nouvelle puce",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+    }
+
+    /**
+     * ajouter une puce à une entreprise
+     */
+    public function delete_puce(Request $request, $id)
+    {
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [
+            'id_puce' => ['required', 'numeric']
+        ]);
+        if ($validator->fails()) {
+            return response()->json(
+                [
+                    'message' => ['error'=>$validator->errors()],
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+
+        // Récupérer les données validées
+        $id_puce = $request->id_puce;
+
+        // rechercher l'entreprise
+        $corporate = Corporate::find($id);
+        $puce = Puce::find($id_puce);
+        $puce->deleted_at = now();
+        $puce->save();
+
+        if ($puce !== null) {
+            // Renvoyer un message de succès
+            return response()->json(
+                [
+                    'message' => '',
+                    'status' => true,
+                    'data' => new CorporateResource($corporate)
+                ]
+            );
+        } else {
+            // Renvoyer une erreur
+            return response()->json(
+                [
+                    'message' => "Erreur l'ors de la suppression d'une puce",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
     }
 
 }

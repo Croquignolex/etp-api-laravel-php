@@ -506,8 +506,13 @@ Route::group(['middleware' => 'auth:api'], function(){
         Route::get('list_puces_corporate/{id}', 'API\CorporateController@list_puces')
         ->where('id', '[0-9]+');
 
+        // ajouter une puce à une entreprise
+        Route::post('ajouter_puce_corporate/{id}', 'API\CorporateController@ajouter_puce')
+        ->where('id', '[0-9]+');
 
-
+        // supprimer une puce à une entreprise
+        Route::post('delete_puce_corporate/{id}', 'API\CorporateController@delete_puce')
+        ->where('id', '[0-9]+');
 
          /*//////////////////////Importer les fichiers excels/////////////////////*/
 
