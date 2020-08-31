@@ -33,10 +33,10 @@ class ImportFlottageController extends Controller
         $superviseur = Roles::SUPERVISEUR;
         $this->middleware("permission:$superviseur");
 
-    } 
+    }
 
 
-    public function import_flotage(Request $request) 
+    public function import_flotage(Request $request)
     {
 
 
@@ -45,7 +45,7 @@ class ImportFlottageController extends Controller
             'fichier' => ['required', 'file', 'max:10000'],
             'id_puce' => ['required', 'Numeric'],
             'entete' => ['required', 'Numeric']
-        ]);  
+        ]);
 
         if ($validator->fails()) {
             return response()->json(
@@ -93,7 +93,7 @@ class ImportFlottageController extends Controller
             //somme totale
             $solde_destockages = $destockages->sum('montant');
 
-            
+
         //les retours flote
             $retour_flotes = Retour_flote::where('user_destination', $request->id_puce);
 
@@ -112,7 +112,7 @@ class ImportFlottageController extends Controller
         $solde_total = $solde_retour_flotes + $solde_destockages - $solde_flotages;
 
 
-        
+
         $fichier = null;
         if ($request->hasFile('fichier') && $request->file('fichier')->isValid()) {
             $fichier = $request->fichier->store('files/fichiers');
@@ -131,26 +131,33 @@ class ImportFlottageController extends Controller
         //rapport de comparaison
 
         if ($nbre_import == $lignes_totales && $solde_import == $solde_total) {
-            $rapport = "la comparaison ne ressort aucune difference, tout est parfait";
+            $rapport = "La comparaison ne ressort aucune difference, tout est parfait";
+            $severite = 'success';
         }elseif ($nbre_import == $lignes_totales && $solde_import != $solde_total) {
-            $rapport = "Tous les enregistrement on bien été faits, mais il ya un problème au niveau des montant";
+            $rapport = "Tous les enregistrement on bien été faits, mais il ya un problème au niveau des montants";
+            $severite = 'warning';
         }elseif ($nbre_import != $lignes_totales && $solde_import == $solde_total) {
-            $rapport = "Tout est bon au niveau des montant mais, il ya innégalité au niveau des enregistrements";
+            $rapport = "Tout est bon au niveau des montanst mais, il ya innégalité au niveau des enregistrements";
+            $severite = 'warning';
         }else {
-            $rapport = "Rien ne marche, il ya innégalité tant sur les nombre d'enregistrements, que sur les montant";
+            $rapport = "Rien ne marche, il ya innégalité tant sur le nombre d'enregistrements, que sur les montant";
+            $severite = 'danger';
         }
-
 
         return response()->json(
             [
-                'Nombre de lignes importées' => $nbre_import,
-                "Nombre de lignes dans l'application" => $lignes_totales,
-                'Solde importé' => $solde_import,
-                'Solde dans lapplication' => $solde_total,
-                'Rapport' => $rapport
+                'message' => "Comparaison éffectuée",
+                'status' => true,
+                'data' => [
+                    'rapport' => $rapport,
+                    'severite' => $severite,
+                    'solde_importe' => $solde_import,
+                    'lignes_importes' => $nbre_import,
+                    'solde_applications' => $solde_total,
+                    "lignes_applications" => $lignes_totales,
+                ]
             ]
         );
-        
     }
 
 
