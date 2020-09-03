@@ -33,7 +33,7 @@ class ApprovisionnementEtpController extends Controller
     /**
      * ////traiter une demande de destockage
      */
-    public function traitement_demande_flotte(Request $request)
+    public function traiter_demande(Request $request)
     {
             // Valider données envoyées
             $validator = Validator::make($request->all(), [
@@ -55,6 +55,17 @@ class ApprovisionnementEtpController extends Controller
                 return response()->json(
                     [
                         'message' => "cette demande n'existe pas",
+                        'status' => false,
+                        'data' => null
+                    ]
+                );
+            }
+
+            //si la demande est revoquée
+            if ($demande->statut == Statut::DECLINE) {
+                return response()->json(
+                    [
+                        'message' => "cette demande est revocquée",
                         'status' => false,
                         'data' => null
                     ]
@@ -91,6 +102,62 @@ class ApprovisionnementEtpController extends Controller
                 );
             }
     }
+
+
+
+    /**
+     * //////revoquer une demande.
+     */
+    public function revoque_demande(Request $request)
+    {
+            // Valider données envoyées
+            $validator = Validator::make($request->all(), [
+                'note' => ['required', 'string'],
+                'id_demande' => ['required', 'Numeric']
+            ]);
+            if ($validator->fails()) {
+                return response()->json(
+                    [
+                        'message' => ['error'=>$validator->errors()],
+                        'status' => false,
+                        'data' => null
+                    ]
+                );
+            }
+
+            //si la demande n'existe pas
+            if (!($demande = Demande_destockage::find($request->id_demande))) {
+                return response()->json(
+                    [
+                        'message' => "cette demande n'existe pas",
+                        'status' => false,
+                        'data' => null
+                    ]
+                );
+            }
+
+            
+
+            //on change le statut
+            $demande->statut = Statut::DECLINE;
+            $demande->note = $request->note;
+
+
+            //message de reussite
+            if ($demande->save()) {
+                return response()->json(
+                    [
+                        'message' => "demande revocquée",
+                        'status' => true,
+                        'data' => $demande
+                    ]
+                );
+            }
+
+    }
+
+
+
 
     /**
      * ////Effectuer un destockage

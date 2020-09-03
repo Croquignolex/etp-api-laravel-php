@@ -388,7 +388,10 @@ Route::group(['middleware' => 'auth:api'], function(){
     //////////////////////Approvisionnement des Puces de ETP/////////////////////
     */
         //traitement d'une demande de destockage (juste pour signaler au système que je traite totalement ou en partie une demande)
-        Route::post('traiter_demande', 'API\ApprovisionnementEtpController@traitement_demande_flotte');
+        Route::post('traiter_demande', 'API\ApprovisionnementEtpController@traiter_demande');
+
+        //revoquer une demande. elle est effectuée par un responsable de zonne
+        Route::post('revoque_demande', 'API\ApprovisionnementEtpController@revoque_demande');
 
         //Approvisionnement.  faite par le responsable de zone, l'Approvisionnement est de 3 types. par un Agant, le digital partner ou la banque
         Route::post('approvisionnement_etp', 'API\ApprovisionnementEtpController@store');
