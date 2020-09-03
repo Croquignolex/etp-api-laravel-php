@@ -4,6 +4,12 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 
+use App\Events\destockageEvent;
+use App\Events\NotificationsEvent;
+use App\Role;
+use App\User;
+use Illuminate\Support\Facades\Auth;
+
 class HomeController extends Controller
 {
     /**
@@ -13,7 +19,7 @@ class HomeController extends Controller
      */
     public function __construct()
     {
-        $this->middleware('auth');
+        //$this->middleware('auth');
     }
 
     /**
@@ -23,6 +29,22 @@ class HomeController extends Controller
      */
     public function index()
     {
+        return view('home');
+    }
+
+    public function event()
+    {       
+        
+        $role = Role::find(2);        
+        $event = new NotificationsEvent($role->id, ['message' => 'Bon message']);
+        broadcast($event)->toOthers();
+        return view('home');
+    }
+
+
+    public function logout()
+    {
+        Auth::logout();
         return view('home');
     }
 }
