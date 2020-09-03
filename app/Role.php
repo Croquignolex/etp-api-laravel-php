@@ -9,8 +9,5 @@ class Role extends spatie_role
     /**
      * Get the role's users 
      */
-    public function users()
-    {
-       //
-    }
+    
 }

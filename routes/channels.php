@@ -1,5 +1,9 @@
 <?php
 
+use App\User;
+use App\Role;
+use Illuminate\Support\Facades\Auth;
+
 /*
 |--------------------------------------------------------------------------
 | Broadcast Channels
@@ -13,4 +17,14 @@
 
 Broadcast::channel('App.User.{id}', function ($user, $id) {
     return (int) $user->id === (int) $id;
+});
+
+
+
+Broadcast::channel('role.{id}', function ($user, $id) {
+    
+    $role = Role::find($id);
+    $user = User::find($user->id);  
+
+    return $user->hasRole([$role->name]);
 });

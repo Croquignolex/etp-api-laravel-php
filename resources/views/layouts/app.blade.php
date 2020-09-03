@@ -50,7 +50,7 @@
                             @endif
                         @else
                             <li class="nav-item dropdown">
-                                <a id="navbarDropdown" class="nav-link dropdown-toggle" href="#" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
+                                <a id="" class="" href="{{ url('logout') }}" role="button" data-toggle="" aria-haspopup="true" aria-expanded="false" v-pre>
                                     {{ Auth::user()->name }} <span class="caret"></span>
                                 </a>
 
@@ -76,5 +76,9 @@
             @yield('content')
         </main>
     </div>
+    <script src="//{{ Request::getHost() }}:6001/socket.io/socket.io.js"></script>
+    {{-- <script src="{{ asset('js/popper.min.js') }}"></script> --}}
+    <script src="{{ asset('js/app.js') }}"></script>
+
 </body>
 </html>
