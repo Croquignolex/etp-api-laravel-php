@@ -143,7 +143,11 @@ class CreateAdminUserSeeder extends Seeder
 
         ]);
 
+        Type_puce::create([
 
+            'name' => \App\Enums\Statut::CORPORATE
+
+        ]);
 
 
         ///creation de la puce de distribution de flotte par defaut

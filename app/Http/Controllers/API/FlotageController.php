@@ -536,6 +536,8 @@ class FlotageController extends Controller
             return ($demande_de_flotte->add_by == $id);
         });
 
+        $approvisionnements = [];
+
         foreach($flottages as $flottage) {
 
             //recuperer la demande correspondante

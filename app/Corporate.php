@@ -13,8 +13,8 @@ class Corporate extends Model
     use SoftDeletes;
 
     protected $dates = ['deleted_at'];
-    protected $fillable = array('nom', 'phone', 'responsable','dossier', 'adresse', 'numeros_agents', 'description');
-    protected $visible = array('nom', 'phone', 'responsable','dossier', 'adresse', 'numeros_agents', 'description');
+    protected $fillable = array('id', 'nom', 'phone', 'responsable','dossier', 'adresse', 'numeros_agents', 'description');
+    protected $visible = array('id', 'nom', 'phone', 'responsable','dossier', 'adresse', 'numeros_agents', 'description', 'created_at');
 
 
     public function puces()

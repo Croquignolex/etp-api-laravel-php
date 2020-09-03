@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class Corporate extends JsonResource
@@ -9,22 +10,22 @@ class Corporate extends JsonResource
     /**
      * Transform the resource into an array.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  Request  $request
      * @return array
      */
     public function toArray($request)
     {
-        //return parent::toArray($request);
-
         return [
             'id' => $this->id,
             'nom' => $this->nom,
             'phone' => $this->phone,
-            'responsable' => $this->responsable,
+            'puces' => $this->puces,
             'dossier' => $this->dossier,
             'adresse' => $this->adresse,
-            'numeros_agents' => $this->numeros_agents,
+            'created_at' => $this->created_at,
+            'responsable' => $this->responsable,
             'description' => $this->description,
+            'numeros_agents' => $this->numeros_agents,
         ];
     }
 }

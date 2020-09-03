@@ -13,9 +13,9 @@ class Retour_flote extends Model
     use SoftDeletes;
 
     protected $dates = ['deleted_at'];
-    protected $fillable = array('id_user', 'id_approvisionnement', 'reference', 'montant','reste', 'statut', 'user_destination', 'user_source');
-    protected $visible = array('id_user', 'id_approvisionnement', 'reference', 'montant','reste', 'statut', 'user_destination', 'user_source');
-                                                     
+    protected $fillable = array('id', 'id_user', 'id_approvisionnement', 'reference', 'montant','reste', 'statut', 'user_destination', 'user_source');
+    protected $visible = array('id', 'id_user', 'id_approvisionnement', 'reference', 'montant','reste', 'statut', 'user_destination', 'user_source', 'created_at');
+
 
     public function user()
     {

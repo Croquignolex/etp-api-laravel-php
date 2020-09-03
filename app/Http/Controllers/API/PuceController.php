@@ -38,6 +38,7 @@ class PuceController extends Controller
             'reference' => ['nullable', 'string', 'max:255','unique:puces,reference'],
             'id_flotte' => ['required', 'Numeric'],
             //'id_agent' => ['required', 'Numeric'],
+            //'id_corporate' => ['required', 'Numeric'],
             'nom' => ['required', 'string'],
             'description' => ['nullable', 'string'],
 			'type' => ['required', 'numeric'],
@@ -58,6 +59,7 @@ class PuceController extends Controller
 		$type = $request->type;
         $numero = $request->numero;
         $id_agent = $request->id_agent;
+        $id_corporate = $request->id_corporate;
         $reference = $request->reference;
         $id_flotte = $request->id_flotte;
         $description = $request->description;
@@ -70,7 +72,8 @@ class PuceController extends Controller
             'id_agent' => $id_agent,
             'reference' => $reference,
             'id_flotte' => $id_flotte,
-            'description' => $description
+            'corporate' => $id_corporate,
+            'description' => $description,
         ]);
 
         // creation de La puce
@@ -112,7 +115,14 @@ class PuceController extends Controller
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['puce' => $puce, 'flote' => $puce->flote, 'type' => $puce->type_puce, 'agent' => $agent, 'user' => $user]
+                    'data' => [
+                        'puce' => $puce,
+                        'flote' => $puce->flote,
+                        'type' => $puce->type_puce,
+                        'agent' => $agent,
+                        'user' => $user,
+                        'corporate' => $puce->company,
+                    ]
                 ]
             );
         }else{
@@ -180,7 +190,14 @@ class PuceController extends Controller
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['puce' => $puce, 'flote' => $puce->flote, 'type' => $puce->type_puce, 'agent' => $agent, 'user' => $user]
+                    'data' => [
+                        'puce' => $puce,
+                        'flote' => $puce->flote,
+                        'type' => $puce->type_puce,
+                        'agent' => $agent,
+                        'user' => $user,
+                        'corporate' => $puce->company,
+                    ]
                 ]
             );
         } else {
@@ -232,7 +249,14 @@ class PuceController extends Controller
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['puce' => $puce, 'flote' => $puce->flote, 'type' => $puce->type_puce, 'agent' => $agent, 'user' => $user]
+                    'data' => [
+                        'puce' => $puce,
+                        'flote' => $puce->flote,
+                        'type' => $puce->type_puce,
+                        'agent' => $agent,
+                        'user' => $user,
+                        'corporate' => $puce->company,
+                    ]
                 ]
             );
         } else {
@@ -284,7 +308,73 @@ class PuceController extends Controller
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['puce' => $puce, 'flote' => $puce->flote, 'type' => $puce->type_puce, 'agent' => $agent, 'user' => $user]
+                    'data' => [
+                        'puce' => $puce,
+                        'flote' => $puce->flote,
+                        'type' => $puce->type_puce,
+                        'agent' => $agent,
+                        'user' => $user,
+                        'corporate' => $puce->company,
+                    ]
+                ]
+            );
+        } else {
+            // Renvoyer une erreur
+            return response()->json(
+                [
+                    'message' => 'Erreur lors de la modification',
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+    }
+
+    /**
+     * modification de l'entreprise de la puce
+     */
+    public function update_corporate(Request $request, $id)
+    {
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [
+            'id_corporate' => ['required', 'Numeric'],
+        ]);
+        if ($validator->fails()) {
+            return response()->json(
+                [
+                    'message' => ['error'=>$validator->errors()],
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+
+        // Récupérer les données validées
+        $corporate = $request->id_corporate;
+
+        // rechercher la puce
+        $puce = Puce::find($id);
+
+        // Modifier la puce
+        $puce->corporate = $corporate;
+
+        if ($puce->save()) {
+            $id_agent = $puce->id_agent;
+            $agent = is_null($id_agent) ? $id_agent : $puce->agent;
+            $user = is_null($id_agent) ? $id_agent : User::find($puce->agent->id_user);
+            // Renvoyer un message de succès
+            return response()->json(
+                [
+                    'message' => '',
+                    'status' => true,
+                    'data' => [
+                        'puce' => $puce,
+                        'flote' => $puce->flote,
+                        'type' => $puce->type_puce,
+                        'agent' => $agent,
+                        'user' => $user,
+                        'corporate' => $puce->company,
+                    ]
                 ]
             );
         } else {

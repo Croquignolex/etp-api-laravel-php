@@ -2,23 +2,18 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Enums\Statut;
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Agent;
-use App\Approvisionnement;
-use App\Demande_flote;
 use App\User;
-use App\Enums\Roles;
-use Illuminate\Support\Facades\Validator;
-use App\Flote;
-use App\Type_puce;
 use App\Puce;
-use App\Caisse;
+use App\Agent;
+use App\Enums\Roles;
 use App\Recouvrement;
-use App\Http\Resources\Recouvrement as RecouvrementResource;
-use App\Retour_flote;
+use App\Enums\Statut;
+use App\Approvisionnement;
+use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
+use App\Http\Resources\Recouvrement as RecouvrementResource;
 
 class RecouvrementController extends Controller
 {
@@ -32,8 +27,9 @@ class RecouvrementController extends Controller
 
         $recouvreur = Roles::RECOUVREUR;
         $superviseur = Roles::SUPERVISEUR;
+        $agent = Roles::AGENT;
         $ges_flotte = Roles::GESTION_FLOTTE;
-        $this->middleware("permission:$recouvreur|$superviseur|$ges_flotte");
+        $this->middleware("permission:$recouvreur|$superviseur|$ges_flotte|$agent");
 
     }
 
@@ -92,12 +88,11 @@ class RecouvrementController extends Controller
         $montant = $request->montant;
 
         //L'agent concerné
-        $user = User::Find($flottage->demande_flote->id_user);
-        $agent = Agent::Where('id_user', $user->id)->first();
-
+        $user = User::find($flottage->demande_flote->id_user);
+        //$agent = Agent::Where('id_user', $user->id)->first();
 
         //la puce de L'agent concerné
-        $puce_agent = Puce::Find($flottage->demande_flote->id_puce);
+        $puce_agent = Puce::find($flottage->demande_flote->id_puce);
 
         //Caisse de l'agent concerné
         $caisse = $user->caisse->first();
@@ -139,20 +134,16 @@ class RecouvrementController extends Controller
 
                 //On change le statut du flottage
                 if ($flottage->reste == 0) {
-
                     $flottage->statut = \App\Enums\Statut::TERMINEE ;
-
                 }else {
-
                     $flottage->statut = \App\Enums\Statut::EN_COURS ;
-
                 }
 
                 //Enregistrer les oppérations
                 $flottage->save();
 
                 //On recupere les recouvrement
-                $recouvrements = Recouvrement::get();
+                $recouvrements = Recouvrement::where('user_destination', $recouvreur->id)->get();
 
                 $approvisionnements = [];
 
