@@ -5,11 +5,13 @@ namespace App\Http\Controllers\API;
 use App\Enums\Statut;
 use App\Puce;
 use App\User;
+use App\Role;
 use App\Agent;
 use App\Enums\Roles;
 use App\Retour_flote;
 use App\Approvisionnement;
 use Illuminate\Http\Request;
+use App\Events\NotificationsEvent;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
@@ -155,6 +157,12 @@ class Retour_flotteController extends Controller
         ]);
 
         if ($retour_flotte->save()) {
+
+            //Notification du gestionnaire de flotte
+            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();    
+            $event = new NotificationsEvent($role->id, ['message' => 'Nouveau retour de flote']);
+            broadcast($event)->toOthers();
+
             //on credite la puce de ETP concernée
             $puce_flottage->solde = $puce_flottage->solde + $montant;
             $puce_flottage->save();

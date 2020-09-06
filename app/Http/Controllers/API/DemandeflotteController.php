@@ -9,7 +9,9 @@ use App\Http\Controllers\Controller;
 use \App\Enums\Roles;
 use App\User;
 use Illuminate\Support\Facades\Validator;
+use App\Events\NotificationsEvent;
 use App\Flote;
+use App\Role;
 use App\Puce;
 use Illuminate\Support\Facades\Auth;
 use App\Approvisionnement;
@@ -94,6 +96,11 @@ class DemandeflotteController extends Controller
 
         // creation de La demande
         if ($demande_flote->save()) {
+
+            //Notification
+            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();    
+            $event = new NotificationsEvent($role->id, ['message' => 'Nouveau Destockage']);
+            broadcast($event)->toOthers();
 
             // Renvoyer un message de succès
             return response()->json(

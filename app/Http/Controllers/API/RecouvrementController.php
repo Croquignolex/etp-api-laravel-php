@@ -4,12 +4,14 @@ namespace App\Http\Controllers\API;
 
 use App\User;
 use App\Puce;
+use App\Role;
 use App\Agent;
 use App\Enums\Roles;
 use App\Recouvrement;
 use App\Enums\Statut;
 use App\Approvisionnement;
 use Illuminate\Http\Request;
+use App\Events\NotificationsEvent;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -118,6 +120,11 @@ class RecouvrementController extends Controller
 
         //si l'enregistrement du recouvrement a lieu
         if ($recouvrement->save()) {
+
+            //Notification du gestionnaire de flotte
+            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();    
+            $event = new NotificationsEvent($role->id, ['message' => 'Nouveau recouvrement']);
+            broadcast($event)->toOthers();
 
             ////ce que le recouvrement implique
 

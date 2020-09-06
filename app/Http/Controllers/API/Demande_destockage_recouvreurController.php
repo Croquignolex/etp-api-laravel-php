@@ -8,8 +8,10 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\User;
 use Illuminate\Support\Facades\Validator;
+use App\Events\NotificationsEvent;
 use App\Flote;
 use App\Enums\Roles;
+use App\Role;
 use App\Puce;
 use Illuminate\Support\Facades\Auth;
 
@@ -104,6 +106,12 @@ class Demande_destockage_recouvreurController extends Controller
 
         // creation de La demande
         if ($demande_destockage->save()) {
+
+
+            //Notification
+            $role = Role::where('name', Roles::RECOUVREUR)->first();    
+            $event = new NotificationsEvent($role->id, ['message' => 'Nouveau Flottage']);
+            broadcast($event)->toOthers();
 
             // Renvoyer un message de succès
             return response()->json(

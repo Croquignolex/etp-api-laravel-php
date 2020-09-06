@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\User;
 use App\Puce;
+use App\Role;
 use App\Agent;
 use App\Caisse;
 use App\Type_puce;
@@ -13,6 +14,7 @@ use App\Demande_flote;
 use App\Approvisionnement;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use App\Events\NotificationsEvent;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
@@ -140,6 +142,16 @@ class FlotageController extends Controller
 
         //si l'enregistrement du flottage a lieu
         if ($flottage->save()) {
+
+            //Notification des responsables de zone
+            $role = Role::where('name', Roles::RECOUVREUR)->first();    
+            $event = new NotificationsEvent($role->id, ['message' => 'Nouveau flottage']);
+            broadcast($event)->toOthers();
+
+            //Notification de l'utilisateur
+            $role = Role::where('name', Roles::AGENT)->first();    
+            $event = new NotificationsEvent($role->id, ['message' => 'Nouveau flottage']);
+            broadcast($event)->toOthers();
 
             ////ce que le flottage implique
 
