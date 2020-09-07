@@ -99,7 +99,7 @@ class DemandeflotteController extends Controller
 
             //Notification
             $role = Role::where('name', Roles::GESTION_FLOTTE)->first();    
-            $event = new NotificationsEvent($role->id, ['message' => 'Nouveau Destockage']);
+            $event = new NotificationsEvent($role->id, ['message' => 'Nouvelle demande flotte']);
             broadcast($event)->toOthers();
 
             // Renvoyer un message de succès

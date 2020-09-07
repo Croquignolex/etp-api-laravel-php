@@ -42,6 +42,7 @@ class ZoneController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'reference' => ['nullable', 'string', 'max:255'],
             'map' => ['nullable', 'string'],
+            'id_responsable' => ['nullable', 'Numeric'],
             'description' => ['nullable', 'string']
         ]);
         if ($validator->fails()) { 
@@ -55,12 +56,28 @@ class ZoneController extends Controller
         }  
 
 
+        //On recupère l'utilisateur passé en paramettre
+        $responsable = User::find($request->id_responsable);
+
+        //On verifi si l'utilisateur passé est un responsable de zone
+        if (!$responsable->hasRole([Roles::RECOUVREUR])) {
+            return response()->json(
+                [
+                    'message' => "Une zonne ne peut etre attribuée qu'à un responsable de zonne",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+
+
         // Récupérer les données validées
              
         $name = $request->name;
         $reference = $request->reference;
         $map = $request->map;
         $description = $request->description;
+        $id_responsable = $request->id_responsable;
 
 
         // Nouvelle zone
@@ -68,6 +85,7 @@ class ZoneController extends Controller
             'nom' => $name,
             'reference' => $reference,
             'map' => $map,
+            'id_responsable' => $id_responsable,
             'description' => $description
         ]);
 
@@ -738,5 +756,77 @@ class ZoneController extends Controller
                 ]
             );
          }
+    }
+
+    /**
+     * modification d'une zone
+     */
+    public function edit_responsable_zone(Request $request, $id)
+    {
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [ 
+            'id_responsable' => ['required', 'Numeric']
+        ]);
+        if ($validator->fails()) { 
+            return response()->json(
+                [
+                    'message' => ['error'=>$validator->errors()],
+                    'status' => false,
+                    'data' => null
+                ]
+            );             
+        }
+
+        //On recupère l'utilisateur passé en paramettre
+        $responsable = User::find($request->id_responsable);
+
+        //On verifi si l'utilisateur passé est un responsable de zone
+        if (!$responsable->hasRole([Roles::RECOUVREUR])) {
+            return response()->json(
+                [
+                    'message' => "Une zonne ne peut etre attribuée qu'à un responsable de zonne",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+
+        if (!$zone = Zone::find($id)) {
+            return response()->json(
+                [
+                    'message' => "la zonne passée en paramettre n'existe pas",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+
+        // Récupérer les données validées
+        $id_responsable = $request->id_responsable;
+
+        // Modifier la zone
+        $zone->id_responsable = $id_responsable;
+
+
+        if ($zone->save()) {
+
+            // Renvoyer un message de succès
+            return response()->json(
+                [
+                    'message' => "l'opération a réussi",
+                    'status' => true,
+                    'data' => ['zone' => $zone, 'responsable' => $responsable]
+                ]
+            );
+        } else {
+            // Renvoyer une erreur
+            return response()->json(
+                [
+                    'message' => 'erreur lors de la modification',
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        } 
     }
 }

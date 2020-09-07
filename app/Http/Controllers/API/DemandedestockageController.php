@@ -91,7 +91,7 @@ class DemandedestockageController extends Controller
 
             //Notification
             $role = Role::where('name', Roles::RECOUVREUR)->first();    
-            $event = new NotificationsEvent($role->id, ['message' => 'Nouveau Destockage']);
+            $event = new NotificationsEvent($role->id, ['message' => 'Nouvelle demande de Destockage']);
             broadcast($event)->toOthers();
 
             // Renvoyer un message de succès

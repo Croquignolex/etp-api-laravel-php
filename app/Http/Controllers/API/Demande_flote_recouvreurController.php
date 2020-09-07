@@ -109,7 +109,7 @@ class Demande_flote_recouvreurController extends Controller
 
             //Notification
             $role = Role::where('name', Roles::GESTION_FLOTTE)->first();    
-            $event = new NotificationsEvent($role->id, ['message' => 'Nouveau Flottage']);
+            $event = new NotificationsEvent($role->id, ['message' => 'Nouvelle demande de Flottage']);
             broadcast($event)->toOthers();
 
             // Renvoyer un message de succès
