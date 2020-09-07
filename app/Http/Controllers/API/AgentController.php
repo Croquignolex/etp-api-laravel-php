@@ -53,8 +53,8 @@ class AgentController extends Controller
                 'id_zone' => ['nullable', 'Numeric'],
 
             //Agent informations
-                'base_64_image' => 'nullable|string',
-                'base_64_image_back' => 'nullable|string',
+                'base_64_image' => 'nullable|file|max:10000',
+                'base_64_image_back' => 'nullable|file|max:10000',
                 'document' => 'nullable|file|max:10000',
                 'reference' => ['nullable', 'string', 'max:255'],
                 //'taux_commission' => ['nullable', 'Numeric'],
@@ -65,7 +65,7 @@ class AgentController extends Controller
 
         
 
-        if ($validator->fails()) { 
+        if ($validator->fails()) {  
             return response()->json(
                 [
                     'message' => ['error'=>$validator->errors()],
@@ -117,23 +117,16 @@ class AgentController extends Controller
                 //$point_de_vente = $request->point_de_vente;
                 //$puce_name = $request->puce_name;
                 //$puce_number = $request->puce_number;
-                $img_cni = null; 
-                $img_cni_back = null;             
+                
+                $img_cni = null;
+                if ($request->hasFile('base_64_image') && $request->file('base_64_image')->isValid()) {
+                    $img_cni = $request->base_64_image->store('files/CNI_avant/agents');
+                }
 
-                if (isset($request->base_64_image)) {
-                    $img_cni = $request->base_64_image;
-                    // Convert base 64 image to normal image for the server and the data base
-                    $server_image_name_path1 = ImageFromBase64::imageFromBase64AndSave($request->input('base_64_image'), 
-                    'images/avatars/');
-                    $img_cni = $server_image_name_path1;
-                } 
-                if (isset($request->base_64_image_back)) {
-                    $img_cni_back = $request->base_64_image_back;
-                    // Convert base 64 image to normal image for the server and the data base
-                    $server_image_name_path2 = ImageFromBase64::imageFromBase64AndSave($request->input('base_64_image_back'), 
-                    'images/avatars/');
-                    $img_cni_back = $server_image_name_path2;
-                }        
+                $img_cni_back = null;
+                if ($request->hasFile('base_64_image_back') && $request->file('base_64_image_back')->isValid()) {
+                    $img_cni_back = $request->base_64_image_back->store('files/CNI_arriere/agents');
+                }       
 
 
         //l'utilisateur connecté
@@ -688,8 +681,8 @@ class AgentController extends Controller
     { 
         // Valider données envoyées
         $validator = Validator::make($request->all(), [ 
-            'base_64_image' => 'nullable|string',
-            'base_64_image_back' => 'nullable|string', 
+            'base_64_image' => 'nullable|file|max:10000',
+            'base_64_image_back' => 'nullable|file|max:10000', 
         ]);
         
         if ($validator->fails()) { 
@@ -716,25 +709,23 @@ class AgentController extends Controller
         if(Storage::exists($agent_img_cni_path_name) && $agent_img_cni_path_name != 'users/default.png')
             Storage::delete($agent_img_cni_path_name);
 
-            //Delete old file before storing new file
+        //Delete old file before storing new file
         if(Storage::exists($agent_img_cni_path_name2) && $agent_img_cni_path_name2 != 'users/default.png')
         Storage::delete($agent_img_cni_path_name2);
+
+        
+        $img_cni = null;
+        if ($request->hasFile('base_64_image') && $request->file('base_64_image')->isValid()) {
+            $img_cni = $request->base_64_image->store('files/CNI_avant/agents');
+        }
+
+
+        $img_cni_back = null;
+        if ($request->hasFile('base_64_image_back') && $request->file('base_64_image_back')->isValid()) {
+            $img_cni_back = $request->base_64_image_back->store('files/CNI_arriere/agents');
+        }
 	
-		if (isset($request->base_64_image)) {
-			$img_cni = $request->base_64_image;
-			// Convert base 64 image to normal image for the server and the data base
-			$agent_img_cni_path_name = ImageFromBase64::imageFromBase64AndSave($request->input('base_64_image'),
-            'images/avatars/');
-			$img_cni = $agent_img_cni_path_name;
-		}
-	
-		if (isset($request->base_64_image_back)) {
-			$img_cni_back = $request->base_64_image_back;
-			// Convert base 64 image to normal image for the server and the data base
-			$server_image_name_path2 = ImageFromBase64::imageFromBase64AndSave($request->input('base_64_image_back'),
-            'images/avatars/');
-			$img_cni_back = $server_image_name_path2;
-		}
+		
  
         // Convert base 64 image to normal image for the server and the data base
         //$server_image_name_path = ImageFromBase64::imageFromBase64AndSave($request->input('base_64_image'),
