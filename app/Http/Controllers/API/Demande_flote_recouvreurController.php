@@ -6,11 +6,13 @@ use App\Agent;
 use App\Demande_flote;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Events\NotificationsEvent;
 use App\Enums\Roles;
 use App\User;
 use Illuminate\Support\Facades\Validator;
 use App\Flote;
 use App\Puce;
+use App\Role;
 use Illuminate\Support\Facades\Auth;
 
 class Demande_flote_recouvreurController extends Controller
@@ -104,6 +106,11 @@ class Demande_flote_recouvreurController extends Controller
 
         // creation de La demande
         if ($demande_flote->save()) {
+
+            //Notification
+            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();    
+            $event = new NotificationsEvent($role->id, ['message' => 'Nouveau Flottage']);
+            broadcast($event)->toOthers();
 
             // Renvoyer un message de succès
             return response()->json(

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Puce;
+use App\Role;
 use App\Agent;
 use App\Caisse;
 use App\Destockage;
@@ -10,6 +11,7 @@ use App\Enums\Roles;
 use App\Enums\Statut;
 use App\Demande_destockage;
 use Illuminate\Http\Request;
+use App\Events\NotificationsEvent;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -93,6 +95,11 @@ class ApprovisionnementEtpController extends Controller
 
             //message de reussite
             if ($demande->save()) {
+
+                //Notification
+                $role = Role::where('name', Roles::AGENT)->first();    
+                $event = new NotificationsEvent($role->id, ['message' => 'Une demande traitée']);
+                broadcast($event)->toOthers();
                 return response()->json(
                     [
                         'message' => "demande traitée",
@@ -145,6 +152,12 @@ class ApprovisionnementEtpController extends Controller
 
             //message de reussite
             if ($demande->save()) {
+
+                //Notification
+                $role = Role::where('name', Roles::AGENT)->first();    
+                $event = new NotificationsEvent($role->id, ['message' => 'Une demande revoquée']);
+                broadcast($event)->toOthers();
+
                 return response()->json(
                     [
                         'message' => "demande revocquée",
@@ -225,6 +238,11 @@ class ApprovisionnementEtpController extends Controller
         ]);
 
         if ($destockage->save()) {
+
+            //Notification
+            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();    
+            $event = new NotificationsEvent($role->id, ['message' => 'Nouvel approvisionnement de ETP']);
+            broadcast($event)->toOthers();
 
             //la puce de ETP concernée et on credite
             $puce_etp = Puce::find($request->id_puce);
