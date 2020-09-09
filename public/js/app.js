@@ -38777,12 +38777,12 @@ var e = new laravel_echo__WEBPACK_IMPORTED_MODULE_0__["default"]({
   broadcaster: 'socket.io',
   host: window.location.hostname + ':6001'
 });
-e.channel('laravel_database_cannal-de-test').listen('destockageEvent', function (e) {
-  console.log('destockageEvent', e);
-});
-e.channel('laravel_database_private-role.2').listen('NotificationsEvent', function (e) {
-  console.log('NotificationsEvent', e);
-}); //window.Vue = require('vue');
+// e.channel('laravel_database_cannal-de-test').listen('destockageEvent', function (e) {
+//   console.log('destockageEvent', e);
+// });
+// e.channel('laravel_database_private-role.2').listen('NotificationsEvent', function (e) {
+//   console.log('NotificationsEvent', e);
+// }); //window.Vue = require('vue');
 
 /**
  * The following block of code may be used to automatically register your

@@ -3,19 +3,18 @@
 namespace App\Events;
 
 use Illuminate\Broadcasting\Channel;
-use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
-use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
-use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Foundation\Events\Dispatchable;
+use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 
-class NotificationsEvent implements ShouldBroadcast
+//class NotificationsEvent implements ShouldBroadcast
+class NotificationsEvent
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    private $role_id;
     public $message;
+    private $role_id;
 
     /**
      * Create a new event instance.
@@ -24,19 +23,27 @@ class NotificationsEvent implements ShouldBroadcast
      */
     public function __construct($role_id, $message)
     {
-        
         $this->role_id = $role_id;
         $this->message = $message;
-        
     }
 
-    /**
-     * Get the channels the event should broadcast on.
-     *
-     * @return \Illuminate\Broadcasting\Channel|array
-     */
-    public function broadcastOn()
-    {
-        return new PrivateChannel('role.' . $this->role_id);
-    }
+//    /**
+//     * Get the channels the event should broadcast on.
+//     *
+//     * @return Channel|array
+//     */
+//    public function broadcastOn()
+//    {
+//        return new Channel('role.' . $this->role_id);
+//    }
+//
+//    public function broadcastAs()
+//    {
+//        return 'notification.event';
+//    }
+//
+//    public function broadcastWith()
+//    {
+//        return ['message' => $this->message];
+//    }
 }

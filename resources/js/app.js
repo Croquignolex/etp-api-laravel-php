@@ -13,16 +13,16 @@ let e = new Echo({
     host: window.location.hostname + ':6001'
 })
 
-e.channel('laravel_database_cannal-de-test')
-    .listen('destockageEvent', function(e) {
-        console.log('destockageEvent', e)
-    })
-
-
-e.channel('laravel_database_private-role.2')
-    .listen('NotificationsEvent', function(e) {
-        console.log('NotificationsEvent', e)
-    })
+// e.channel('laravel_database_cannal-de-test')
+//     .listen('destockageEvent', function(e) {
+//         console.log('destockageEvent', e)
+//     })
+//
+//
+// e.channel('laravel_database_private-role.2')
+//     .listen('NotificationsEvent', function(e) {
+//         console.log('NotificationsEvent', e)
+//     })
 
 //window.Vue = require('vue');
 
