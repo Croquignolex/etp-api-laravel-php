@@ -39,6 +39,7 @@ class HomeController extends Controller
         $event = new NotificationsEvent($role->id, ['message' => 'Bon message']);
         broadcast($event)->toOthers();
         return view('home');
+
     }
 
 

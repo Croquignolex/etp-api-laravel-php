@@ -15,6 +15,7 @@ use App\Events\NotificationsEvent;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
+use App\Notifications\Retour_flotte as Notif_retour_flotte;
 use App\Http\Resources\Retour_flote as Retour_floteResource;
 
 class Retour_flotteController extends Controller
@@ -162,6 +163,19 @@ class Retour_flotteController extends Controller
             $role = Role::where('name', Roles::GESTION_FLOTTE)->first();    
             $event = new NotificationsEvent($role->id, ['message' => 'Nouveau retour de flote']);
             broadcast($event)->toOthers();
+
+            //Database Notification
+            $users = User::all();
+            foreach ($users as $user) {
+                
+                if ($user->hasRole([$role->name])) {
+                    
+                    $user->notify(new Notif_retour_flotte([
+                        'data' => $retour_flotte,
+                        'message' => "Nouveau retour de flote"                    
+                    ]));
+                }
+            }
 
             //on credite la puce de ETP concernée
             $puce_flottage->solde = $puce_flottage->solde + $montant;
@@ -504,6 +518,25 @@ class Retour_flotteController extends Controller
 
         //message de reussite
         if ($retour_flotte->save()) {
+
+            //Notification du gestionnaire de flotte
+            $role = Role::where('name', Roles::RECOUVREUR)->first();    
+            $event = new NotificationsEvent($role->id, ['message' => 'Un retour de flote approuvé']);
+            broadcast($event)->toOthers();
+
+            //Database Notification
+            $users = User::all();
+            foreach ($users as $user) {
+                
+                if ($user->hasRole([$role->name])) {
+                    
+                    $user->notify(new Notif_retour_flotte([
+                        'data' => $retour_flotte,
+                        'message' => "Un retour de flote approuvé"                    
+                    ]));
+                }
+            }
+
             //On recupere les retour flotte
             $retour_flotes = Retour_flote::get();
 

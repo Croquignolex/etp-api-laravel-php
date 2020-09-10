@@ -37,6 +37,6 @@ class NotificationsEvent implements ShouldBroadcast
      */
     public function broadcastOn()
     {
-        return new PrivateChannel('role.' . $this->role_id);
+        return new PrivateChannel('role.' . $this->role_id); 
     }
 }

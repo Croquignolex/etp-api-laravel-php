@@ -24,7 +24,5 @@ Broadcast::channel('App.User.{id}', function ($user, $id) {
 Broadcast::channel('role.{id}', function ($user, $id) {
     
     $role = Role::find($id);
-    $user = User::find($user->id);  
-
     return $user->hasRole([$role->name]);
 });

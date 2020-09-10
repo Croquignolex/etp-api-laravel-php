@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use App\Events\NotificationsEvent;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use App\Notifications\Recouvrement as Notif_recouvrement;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Resources\Recouvrement as RecouvrementResource;
 
@@ -122,9 +123,22 @@ class RecouvrementController extends Controller
         if ($recouvrement->save()) {
 
             //Notification du gestionnaire de flotte
-            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();    
+            $role = Role::where('name', Roles::RECOUVREUR)->first();    
             $event = new NotificationsEvent($role->id, ['message' => 'Nouveau recouvrement']);
             broadcast($event)->toOthers();
+
+            //Database Notification
+            $users = User::all();
+            foreach ($users as $user) {
+                
+                if ($user->hasRole([$role->name])) {
+                    
+                    $user->notify(new Notif_recouvrement([
+                        'data' => $recouvrement,
+                        'message' => "Nouveau recouvrement"                    
+                    ]));
+                }
+            }
 
             ////ce que le recouvrement implique
 
@@ -433,6 +447,25 @@ class RecouvrementController extends Controller
 
         //message de reussite
         if ($recouvrement->save()) {
+
+            //Notification du gestionnaire de flotte
+            $role = Role::where('name', Roles::RECOUVREUR)->first();    
+            $event = new NotificationsEvent($role->id, ['message' => 'Un recouvrement Approuvée']);
+            broadcast($event)->toOthers();
+
+            //Database Notification
+            $users = User::all();
+            foreach ($users as $user) {
+                
+                if ($user->hasRole([$role->name])) {
+                    
+                    $user->notify(new Notif_recouvrement([
+                        'data' => $recouvrement,
+                        'message' => "Un recouvrement Approuvée"                    
+                    ]));
+                }
+            }
+
             //On recupere les recouvrement
             $recouvrements = Recouvrement::get();
 

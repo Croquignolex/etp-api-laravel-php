@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Puce;
+use App\User;
 use App\Role;
 use App\Agent;
 use App\Caisse;
@@ -14,6 +15,7 @@ use Illuminate\Http\Request;
 use App\Events\NotificationsEvent;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use App\Notifications\Destockage as Notif_destockage;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Resources\Destockage as DestockageResource;
 
@@ -96,10 +98,28 @@ class ApprovisionnementEtpController extends Controller
             //message de reussite
             if ($demande->save()) {
 
-                //Notification
-                $role = Role::where('name', Roles::AGENT)->first();    
+                //Broadcast Notification
+                $role = Role::where('name', Roles::GESTION_FLOTTE)->first();    
                 $event = new NotificationsEvent($role->id, ['message' => 'Une demande traitée']);
                 broadcast($event)->toOthers();
+
+                //Database Notification
+                $users = User::all();
+                foreach ($users as $user) {
+                    
+                    if ($user->hasRole([$role->name])) {
+                        
+                        $user->notify(new Notif_destockage([
+                            'data' => $demande,
+                            'message' => "Une demande en cours de traitement"                    
+                        ]));
+                    }
+                }
+
+                //Database Notification
+                User::find($demande->id_user)->notify(new Notif_destockage(['message' => "Votre demande est entrain d'etre traitée"]));
+
+                //Reponse
                 return response()->json(
                     [
                         'message' => "demande traitée",
@@ -153,10 +173,27 @@ class ApprovisionnementEtpController extends Controller
             //message de reussite
             if ($demande->save()) {
 
-                //Notification
-                $role = Role::where('name', Roles::AGENT)->first();    
+                //Broadcast Notification
+                $role = Role::where('name', Roles::RECOUVREUR)->first();    
                 $event = new NotificationsEvent($role->id, ['message' => 'Une demande revoquée']);
                 broadcast($event)->toOthers();
+
+                //Database Notification
+                $users = User::all();
+                foreach ($users as $user) {
+                    
+                    if ($user->hasRole([$role->name])) {
+                        
+                        $user->notify(new Notif_destockage([
+                            'data' => $demande,
+                            'message' => "Une demande Revoquée"                    
+                        ]));
+                    }
+                }
+
+                //Database Notification
+                User::find($demande->id_user)->notify(new Notif_destockage(['message' => "Votre demande a été Revoquée"]));
+
 
                 return response()->json(
                     [
@@ -243,6 +280,19 @@ class ApprovisionnementEtpController extends Controller
             $role = Role::where('name', Roles::GESTION_FLOTTE)->first();    
             $event = new NotificationsEvent($role->id, ['message' => 'Nouvel approvisionnement de ETP']);
             broadcast($event)->toOthers();
+
+            //Database Notification
+            $users = User::all();
+            foreach ($users as $user) {
+                
+                if ($user->hasRole([$role->name])) {
+                    
+                    $user->notify(new Notif_destockage([
+                        'data' => $destockage,
+                        'message' => "Nouvel approvisionnement de ETP"                    
+                    ]));
+                }
+            }
 
             //la puce de ETP concernée et on credite
             $puce_etp = Puce::find($request->id_puce);
@@ -331,6 +381,24 @@ class ApprovisionnementEtpController extends Controller
         if ($destockage->save()) {
             $destockages = Destockage::where('type', Statut::BY_AGENT)->get();
 
+            //Notification
+            $role = Role::where('name', Roles::RECOUVREUR)->first();    
+            $event = new NotificationsEvent($role->id, ['message' => 'Approvisionnement Approvée']);
+            broadcast($event)->toOthers();
+
+            //Database Notification
+            $users = User::all();
+            foreach ($users as $user) {
+                
+                if ($user->hasRole([$role->name])) {
+                    
+                    $user->notify(new Notif_destockage([
+                        'data' => $destockage,
+                        'message' => "Approvisionnement Approvée"                    
+                    ]));
+                }
+            }
+
             return response()->json(
                 [
                     'message' => "liste",
@@ -372,6 +440,24 @@ class ApprovisionnementEtpController extends Controller
         //message de reussite
         if ($destockage->save()) {
             $destockages = Destockage::where('type', Statut::BY_DIGIT_PARTNER)->orWhere('type', Statut::BY_BANK)->get();
+
+            //Notification
+            $role = Role::where('name', Roles::RECOUVREUR)->first();    
+            $event = new NotificationsEvent($role->id, ['message' => 'Approvisionnement Approvée']);
+            broadcast($event)->toOthers();
+
+            //Database Notification
+            $users = User::all();
+            foreach ($users as $user) {
+                
+                if ($user->hasRole([$role->name])) {
+                    
+                    $user->notify(new Notif_destockage([
+                        'data' => $destockage,
+                        'message' => "Approvisionnement Approvée"                    
+                    ]));
+                }
+            }
 
             return response()->json(
                 [
