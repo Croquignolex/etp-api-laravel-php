@@ -163,7 +163,7 @@ class ApprovisionnementEtpController extends Controller
                 );
             }
 
-            
+
 
             //on change le statut
             $demande->statut = Statut::DECLINE;
@@ -277,7 +277,7 @@ class ApprovisionnementEtpController extends Controller
         if ($destockage->save()) {
 
             //Notification
-            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();    
+            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
             $event = new NotificationsEvent($role->id, ['message' => 'Nouvel approvisionnement de ETP']);
             broadcast($event)->toOthers();
 

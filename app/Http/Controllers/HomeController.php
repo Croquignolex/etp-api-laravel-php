@@ -33,9 +33,9 @@ class HomeController extends Controller
     }
 
     public function event()
-    {       
-        
-        $role = Role::find(2);        
+    {
+
+        $role = Role::find(3);
         $event = new NotificationsEvent($role->id, ['message' => 'Bon message']);
         broadcast($event)->toOthers();
         return view('home');
