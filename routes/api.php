@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Http\Request;
+use App\User;
 
 /*
 |--------------------------------------------------------------------------
@@ -532,5 +533,25 @@ Route::group(['middleware' => 'auth:api'], function(){
 
         //importer et comparer le listing pour une puce Agent
         Route::post('import_agent', 'API\ImportFlottageController@import_agent');
+
+
+
+        /*//////////////////////Noifications/////////////////////*/
+
+            //Recupérer mes notifications non lues
+            Route::get('unread_notifications', 'API\NotificationsController@unread_notifications');
+            
+
+            //Recupérer toutes mes notifications
+            Route::get('all_notifications', 'API\NotificationsController@all_notifications');
+
+
+            //marquer comme lue
+            Route::get('read_notifications/{id}', 'API\NotificationsController@read_notifications');
+
+
+            //Supprimer notification
+            Route::get('delette_notifications/{id}', 'API\NotificationsController@delette_notifications');
+
 
 });
