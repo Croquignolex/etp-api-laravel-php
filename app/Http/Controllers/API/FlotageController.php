@@ -17,6 +17,7 @@ use Illuminate\Http\JsonResponse;
 use App\Events\NotificationsEvent;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
+use App\Notifications\Flottage as Notif_flottage;
 use Illuminate\Support\Facades\Validator;
 
 class FlotageController extends Controller
@@ -143,15 +144,27 @@ class FlotageController extends Controller
         //si l'enregistrement du flottage a lieu
         if ($flottage->save()) {
 
-            //Notification des responsables de zone
+            //Broadcast Notification des responsables de zone
             $role = Role::where('name', Roles::RECOUVREUR)->first();    
             $event = new NotificationsEvent($role->id, ['message' => 'Nouveau flottage']);
             broadcast($event)->toOthers();
 
-            //Notification de l'utilisateur
-            $role = Role::where('name', Roles::AGENT)->first();    
-            $event = new NotificationsEvent($role->id, ['message' => 'Nouveau flottage']);
-            broadcast($event)->toOthers();
+            //Database Notification
+            $users = User::all();
+            foreach ($users as $user) {
+                
+                if ($user->hasRole([$role->name])) {
+                    
+                    $user->notify(new Notif_flottage([
+                        'data' => $flottage,
+                        'message' => "Nouveau flottage"                    
+                    ]));
+                }
+            }
+
+            //Database Notification de l'agent
+            User::find($demande_flotte->id_user)->notify(new Notif_flottage(['message' => "Nouveau flottage"]));
+
 
             ////ce que le flottage implique
 
@@ -355,6 +368,24 @@ class FlotageController extends Controller
 
             //si l'enregistrement du flottage a lieu
             if ($flottage->save()) {
+
+                //Broadcast Notification des responsables de zone
+                $role = Role::where('name', Roles::RECOUVREUR)->first();    
+                $event = new NotificationsEvent($role->id, ['message' => 'Nouveau flottage']);
+                broadcast($event)->toOthers();
+
+                //Database Notification
+                $users = User::all();
+                foreach ($users as $user) {
+                    
+                    if ($user->hasRole([$role->name])) {
+                        
+                        $user->notify(new Notif_flottage([
+                            'data' => $flottage,
+                            'message' => "Nouveau flottage"                    
+                        ]));
+                    }
+                }
 
                 ////ce que le flottage implique
 

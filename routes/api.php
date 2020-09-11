@@ -114,7 +114,7 @@ Route::group(['middleware' => 'auth:api'], function(){
 
 		//Approuver ou desapprouver un agent
 		Route::post('edit_agent_status/{id}', 'API\AgentController@edit_agent_status')
-		->where('id', '[0-9]+');
+		->where('id', '[0-9]+'); 
 
 		 //Changer la zone d'un agent
 		Route::post('edit_zone_agent/{id}', 'API\AgentController@edit_zone_agent')
@@ -357,6 +357,14 @@ Route::group(['middleware' => 'auth:api'], function(){
         // ajouter un recouvreur à une zone
         Route::post('ajouter_recouvreur_zone/{id}', 'API\ZoneController@ajouter_recouvreur')
         ->where('id', '[0-9]+');
+
+        // Modifier le responsable d'une zonne
+        Route::post('edit_responsable_zone/{id}', 'API\ZoneController@edit_responsable_zone')
+        ->where('id', '[0-9]+');
+
+
+
+
         /*
     //////////////////////Flottage/////////////////////
     */

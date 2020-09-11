@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\User;
 use Illuminate\Support\Facades\Validator;
 use App\Events\NotificationsEvent;
+use App\Notifications\Demande_destockage as Notif_demande_destockage;
 use App\Flote;
 use App\Enums\Roles;
 use App\Role;
@@ -107,11 +108,23 @@ class Demande_destockage_recouvreurController extends Controller
         // creation de La demande
         if ($demande_destockage->save()) {
 
-
-            //Notification
+            //Broadcast Notification
             $role = Role::where('name', Roles::RECOUVREUR)->first();    
-            $event = new NotificationsEvent($role->id, ['message' => 'Nouveau Flottage']);
+            $event = new NotificationsEvent($role->id, ['message' => 'Nouvelle demande de destockage']);
             broadcast($event)->toOthers();
+
+            //Database Notification
+            $users = User::all();
+            foreach ($users as $user) {
+                
+                if ($user->hasRole([$role->name])) {
+                    
+                    $user->notify(new Notif_demande_destockage([
+                        'data' => $demande_destockage,
+                        'message' => "Nouvelle demande de Destockage"                    
+                    ]));
+                }
+            }
 
             // Renvoyer un message de succès
             return response()->json(
@@ -231,7 +244,27 @@ class Demande_destockage_recouvreurController extends Controller
                 $demandeur = User::find($demande_destockage->add_by);
 
 				$demandes_destockages[] = ['demande' => $demande_destockage, 'demandeur' => $demandeur, 'agent' => $agent, 'user' => $user, 'puce' => $demande_destockage->puce];
-			}
+            }
+            
+            //Broadcast Notification
+            $role = Role::where('name', Roles::RECOUVREUR)->first();    
+            $event = new NotificationsEvent($role->id, ['message' => 'Une demande de Destockage Annulée']);
+            broadcast($event)->toOthers();
+
+
+            //Database Notification
+            $users = User::all();
+            foreach ($users as $user) {
+                
+                if ($user->hasRole([$role->name])) {
+                    
+                    $user->notify(new Notif_demande_destockage([
+                        'data' => $demande_destockageDB,
+                        'message' => "Une demande de Destockage Annulée"                    
+                    ]));
+
+                }
+            }
 
             // Renvoyer un message de succès
             return response()->json(
@@ -283,7 +316,27 @@ class Demande_destockage_recouvreurController extends Controller
 
         // update de La demande
         if ($demande_destockage->save()) {
-			$user = $demande_destockage->user;
+            $user = $demande_destockage->user;
+            
+            //Broadcast Notification
+            $role = Role::where('name', Roles::RECOUVREUR)->first();    
+            $event = new NotificationsEvent($role->id, ['message' => 'Une demande de Destockage modifiée']);
+            broadcast($event)->toOthers();
+
+
+            //Database Notification
+            $users = User::all();
+            foreach ($users as $user) {
+                
+                if ($user->hasRole([$role->name])) {
+                    
+                    $user->notify(new Notif_demande_destockage([
+                        'data' => $demande_destockage,
+                        'message' => "Une demande de Destockage modifiée"                    
+                    ]));
+
+                }
+            }
 
             // Renvoyer un message de succès
             return response()->json(

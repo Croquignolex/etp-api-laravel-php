@@ -38776,6 +38776,16 @@ __webpack_require__(/*! ./bootstrap */ "./resources/js/bootstrap.js");
 var e = new laravel_echo__WEBPACK_IMPORTED_MODULE_0__["default"]({
   broadcaster: 'socket.io',
   host: window.location.hostname + ':6001'
+<<<<<<< HEAD
+}); // e.channel('laravel_database_cannal-de-test')
+//     .listen('destockageEvent', function(e) {
+//         console.log('destockageEvent', e)
+//     })
+
+e.channel('laravel_database_private-role.2').listen('NotificationsEvent', function (e) {
+  console.log('NotificationsEvent', e);
+}); //window.Vue = require('vue');
+=======
 });
 // e.channel('laravel_database_cannal-de-test').listen('destockageEvent', function (e) {
 //   console.log('destockageEvent', e);
@@ -38783,6 +38793,7 @@ var e = new laravel_echo__WEBPACK_IMPORTED_MODULE_0__["default"]({
 // e.channel('laravel_database_private-role.2').listen('NotificationsEvent', function (e) {
 //   console.log('NotificationsEvent', e);
 // }); //window.Vue = require('vue');
+>>>>>>> d82b005343ff2f269b810c7680c2d17317ff4bc7
 
 /**
  * The following block of code may be used to automatically register your
