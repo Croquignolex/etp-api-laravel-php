@@ -39,6 +39,7 @@ class ApprovisionnementEtpController extends Controller
      */
     public function traiter_demande(Request $request)
     {
+
             // Valider données envoyées
             $validator = Validator::make($request->all(), [
                 'montant' => ['required', 'Numeric'],

@@ -145,7 +145,7 @@ class FlotageController extends Controller
         if ($flottage->save()) {
 
             //Broadcast Notification des responsables de zone
-            $role = Role::where('name', Roles::RECOUVREUR)->first();    
+            $role = Role::where('name', Roles::RECOUVREUR)->first();  
             $event = new NotificationsEvent($role->id, ['message' => 'Nouveau flottage']);
             broadcast($event)->toOthers();
 

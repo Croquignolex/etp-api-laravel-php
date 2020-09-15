@@ -10,6 +10,7 @@ use App\User;
 use Illuminate\Support\Facades\Validator;
 use App\Events\NotificationsEvent;
 use App\Notifications\Demande_destockage as Notif_demande_destockage;
+use App\Notifications\Destockage as Notif_destockage;
 use App\Flote;
 use App\Enums\Roles;
 use App\Role;
@@ -398,6 +399,24 @@ class Demande_destockage_recouvreurController extends Controller
 
         // update de La demande
         if ($demande_destockage->save()) {
+
+            //Broadcast Notification
+            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();    
+            $event = new NotificationsEvent($role->id, ['message' => 'Une demande traitée']);
+            broadcast($event)->toOthers();
+
+            //Database Notification
+            $users = User::all();
+            foreach ($users as $user) {
+                
+                if ($user->hasRole([$role->name])) {
+                    
+                    $user->notify(new Notif_destockage([
+                        'data' => $demande_destockage,
+                        'message' => "Une demande en cours de traitement"                    
+                    ]));
+                }
+            }
             //On recupere les 'demande de destockage'
 //            $demandes_destockage = Demande_destockage::where('add_by', Auth::user()->id)->get();
             // tous lister car le responsable de zone peut voir toutes les démande de déstockage et agir en conséquence
