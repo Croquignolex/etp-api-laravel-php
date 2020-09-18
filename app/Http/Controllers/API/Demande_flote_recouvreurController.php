@@ -54,7 +54,7 @@ class Demande_flote_recouvreurController extends Controller
             );
         }
 
-        if (!Agent::Find($request->id_agent)) {
+        if (!Agent::find($request->id_agent)) {
             return response()->json(
                 [
                     'message' => "Cet Agent n'existe pas",
@@ -64,7 +64,7 @@ class Demande_flote_recouvreurController extends Controller
             );
         }
 
-        if (!Puce::Find($request->id_puce)) {
+        if (!Puce::find($request->id_puce)) {
             return response()->json(
                 [
                     'message' => "Cette Puce n'existe pas",
@@ -78,7 +78,7 @@ class Demande_flote_recouvreurController extends Controller
         $add_by = Auth::user();
 
         //recuperer l'agent concerné
-        $agent = Agent::Find($request->id_agent);
+        $agent = Agent::find($request->id_agent);
 
         $user = User::find($agent->id_user);
 
@@ -109,19 +109,19 @@ class Demande_flote_recouvreurController extends Controller
         if ($demande_flote->save()) {
 
             //Notification
-            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();    
+            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
             $event = new NotificationsEvent($role->id, ['message' => 'Nouvelle demande de Flottage']);
             broadcast($event)->toOthers();
 
             //Database Notification
             $users = User::all();
             foreach ($users as $user) {
-                
+
                 if ($user->hasRole([$role->name])) {
-                    
+
                     $user->notify(new Notif_demande_flotte([
                         'data' => $demande_flote,
-                        'message' => "Nouvelle demande de flotte"                    
+                        'message' => "Nouvelle demande de flotte"
                     ]));
                 }
             }
@@ -230,34 +230,37 @@ class Demande_flote_recouvreurController extends Controller
         // creation de La demande
         if ($demande_floteDB->save()) {
 			//On recupere les 'demande de flotte'
-			$demandes_flote = Demande_flote::where('add_by', Auth::user()->id)->get();
+			$demandes_flote = Demande_flote::all();
 
 			$demandes_flotes = [];
 
 			foreach($demandes_flote as $demande_flote) {
-				//recuperer l'utilisateur concerné
-				$user = $demande_flote->user;
+                //recuperer l'utilisateur concerné
+                $user = $demande_flote->user;
 
-				//recuperer l'agent concerné
-				$agent = Agent::where('id_user', $user->id)->first();
+                //recuperer l'agent concerné
+                $agent = Agent::where('id_user', $user->id)->first();
 
-				$demandes_flotes[] = ['demande' => $demande_flote, 'agent' => $agent, 'user' => $user, 'puce' => $demande_flote->puce];
+                //recuperer le demandeur
+                $demandeur = User::Find($demande_flote->add_by);
+
+                $demandes_flotes[] = ['demande' => $demande_flote, 'demandeur' => $demandeur, 'agent' => $agent, 'user' => $user, 'puce' => $demande_flote->puce];
             }
-            
+
             ////Broadcast Notification
-            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();    
+            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
             $event = new NotificationsEvent($role->id, ['message' => "Annulation d'une emande de flotte"]);
             broadcast($event)->toOthers();
 
             //Database Notification
             $users = User::all();
             foreach ($users as $user) {
-                
+
                 if ($user->hasRole([$role->name])) {
-                    
+
                     $user->notify(new Notif_demande_flotte([
                         'data' => $demande_floteDB,
-                        'message' => "Annulation d'une emande de flotte"                    
+                        'message' => "Annulation d'une emande de flotte"
                     ]));
                 }
             }
@@ -315,22 +318,22 @@ class Demande_flote_recouvreurController extends Controller
             $user = $demande_flote->user;
 
             ////Broadcast Notification
-            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();    
+            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
             $event = new NotificationsEvent($role->id, ['message' => "Modification d'une demande de flotte"]);
             broadcast($event)->toOthers();
 
             //Database Notification
             $users = User::all();
             foreach ($users as $user) {
-                
+
                 if ($user->hasRole([$role->name])) {
-                    
+
                     $user->notify(new Notif_demande_flotte([
                         'data' => $demande_flote,
-                        'message' => "Modification d'une emande de flotte"                    
+                        'message' => "Modification d'une emande de flotte"
                     ]));
                 }
-            }   
+            }
 
             // Renvoyer un message de succès
             return response()->json(

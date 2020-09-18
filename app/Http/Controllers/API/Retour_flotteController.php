@@ -160,19 +160,19 @@ class Retour_flotteController extends Controller
         if ($retour_flotte->save()) {
 
             //Notification du gestionnaire de flotte
-            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();    
+            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
             $event = new NotificationsEvent($role->id, ['message' => 'Nouveau retour de flote']);
             broadcast($event)->toOthers();
 
             //Database Notification
             $users = User::all();
-            foreach ($users as $user) {
-                
-                if ($user->hasRole([$role->name])) {
-                    
-                    $user->notify(new Notif_retour_flotte([
+            foreach ($users as $_user) {
+
+                if ($_user->hasRole([$role->name])) {
+
+                    $_user->notify(new Notif_retour_flotte([
                         'data' => $retour_flotte,
-                        'message' => "Nouveau retour de flote"                    
+                        'message' => "Nouveau retour de flote"
                     ]));
                 }
             }
@@ -196,7 +196,7 @@ class Retour_flotteController extends Controller
 
             //On change le statut du flottage
             if ($flottage->reste == 0) {
-                $flottage->statut = \App\Enums\Statut::TERMINEE ;
+                $flottage->statut = \App\Enums\Statut::EFFECTUER ;
             }else {
                 $flottage->statut = \App\Enums\Statut::EN_COURS ;
             }
@@ -205,9 +205,7 @@ class Retour_flotteController extends Controller
             $flottage->save();
 
             //On recupere les retour flotte
-            $retour_flotes = $is_manager
-                ? Retour_flote::get()
-                : Retour_flote::where('id_user', $user->id)->get();
+            $retour_flotes = Retour_flote::where('id_user', $user->id)->get();
 
             $retours_flotes = [];
 
@@ -236,11 +234,51 @@ class Retour_flotteController extends Controller
                 ];
             }
 
+            // Extraction des approvisionnements
+
+            $flottages = Approvisionnement::get();
+
+            $approvisionnements = [];
+
+            foreach($flottages as $flottage) {
+
+                //recuperer la demande correspondante
+                $demande = $flottage->demande_flote;
+
+                //recuperer l'agent concerné
+                $user = $demande->user;
+
+                //recuperer l'agent concerné
+                $agent = Agent::where('id_user', $user->id)->first();
+
+                // recuperer celui qui a éffectué le flottage
+                $gestionnaire = User::find($flottage->id_user);
+
+                //recuperer la puce de l'agent
+                $puce_receptrice = Puce::find($demande->id_puce);
+
+                //recuperer la puce de ETP
+                $puce_emetrice = Puce::find($flottage->from);
+
+                $approvisionnements[] = [
+                    'approvisionnement' => $flottage,
+                    'demande' => $demande,
+                    'user' => $user,
+                    'agent' => $agent,
+                    'gestionnaire' => $gestionnaire,
+                    'puce_emetrice' => $puce_emetrice,
+                    'puce_receptrice' => $puce_receptrice,
+                ];
+            }
+
             return response()->json(
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => ['recouvrements' => $retours_flotes]
+                    'data' => [
+                        'recouvrements' => $retours_flotes,
+                        'flottages' => $approvisionnements
+                    ]
                 ]
             );
         }else {
@@ -520,19 +558,19 @@ class Retour_flotteController extends Controller
         if ($retour_flotte->save()) {
 
             //Notification du gestionnaire de flotte
-            $role = Role::where('name', Roles::RECOUVREUR)->first();    
+            $role = Role::where('name', Roles::RECOUVREUR)->first();
             $event = new NotificationsEvent($role->id, ['message' => 'Un retour de flote approuvé']);
             broadcast($event)->toOthers();
 
             //Database Notification
             $users = User::all();
             foreach ($users as $user) {
-                
+
                 if ($user->hasRole([$role->name])) {
-                    
+
                     $user->notify(new Notif_retour_flotte([
                         'data' => $retour_flotte,
-                        'message' => "Un retour de flote approuvé"                    
+                        'message' => "Un retour de flote approuvé"
                     ]));
                 }
             }

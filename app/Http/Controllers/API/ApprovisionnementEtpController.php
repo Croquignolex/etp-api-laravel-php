@@ -100,19 +100,19 @@ class ApprovisionnementEtpController extends Controller
             if ($demande->save()) {
 
                 //Broadcast Notification
-                $role = Role::where('name', Roles::GESTION_FLOTTE)->first();    
+                $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
                 $event = new NotificationsEvent($role->id, ['message' => 'Une demande traitée']);
                 broadcast($event)->toOthers();
 
                 //Database Notification
                 $users = User::all();
                 foreach ($users as $user) {
-                    
+
                     if ($user->hasRole([$role->name])) {
-                        
+
                         $user->notify(new Notif_destockage([
                             'data' => $demande,
-                            'message' => "Une demande en cours de traitement"                    
+                            'message' => "Une demande en cours de traitement"
                         ]));
                     }
                 }
@@ -175,19 +175,19 @@ class ApprovisionnementEtpController extends Controller
             if ($demande->save()) {
 
                 //Broadcast Notification
-                $role = Role::where('name', Roles::RECOUVREUR)->first();    
+                $role = Role::where('name', Roles::RECOUVREUR)->first();
                 $event = new NotificationsEvent($role->id, ['message' => 'Une demande revoquée']);
                 broadcast($event)->toOthers();
 
                 //Database Notification
                 $users = User::all();
                 foreach ($users as $user) {
-                    
+
                     if ($user->hasRole([$role->name])) {
-                        
+
                         $user->notify(new Notif_destockage([
                             'data' => $demande,
-                            'message' => "Une demande Revoquée"                    
+                            'message' => "Une demande Revoquée"
                         ]));
                     }
                 }
@@ -285,12 +285,12 @@ class ApprovisionnementEtpController extends Controller
             //Database Notification
             $users = User::all();
             foreach ($users as $user) {
-                
+
                 if ($user->hasRole([$role->name])) {
-                    
+
                     $user->notify(new Notif_destockage([
                         'data' => $destockage,
-                        'message' => "Nouvel approvisionnement de ETP"                    
+                        'message' => "Nouvel approvisionnement de ETP"
                     ]));
                 }
             }
@@ -333,7 +333,7 @@ class ApprovisionnementEtpController extends Controller
 
             }
 
-            $recouvreur_id = Auth::user()->id;
+            $connected_user = Auth::user();
             if($type == Statut::BY_AGENT) $destockages = Destockage::where('type', Statut::BY_AGENT)->get();
             else $destockages = Destockage::where('type', Statut::BY_DIGIT_PARTNER)->orWhere('type', Statut::BY_BANK)->get();
 
@@ -341,8 +341,12 @@ class ApprovisionnementEtpController extends Controller
                 [
                     'message' => "liste",
                     'status' => true,
-                    'data' => DestockageResource::collection($destockages->filter(function(Destockage $destockage) use ($recouvreur_id) {
-                        return ($destockage->id_recouvreur == $recouvreur_id);
+                    'data' => DestockageResource::collection($destockages->filter(function(Destockage $destockage) use ($connected_user) {
+                        if($connected_user->roles->first()->name === Roles::SUPERVISEUR) {
+                            return true;
+                        } else {
+                            return ($destockage->id_recouvreur == $connected_user->id);
+                        }
                     }))
                 ]
             );
@@ -383,19 +387,19 @@ class ApprovisionnementEtpController extends Controller
             $destockages = Destockage::where('type', Statut::BY_AGENT)->get();
 
             //Notification
-            $role = Role::where('name', Roles::RECOUVREUR)->first();    
+            $role = Role::where('name', Roles::RECOUVREUR)->first();
             $event = new NotificationsEvent($role->id, ['message' => 'Approvisionnement Approvée']);
             broadcast($event)->toOthers();
 
             //Database Notification
             $users = User::all();
             foreach ($users as $user) {
-                
+
                 if ($user->hasRole([$role->name])) {
-                    
+
                     $user->notify(new Notif_destockage([
                         'data' => $destockage,
-                        'message' => "Approvisionnement Approvée"                    
+                        'message' => "Approvisionnement Approvée"
                     ]));
                 }
             }
@@ -443,19 +447,19 @@ class ApprovisionnementEtpController extends Controller
             $destockages = Destockage::where('type', Statut::BY_DIGIT_PARTNER)->orWhere('type', Statut::BY_BANK)->get();
 
             //Notification
-            $role = Role::where('name', Roles::RECOUVREUR)->first();    
+            $role = Role::where('name', Roles::RECOUVREUR)->first();
             $event = new NotificationsEvent($role->id, ['message' => 'Approvisionnement Approvée']);
             broadcast($event)->toOthers();
 
             //Database Notification
             $users = User::all();
             foreach ($users as $user) {
-                
+
                 if ($user->hasRole([$role->name])) {
-                    
+
                     $user->notify(new Notif_destockage([
                         'data' => $destockage,
-                        'message' => "Approvisionnement Approvée"                    
+                        'message' => "Approvisionnement Approvée"
                     ]));
                 }
             }
