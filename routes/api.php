@@ -115,7 +115,7 @@ Route::group(['middleware' => 'auth:api'], function(){
 
 		//Approuver ou desapprouver un agent
 		Route::post('edit_agent_status/{id}', 'API\AgentController@edit_agent_status')
-		->where('id', '[0-9]+'); 
+		->where('id', '[0-9]+');
 
 		 //Changer la zone d'un agent
 		Route::post('edit_zone_agent/{id}', 'API\AgentController@edit_zone_agent')
@@ -540,7 +540,7 @@ Route::group(['middleware' => 'auth:api'], function(){
 
             //Recupérer mes notifications non lues
             Route::get('unread_notifications', 'API\NotificationsController@unread_notifications');
-            
+
 
             //Recupérer toutes mes notifications
             Route::get('all_notifications', 'API\NotificationsController@all_notifications');
@@ -551,7 +551,7 @@ Route::group(['middleware' => 'auth:api'], function(){
 
 
             //Supprimer notification
-            Route::get('delette_notifications/{id}', 'API\NotificationsController@delette_notifications');
+            Route::post('delette_notifications/{id}', 'API\NotificationsController@delette_notifications');
 
 
 });
