@@ -13,7 +13,7 @@ class CreateVersementsTable extends Migration {
 			$table->integer('id_caisse')->unsigned()->nullable()->index();
 			$table->integer('id_agent')->unsigned()->nullable()->index();
 			$table->integer('id_flote')->unsigned()->nullable()->index();
-			$table->integer('montant')->nullable();
+			$table->double('montant')->nullable();
 			$table->text('note');
 			$table->integer('reste_du_versement')->nullable();
 			$table->timestamps();
