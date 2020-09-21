@@ -114,7 +114,7 @@ class RecouvrementController extends Controller
             'reste' => $montant,
             'recu' => $recu,
             'id_flottage' => $request->id_flottage,
-            'statut' => Statut::EN_COURS,
+            'statut' => Statut::EFFECTUER,
             'user_destination' => $recouvreur->id,
             'user_source' => $user->id
         ]);
@@ -123,19 +123,19 @@ class RecouvrementController extends Controller
         if ($recouvrement->save()) {
 
             //Notification du gestionnaire de flotte
-            $role = Role::where('name', Roles::RECOUVREUR)->first();    
+            $role = Role::where('name', Roles::RECOUVREUR)->first();
             $event = new NotificationsEvent($role->id, ['message' => 'Nouveau recouvrement']);
             broadcast($event)->toOthers();
 
             //Database Notification
             $users = User::all();
             foreach ($users as $user) {
-                
+
                 if ($user->hasRole([$role->name])) {
-                    
+
                     $user->notify(new Notif_recouvrement([
                         'data' => $recouvrement,
-                        'message' => "Nouveau recouvrement"                    
+                        'message' => "Nouveau recouvrement"
                     ]));
                 }
             }
@@ -155,7 +155,7 @@ class RecouvrementController extends Controller
 
                 //On change le statut du flottage
                 if ($flottage->reste == 0) {
-                    $flottage->statut = \App\Enums\Statut::TERMINEE ;
+                    $flottage->statut = \App\Enums\Statut::EFFECTUER ;
                 }else {
                     $flottage->statut = \App\Enums\Statut::EN_COURS ;
                 }
@@ -166,7 +166,7 @@ class RecouvrementController extends Controller
                 //On recupere les recouvrement
                 $recouvrements = Recouvrement::where('user_destination', $recouvreur->id)->get();
 
-                $approvisionnements = [];
+                $recouvrementsArray = [];
 
                 foreach($recouvrements as $recouvrement) {
 
@@ -185,7 +185,7 @@ class RecouvrementController extends Controller
                     //recuperer la puce de l'agent
                     $puce_agent = Puce::find($flottage->demande_flote->id_puce);
 
-                    $approvisionnements[] = [
+                    $recouvrementsArray[] = [
                         'recouvrement' => $recouvrement,
                         'flottage' => $flottage,
                         'user' => $user,
@@ -195,11 +195,51 @@ class RecouvrementController extends Controller
                     ];
                 }
 
+                // Extraction des approvisionnements
+
+                $flottages = Approvisionnement::get();
+
+                $approvisionnements = [];
+
+                foreach($flottages as $flottage) {
+
+                    //recuperer la demande correspondante
+                    $demande = $flottage->demande_flote;
+
+                    //recuperer l'agent concerné
+                    $user = $demande->user;
+
+                    //recuperer l'agent concerné
+                    $agent = Agent::where('id_user', $user->id)->first();
+
+                    // recuperer celui qui a éffectué le flottage
+                    $gestionnaire = User::find($flottage->id_user);
+
+                    //recuperer la puce de l'agent
+                    $puce_receptrice = Puce::find($demande->id_puce);
+
+                    //recuperer la puce de ETP
+                    $puce_emetrice = Puce::find($flottage->from);
+
+                    $approvisionnements[] = [
+                        'approvisionnement' => $flottage,
+                        'demande' => $demande,
+                        'user' => $user,
+                        'agent' => $agent,
+                        'gestionnaire' => $gestionnaire,
+                        'puce_emetrice' => $puce_emetrice,
+                        'puce_receptrice' => $puce_receptrice,
+                    ];
+                }
+
                 return response()->json(
                     [
                         'message' => '',
                         'status' => true,
-                        'data' => ['recouvrements' => $approvisionnements]
+                        'data' => [
+                            'recouvrements' => $recouvrementsArray,
+                            'flottages' => $approvisionnements
+                        ]
                     ]
                 );
         }else {
@@ -449,19 +489,19 @@ class RecouvrementController extends Controller
         if ($recouvrement->save()) {
 
             //Notification du gestionnaire de flotte
-            $role = Role::where('name', Roles::RECOUVREUR)->first();    
+            $role = Role::where('name', Roles::RECOUVREUR)->first();
             $event = new NotificationsEvent($role->id, ['message' => 'Un recouvrement Approuvée']);
             broadcast($event)->toOthers();
 
             //Database Notification
             $users = User::all();
             foreach ($users as $user) {
-                
+
                 if ($user->hasRole([$role->name])) {
-                    
+
                     $user->notify(new Notif_recouvrement([
                         'data' => $recouvrement,
-                        'message' => "Un recouvrement Approuvée"                    
+                        'message' => "Un recouvrement Approuvée"
                     ]));
                 }
             }

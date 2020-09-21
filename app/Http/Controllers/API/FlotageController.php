@@ -135,7 +135,7 @@ class FlotageController extends Controller
             'from' => $puce_etp->id,
             'id_user' => $gestionnaire->id,
             'reference' => null,
-            'statut' => Statut::TERMINEE,
+            'statut' => Statut::EN_ATTENTE,
             'note' => null,
             'montant' => $montant,
             'reste' => $montant
@@ -145,19 +145,19 @@ class FlotageController extends Controller
         if ($flottage->save()) {
 
             //Broadcast Notification des responsables de zone
-            $role = Role::where('name', Roles::RECOUVREUR)->first();  
+            $role = Role::where('name', Roles::RECOUVREUR)->first();
             $event = new NotificationsEvent($role->id, ['message' => 'Nouveau flottage']);
             broadcast($event)->toOthers();
 
             //Database Notification
             $users = User::all();
             foreach ($users as $user) {
-                
+
                 if ($user->hasRole([$role->name])) {
-                    
+
                     $user->notify(new Notif_flottage([
                         'data' => $flottage,
-                        'message' => "Nouveau flottage"                    
+                        'message' => "Nouveau flottage"
                     ]));
                 }
             }
@@ -293,7 +293,7 @@ class FlotageController extends Controller
             $add_by = $user->id;
             $reference = null;
             $montant = $request->montant;
-            $statut = Statut::EFFECTUER;
+            $statut = Statut::EN_ATTENTE;
             $source = $request->id_puce_flottage;
             //recuperer l'id de puce de l'agent
             $id_puce = $request->id_puce_agent;
@@ -359,7 +359,7 @@ class FlotageController extends Controller
                 'id_demande_flote' => $demande_flotte->id,
                 'id_user' => $gestionnaire->id,
                 'reference' => null,
-                'statut' => Statut::TERMINEE,
+                'statut' => Statut::EFFECTUER,
                 'note' => null,
                 'from' => $request->id_puce_flottage,
                 'montant' => $montant,
@@ -370,19 +370,19 @@ class FlotageController extends Controller
             if ($flottage->save()) {
 
                 //Broadcast Notification des responsables de zone
-                $role = Role::where('name', Roles::RECOUVREUR)->first();    
+                $role = Role::where('name', Roles::RECOUVREUR)->first();
                 $event = new NotificationsEvent($role->id, ['message' => 'Nouveau flottage']);
                 broadcast($event)->toOthers();
 
                 //Database Notification
                 $users = User::all();
                 foreach ($users as $user) {
-                    
+
                     if ($user->hasRole([$role->name])) {
-                        
+
                         $user->notify(new Notif_flottage([
                             'data' => $flottage,
-                            'message' => "Nouveau flottage"                    
+                            'message' => "Nouveau flottage"
                         ]));
                     }
                 }

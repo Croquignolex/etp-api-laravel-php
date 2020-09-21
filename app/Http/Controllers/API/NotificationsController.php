@@ -46,7 +46,9 @@ class NotificationsController extends Controller
             [
                 'message' => "",
                 'status' => true,
-                'data' => $my_notifications
+                'data' =>  [
+                    'notifications' => $my_notifications
+                ]
             ]
         );
     }
@@ -63,7 +65,9 @@ class NotificationsController extends Controller
             [
                 'message' => "",
                 'status' => true,
-                'data' => $my_notifications
+                'data' =>  [
+                    'notifications' => $my_notifications
+                ]
             ]
         );
     }
@@ -75,7 +79,7 @@ class NotificationsController extends Controller
      */
     public function read_notifications($id)
     {
-        
+
         $user = Auth::user();
         $my_notifications = $user->unreadNotifications ;
 
@@ -96,7 +100,7 @@ class NotificationsController extends Controller
             [
                 'message' => "",
                 'status' => true,
-                'data' => $my_notification
+                'data' =>  []
             ]
         );
     }
@@ -108,7 +112,7 @@ class NotificationsController extends Controller
      */
     public function delette_notifications($id)
     {
-        
+
         $user = Auth::user();
         $my_notifications = $user->notifications ;
 
@@ -124,12 +128,15 @@ class NotificationsController extends Controller
         }
 
         $my_notification->delete();
+        $my_notifications0 = $user->notifications ;
 
         return response()->json(
             [
                 'message' => "",
                 'status' => true,
-                'data' => $my_notification
+                'data' => [
+                    'notifications' => $my_notifications0
+                ]
             ]
         );
     }
