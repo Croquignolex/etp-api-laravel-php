@@ -110,22 +110,24 @@ class Demande_destockage_recouvreurController extends Controller
         if ($demande_destockage->save()) {
 
             //Broadcast Notification
-            $role = Role::where('name', Roles::RECOUVREUR)->first();    
+            $role = Role::where('name', Roles::RECOUVREUR)->first();  
+            $role2 = Role::where('name', Roles::GESTION_FLOTTE)->first();  
             $event = new NotificationsEvent($role->id, ['message' => 'Nouvelle demande de destockage']);
             broadcast($event)->toOthers();
 
             //Database Notification
             $users = User::all();
-            foreach ($users as $user) {
-                
-                if ($user->hasRole([$role->name])) {
+                //notifier les RZ et les GF
+                foreach ($users as $user) {
                     
-                    $user->notify(new Notif_demande_destockage([
-                        'data' => $demande_destockage,
-                        'message' => "Nouvelle demande de Destockage"                    
-                    ]));
+                    if ($user->hasRole([$role->name]) || $user->hasRole([$role2->name])) {
+                        
+                        $user->notify(new Notif_demande_destockage([
+                            'data' => $demande_destockage,
+                            'message' => "Nouvelle demande de Destockage"                    
+                        ]));
+                    }
                 }
-            }
 
             // Renvoyer un message de succès
             return response()->json(
