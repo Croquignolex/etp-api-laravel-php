@@ -622,7 +622,7 @@ class FlotageController extends Controller
     }
 
     /**
-     * ////lister tous les flottages
+     * ////details d'un flottages
      */
     public function show($id_flottage)
     {

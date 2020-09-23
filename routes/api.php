@@ -554,4 +554,20 @@ Route::group(['middleware' => 'auth:api'], function(){
             Route::post('delette_notifications/{id}', 'API\NotificationsController@delette_notifications');
 
 
+            /*
+    //////////////////////Flottage Interne/////////////////////
+    */
+
+        //Creer un Flottage Interne
+        Route::post('flottage_interne', 'API\Flottage_interneController@store');
+
+        //Details d'un Flottage Interne
+        Route::get('detail_flottage_interne/{id}', 'API\Flottage_interneController@show')
+        ->where('id', '[0-9]+');
+
+        //lister les Flottages Interne
+        Route::get('list_all_flottage_interne', 'API\Flottage_interneController@list_all');
+
+
+
 });

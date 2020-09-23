@@ -32,8 +32,6 @@ class CreateForeingnKeys extends Migration
 				->onUpdate('no action');
         });
 
-
-
          // pour la table recouvrements
 
         Schema::table('recouvrements', function(Blueprint $table) {
