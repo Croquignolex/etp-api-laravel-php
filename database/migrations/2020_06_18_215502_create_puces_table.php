@@ -22,7 +22,7 @@ class CreatePucesTable extends Migration
             $table->string('reference')->nullable();
             $table->string('numero')->nullable();
 			$table->string('description')->nullable();
-			$table->decimal('solde')->nullable()->default(0);
+			$table->double('solde')->nullable()->default(0);
 			$table->softDeletes();
             $table->timestamps();
             

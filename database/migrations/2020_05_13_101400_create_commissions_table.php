@@ -11,7 +11,7 @@ class CreateCommissionsTable extends Migration {
 		Schema::create('commissions', function(Blueprint $table) {
 			$table->increments('id');
 			$table->integer('id_transaction')->unsigned()->nullable();
-			$table->integer('montant')->nullable();
+			$table->double('montant')->nullable();
 			$table->string('statut')->nullable();
 			$table->timestamps();
 			$table->softDeletes();

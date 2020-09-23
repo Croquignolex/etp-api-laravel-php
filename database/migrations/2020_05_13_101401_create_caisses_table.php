@@ -13,7 +13,7 @@ class CreateCaissesTable extends Migration {
 			$table->integer('id_user')->unsigned()->nullable()->index();
 			$table->string('nom')->nullable();
 			$table->string('description')->nullable();
-			$table->integer('solde')->nullable();
+			$table->double('solde')->nullable();
 			$table->string('reference')->nullable();
 			$table->softDeletes();
 			$table->timestamps();

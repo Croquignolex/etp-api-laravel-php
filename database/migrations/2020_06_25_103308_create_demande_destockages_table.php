@@ -18,7 +18,7 @@ class CreateDemandeDestockagesTable extends Migration
             $table->integer('add_by')->unsigned()->nullable()->index();
             $table->integer('id_user')->unsigned()->nullable()->index();
             $table->string('reference')->nullable();
-            $table->integer('montant')->unsigned()->default('0');
+            $table->double('montant')->unsigned()->default('0');
             $table->integer('reste')->unsigned()->default('0');
             $table->string('statut')->nullable();
             $table->integer('puce_source')->unsigned()->nullable()->index();
