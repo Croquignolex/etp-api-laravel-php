@@ -279,21 +279,23 @@ class ApprovisionnementEtpController extends Controller
 
             //Notification
             $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
+            $role2 = Role::where('name', Roles::SUPERVISEUR)->first();
             $event = new NotificationsEvent($role->id, ['message' => 'Nouvel approvisionnement de ETP']);
             broadcast($event)->toOthers();
 
             //Database Notification
-            $users = User::all();
-            foreach ($users as $user) {
+                $users = User::all();
+                foreach ($users as $user) {
 
-                if ($user->hasRole([$role->name])) {
+                    if ($user->hasRole([$role->name]) || $user->hasRole([$role2->name])) {
 
-                    $user->notify(new Notif_destockage([
-                        'data' => $destockage,
-                        'message' => "Nouvel approvisionnement de ETP"
-                    ]));
+                        $user->notify(new Notif_destockage([
+                            'data' => $destockage,
+                            'message' => "Nouvel approvisionnement de ETP"
+                        ]));
+                    }
                 }
-            }
+                
 
             //la puce de ETP concernée et on credite
             $puce_etp = Puce::find($request->id_puce);
@@ -330,6 +332,12 @@ class ApprovisionnementEtpController extends Controller
                 $caisse = Caisse::where('id_user', $agent->user->id)->first();
                 $caisse->solde = $caisse->solde + $montant;
                 $caisse->save();
+
+                //on notifie l'agent
+                $agent->user->notify(new Notif_destockage([
+                    'data' => $destockage,
+                    'message' => "Nouveau déstockage"
+                ]));
 
             }
 
