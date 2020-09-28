@@ -261,6 +261,10 @@ class ApprovisionnementEtpController extends Controller
             $id_puce = $request->id_puce;
             $montant = $request->montant;
 
+            $statut = Auth::user()->roles->first()->name === Roles::SUPERVISEUR
+                ? Statut::EFFECTUER
+                : Statut::EN_COURS;
+
         //initier le destockage encore appelé approvisionnement de ETP
         $destockage = new Destockage([
             'id_recouvreur' => isset($request->id_recouvreur) ? $request->id_recouvreur : Auth::user()->id,
@@ -270,7 +274,7 @@ class ApprovisionnementEtpController extends Controller
             'fournisseur' => isset($request->fournisseur) ? $fournisseur : null,
             'recu' => $recu,
             'reference' => null,
-            'statut' => Statut::EN_COURS,
+            'statut' => $statut,
             'note' => null,
             'montant' => $montant
         ]);

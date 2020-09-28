@@ -162,7 +162,7 @@ class CreateAdminUserSeeder extends Seeder
 
             'type' => 3,
 
-            'nom' => "PUce de flottage MTN"
+            'nom' => "Puce de flottage MTN"
 
         ]);
 
@@ -176,7 +176,7 @@ class CreateAdminUserSeeder extends Seeder
 
             'id_agent' => Null,
 
-            'nom' => "PUce de flottage ORANGE"
+            'nom' => "Puce de flottage ORANGE"
 
         ]);
 
