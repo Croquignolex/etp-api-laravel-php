@@ -427,22 +427,11 @@ class Retour_flotteController extends Controller
      */
     public function list_retour_flotte_by_agent($id)
     {
-        if (!$agent = Agent::find($id)){
-
-            return response()->json(
-                [
-                    'message' => "l'agent' n'existe pas",
-                    'status' => true,
-                    'data' => []
-                ]
-            );
-        }
-        $user = User::find($agent->id_user);
-
-        $retour_flotes = Retour_flote::get()->filter(function(Retour_flote $retour_flote) use ($user){
+        // $id est le id du user directement
+        $retour_flotes = Retour_flote::get()->filter(function(Retour_flote $retour_flote) use ($id){
             $demande_flote =$retour_flote->flotage->demande_flote;
             $id_user = $demande_flote->id_user;
-            return $id_user == $user->id;
+            return $id_user == $id;
         });
 
         $retours_flotes = [];

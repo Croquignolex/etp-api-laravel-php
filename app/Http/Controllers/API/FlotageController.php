@@ -293,7 +293,7 @@ class FlotageController extends Controller
             $add_by = $user->id;
             $reference = null;
             $montant = $request->montant;
-            $statut = Statut::EN_ATTENTE;
+            $statut = Statut::EFFECTUER;
             $source = $request->id_puce_flottage;
             //recuperer l'id de puce de l'agent
             $id_puce = $request->id_puce_agent;
@@ -359,7 +359,7 @@ class FlotageController extends Controller
                 'id_demande_flote' => $demande_flotte->id,
                 'id_user' => $gestionnaire->id,
                 'reference' => null,
-                'statut' => Statut::EFFECTUER,
+                'statut' => Statut::EN_ATTENTE,
                 'note' => null,
                 'from' => $request->id_puce_flottage,
                 'montant' => $montant,
