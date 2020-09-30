@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Validator;
 
 
 class UserController extends Controller
-{ 
+{
 	/***
 
      * les conditions de lecture des methodes
@@ -32,7 +32,7 @@ class UserController extends Controller
         $this->middleware("permission:$superviseur");
 
    }
-   
+
     /**
      * Inscription d'un utilisateur
      *
@@ -45,21 +45,21 @@ class UserController extends Controller
             'name' => 'required',
             'phone' => 'required|numeric|unique:users,phone',
             'adresse' => 'nullable',
-            //'id_zone' => ['nullable', 'array'], 
+            //'id_zone' => ['nullable', 'array'],
             'description' => 'nullable',
-            'email' => 'nullable|email', 
+            'email' => 'nullable|email',
             'poste' => ['nullable', 'string', 'max:255'],
-            'password' => 'required|string|min:6', 
+            'password' => 'required|string|min:6',
             'id_role' => 'required',
         ]);
-        if ($validator->fails()) { 
+        if ($validator->fails()) {
             return response()->json(
                 [
                     'message' => ['error'=>$validator->errors()],
                     'status' => false,
                     'data' => null
                 ]
-            );             
+            );
         }
 
         //dd($request);
@@ -72,13 +72,13 @@ class UserController extends Controller
                     'status' => false,
                     'data' => null
                 ]
-            ); 
+            );
         }
 
         /*if (isset($request->id_zone)) {
             foreach ($request->id_zone as $zone) {
                 // on verifie si la zone est définie
-                
+
                     if (!Zone::Find($zone)) {
                         return response()->json(
                             [
@@ -86,18 +86,18 @@ class UserController extends Controller
                                 'status' => false,
                                 'data' => null
                             ]
-                        ); 
+                        );
                     }
-                
+
             }
         }*/
-        
+
         // Convert base 64 image to normal image for the server and the data base
         //$server_image_name_path = ImageFromBase64::imageFromBase64AndSave($request->input('base_64_image'),
             //'images/avatars/');
 
-        $input = $request->all(); 
-        $input['password'] = bcrypt($input['password']); 
+        $input = $request->all();
+        $input['password'] = bcrypt($input['password']);
         //$input['avatar'] = $server_image_name_path;
         $input['add_by'] = Auth::user()->id;
         //$input['id_zone'] = json_encode($request->id_zone);
@@ -118,9 +118,9 @@ class UserController extends Controller
             $user->assignRole($role);
 
             //On lui crée un token
-            $success['token'] =  $user->createToken('MyApp')->accessToken; 
+            $success['token'] =  $user->createToken('MyApp')->accessToken;
             $success['user'] =  $user;
-			
+
 			// Store user setting
 			$user->setting()->create([
 				'bars' => '[0,1,2,3,4,5,6,7,8,9]',
@@ -135,34 +135,34 @@ class UserController extends Controller
                     'data' => ['user'=>$success]
                 ]
             );
-        }     
-            
-        
+        }
+
+
         return response()->json(
             [
                 'message' => "l'utilisateur n'a pas été créé",
                 'status' => false,
                 'data' => null
             ]
-        ); 
+        );
     }
 
-	/** 
-     * details d'un utilisateur 
-     */ 
-    public function details_user($id) 
-    { 
+	/**
+     * details d'un utilisateur
+     */
+    public function details_user($id)
+    {
         $userCount = User::Where('id', $id)->count();
         if ($userCount != 0) {
-            $user = User::find($id);  
-			
+            $user = User::find($id);
+
             return response()->json(
                 [
                     'message' => '',
                     'status' => true,
                     'data' => [
 						'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
-						'role' => $user->roles->first(), 
+						'role' => $user->roles->first(),
 						'zone' => $user->zone
 					]
                 ]
@@ -174,22 +174,22 @@ class UserController extends Controller
                     'status' => false,
                     'data' => null
                 ]
-            ); 
-         }        
- 
-    } 
+            );
+         }
 
-    /** 
+    }
+
+    /**
      * //Approuver ou desapprouver un utilisateur
-     */ 
-    public function edit_user_status($id) 
-    { 
+     */
+    public function edit_user_status($id)
+    {
         $userDB = User::Find($id);
         $user_status = $userDB->statut;
 
         if ($userDB == null) {
 
-            // Renvoyer un message d'erreur          
+            // Renvoyer un message d'erreur
             return response()->json(
                 [
                     'message' => 'lutilisateur introuvable',
@@ -203,29 +203,29 @@ class UserController extends Controller
             // Approuver
             $userDB->statut = Statut::APPROUVE;
 
-            
+
         }else{
 
             // desapprouver
             $userDB->statut = Statut::DECLINE;
         }
-  
-         
+
+
         if ($userDB->save()) {
-			
+
 			$users = User::where('deleted_at', null)->get();
             $returenedUers = [];
             foreach($users as $user) {
- 
+
                 $returenedUers[] = [
-					'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']), 
+					'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
 					'role' => $user->roles->first(),
 					'zone' => $user->zone
 				];
 
-            }         
+            }
 
-            // Renvoyer un message de succès          
+            // Renvoyer un message de succès
             return response()->json(
                 [
                     'message' => 'Statut changé',
@@ -244,8 +244,8 @@ class UserController extends Controller
                 ]
             );
         }
- 
-    }      
+
+    }
 
     /**
      * liste des utilisateurs
@@ -255,18 +255,18 @@ class UserController extends Controller
     public function list()
     {
         if (Auth::check()) {
-                
+
             $users = User::where('deleted_at', null)->get();
             $returenedUers = [];
             foreach($users as $user) {
- 
+
                 $returenedUers[] = [
-					'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']), 
+					'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
 					'role' => $user->roles->first(),
 					'zone' => $user->zone
 				];
 
-            }         
+            }
                 return response()->json(
                     [
                         'message' => '',
@@ -306,7 +306,7 @@ class UserController extends Controller
             );
         }
 
-        if (!User::find($id)) { 
+        if (!User::find($id)) {
             // Renvoyer une erreur
             return response()->json(
                 [
@@ -320,19 +320,19 @@ class UserController extends Controller
         if (Auth::check()) {
 
             if (User::find($id)->delete()) {
-				 
+
 				$users = User::get();
 				$returenedUers = [];
 				foreach($users as $user) {
-	 
+
 					$returenedUers[] = [
-						'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']), 
+						'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
 						'role' => $user->roles->first(),
 						'zone' => $user->zone
 					];
 
-				}        
-				
+				}
+
                 // Renvoyer un message de succès
                 return response()->json(
                     [
@@ -362,11 +362,11 @@ class UserController extends Controller
          }
     }
 
-    /** 
-     * modification d'un utilisateur 
-     */ 
-    public function edit_user(Request $request, $id) 
-    { 
+    /**
+     * modification d'un utilisateur
+     */
+    public function edit_user(Request $request, $id)
+    {
 
         //voir si l'utilisateur à modifier existe
         if(!User::Find($id)){
@@ -379,7 +379,7 @@ class UserController extends Controller
                     'data' => null
                 ]
             );
-            
+
         }
 
         // Valider données envoyées
@@ -392,19 +392,19 @@ class UserController extends Controller
             'adresse' => ['nullable', 'string', 'max:255'],
             // 'roles' => ['required'],
             // 'phone' => ['required', 'numeric', 'max:255']
-			'email' => 'nullable|email', 
+			'email' => 'nullable|email',
         ]);
-        if ($validator->fails()) { 
+        if ($validator->fails()) {
             return response()->json(
                 [
                     'message' => ['error'=>$validator->errors()],
                     'status' => false,
                     'data' => null
                 ]
-            );            
+            );
         }
 
-        
+
 
         // Récupérer les données validées
         $name = $request->name;
@@ -412,7 +412,7 @@ class UserController extends Controller
         $email = $request->email;
         $adresse = $request->adresse;
         // $status = $request->status;
-        $poste = $request->poste; 
+        $poste = $request->poste;
         // $phone = $request->phone;
 
         // Modifier le profil de l'utilisateur
@@ -427,15 +427,15 @@ class UserController extends Controller
         $user->adresse = $adresse;
 
         if ($user->save()) {
-			 
-            // Renvoyer un message de succès          
+
+            // Renvoyer un message de succès
             return response()->json(
                 [
                     'message' => 'profil modifié',
                     'status' => true,
                    'data' => [
 						'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
-						'role' => $user->roles->first(), 
+						'role' => $user->roles->first(),
 						'zone' => $user->zone
 					]
                 ]
@@ -453,11 +453,11 @@ class UserController extends Controller
         }
     }
 
-    /** 
-     * modification du role d'un utilisateur 
-     */ 
-    public function edit_role_user(Request $request, $id) 
-    { 
+    /**
+     * modification du role d'un utilisateur
+     */
+    public function edit_role_user(Request $request, $id)
+    {
         //voir si l'utilisateur à modifier existe
         if(!User::Find($id)){
 
@@ -469,23 +469,23 @@ class UserController extends Controller
                     'data' => null
                 ]
             );
-            
+
         }
-        
+
         // Valider données envoyées
-        $validator = Validator::make($request->all(), [ 
+        $validator = Validator::make($request->all(), [
 
             'id_role' => ['required']
 
         ]);
-        if ($validator->fails()) { 
+        if ($validator->fails()) {
             return response()->json(
                 [
                     'message' => ['error'=>$validator->errors()],
                     'status' => false,
                     'data' => null
                 ]
-            );            
+            );
         }
 
         // on verifie si le role est définit
@@ -497,23 +497,23 @@ class UserController extends Controller
                     'status' => false,
                     'data' => null
                 ]
-            ); 
+            );
         }
 
- 
+
         DB::table('model_has_roles')->where('model_id',$id)->delete();
         $user = User::find($id);
 
-        if ($user->assignRole($roleExist)) {            
+        if ($user->assignRole($roleExist)) {
 
-            // Renvoyer un message de succès          
+            // Renvoyer un message de succès
             return response()->json(
                 [
                     'message' => 'Role modifié',
                     'status' => true,
                      'data' => [
 						'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
-						'role' => $user->roles->first(), 
+						'role' => $user->roles->first(),
 					]
                 ]
             );
@@ -527,14 +527,14 @@ class UserController extends Controller
                     'data' => null
                 ]
             );
-        } 
-    } 
-	
-	/** 
-     * modification du role d'un utilisateur 
-     */ 
-    public function edit_zone_user(Request $request, $id) 
-    { 
+        }
+    }
+
+	/**
+     * modification du role d'un utilisateur
+     */
+    public function edit_zone_user(Request $request, $id)
+    {
         //voir si l'utilisateur à modifier existe
         if(!User::Find($id)){
 
@@ -546,23 +546,23 @@ class UserController extends Controller
                     'data' => null
                 ]
             );
-            
+
         }
-        
+
         // Valider données envoyées
-        $validator = Validator::make($request->all(), [ 
+        $validator = Validator::make($request->all(), [
 
             'id_zone' => ['required']
 
         ]);
-        if ($validator->fails()) { 
+        if ($validator->fails()) {
             return response()->json(
                 [
                     'message' => ['error'=>$validator->errors()],
                     'status' => false,
                     'data' => null
                 ]
-            );            
+            );
         }
 
         // on verifie si la zone est définit
@@ -574,15 +574,30 @@ class UserController extends Controller
                     'status' => false,
                     'data' => null
                 ]
-            ); 
+            );
         }
- 
         $user = User::find($id);
+        // On vérifie s'il ya déjà un responsable dans cette zone
+        if($user->roles->first()->name === Roles::RECOUVREUR) {
+            if($zoneExist->id_responsable !== null) {
+                return response()->json(
+                    [
+                        'message' => 'Un responsable est déjà présent dans cette zone',
+                        'status' => false,
+                        'data' => null
+                    ]
+                );
+            }
+            $zoneExist->id_responsable = $user->id;
+            $zoneExist->save();
+        }
+        //
+
 		$user->id_zone = $request->input('id_zone');
 
-        if ($user->save()) {            
+        if ($user->save()) {
 
-            // Renvoyer un message de succès          
+            // Renvoyer un message de succès
             return response()->json(
                 [
                     'message' => 'Role modifié',
@@ -603,10 +618,10 @@ class UserController extends Controller
                     'data' => null
                 ]
             );
-        } 
-    } 
-	
-	/** 
+        }
+    }
+
+	/**
      * Creation d'un responsable de zone
      */
     public function create_recouvreur(Request $request)
@@ -615,29 +630,45 @@ class UserController extends Controller
             'name' => 'required',
             'phone' => 'required|numeric|unique:users,phone',
             'adresse' => 'nullable',
-            'id_zone' => ['required'], 
+            'id_zone' => ['required'],
             'description' => 'nullable',
-            'email' => 'nullable|email', 
-            'password' => 'required|string|min:6',  
+            'email' => 'nullable|email',
+            'password' => 'required|string|min:6',
         ]);
-        if ($validator->fails()) { 
+        if ($validator->fails()) {
             return response()->json(
                 [
                     'message' => ['error'=>$validator->errors()],
                     'status' => false,
                     'data' => null
                 ]
-            );             
+            );
         }
- 
+
         $role = Role::where('name', Roles::RECOUVREUR)->first();
 
-        $input = $request->all(); 
-        $input['password'] = bcrypt($input['password']); 
+        $input = $request->all();
+        $input['password'] = bcrypt($input['password']);
         //$input['avatar'] = $server_image_name_path;
         $input['add_by'] = Auth::user()->id;
         //$input['id_zone'] = json_encode($request->id_zone);
+
+        // On vérifie s'il ya déjà un responsable dans cette zone
+        $zone = Zone::find($input['id_zone']);
+        if($zone->id_responsable !== null) {
+            return response()->json(
+                [
+                    'message' => 'Un responsable est déjà présent dans cette zone',
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+
         $user = User::create($input);
+        $zone->id_responsable = $user->id;
+        $zone->save();
+        //
 
         if (isset($user)) {
             //On crée la caisse de l'utilisateur
@@ -654,9 +685,9 @@ class UserController extends Controller
             $user->assignRole($role);
 
             //On lui crée un token
-            $success['token'] =  $user->createToken('MyApp')->accessToken; 
+            $success['token'] =  $user->createToken('MyApp')->accessToken;
             $success['user'] =  $user;
-			
+
 			$user->setting()->create([
 				'bars' => '[0,1,2,3,4,5,6,7,8,9]',
 				'charts' => '[0,1,2,3,4,5,6,7,8,9]',
@@ -670,15 +701,15 @@ class UserController extends Controller
                     'data' => ['user'=>$success]
                 ]
             );
-        }     
-            
-        
+        }
+
+
         return response()->json(
             [
                 'message' => "l'utilisateur n'a pas été créé",
                 'status' => false,
                 'data' => null
             ]
-        ); 
+        );
     }
 }
