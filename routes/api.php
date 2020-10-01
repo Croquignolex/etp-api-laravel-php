@@ -385,7 +385,7 @@ Route::group(['middleware' => 'auth:api'], function(){
             ->where('id', '[0-9]+');
 
         //Creer un Flottage
-        Route::post('flottage', 'API\FlotageController@store');
+        Route::post('flottage', 'API\FlotageController@store'); 
 
         //lister les Flottages relatifs à une demande precise
         Route::get('list_flottage/{id}', 'API\FlotageController@list_flottage')
@@ -567,6 +567,24 @@ Route::group(['middleware' => 'auth:api'], function(){
 
         //lister les Flottages Interne
         Route::get('list_all_flottage_interne', 'API\Flottage_interneController@list_all');
+
+
+        /*
+    ////////////////////// Gestion des soldes/////////////////////
+    */
+
+        //afficher mon solde
+        Route::get('mon_solde', 'API\LoginController@solde');
+
+        //recuperer le solde d'un user precis
+        Route::get('solde/{id}', 'API\UserController@solde')
+        ->where('id', '[0-9]+');
+
+        //Recuperer le solde de tous les agents
+        Route::get('agents_soldes', 'API\UserController@agents_soldes');
+
+        //Recuperer le solde de tous les responsables de zonnes
+        Route::get('rz_soldes', 'API\UserController@rz_soldes');
 
 
 

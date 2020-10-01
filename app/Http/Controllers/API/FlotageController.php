@@ -163,7 +163,7 @@ class FlotageController extends Controller
             }
 
             //Database Notification de l'agent
-            User::find($demande_flotte->id_user)->notify(new Notif_flottage(['message' => "Nouveau flottage"]));
+            User::find($demande_flotte->id_user)->notify(new Notif_flottage(['message' => "Nouveau flottage", 'data' => $flottage,]));
 
 
             ////ce que le flottage implique
@@ -299,12 +299,12 @@ class FlotageController extends Controller
             $id_puce = $request->id_puce_agent;
 
         // Nouvelle demande fictive de flotte
-        $demande_flotte = new Demande_flote([
+        $demande_flotte = new Demande_flote([ 
             'id_user' => $id_user,
             'add_by' => $add_by,
             'reference' => $reference,
             'montant' => $montant,
-            'reste' => $montant,
+            'reste' => 0,
             'statut' => $statut,
             'id_puce' => $id_puce,
             'source' => $source
@@ -348,7 +348,7 @@ class FlotageController extends Controller
             $montant = $request->montant;
 
             //Caisse de l'agent concerné
-            //$caisse = Caisse::where('id_user', $demande_flotte->id_user)->first();
+            $caisse = Caisse::where('id_user', $demande_flotte->id_user)->first();
 
             //La gestionnaire concernée
             $gestionnaire = Auth::user();
@@ -375,17 +375,26 @@ class FlotageController extends Controller
                 broadcast($event)->toOthers();
 
                 //Database Notification
-                $users = User::all();
-                foreach ($users as $user) {
 
-                    if ($user->hasRole([$role->name])) {
+                    //noifier l'agent concerné
+                    $user->notify(new Notif_flottage([
+                        'data' => $flottage,
+                        'message' => "Nouveau flottage"
+                    ]));
 
-                        $user->notify(new Notif_flottage([
-                            'data' => $flottage,
-                            'message' => "Nouveau flottage"
-                        ]));
+
+                    //noifier les responsables de zonne
+                    $users = User::all();
+                    foreach ($users as $user) {
+
+                        if ($user->hasRole([$role->name])) {
+
+                            $user->notify(new Notif_flottage([
+                                'data' => $flottage,
+                                'message' => "Nouveau flottage"
+                            ]));
+                        }
                     }
-                }
 
                 ////ce que le flottage implique
 
@@ -398,8 +407,8 @@ class FlotageController extends Controller
                 $puce_agent->save();
 
                 //On debite la caisse de l'Agent pour le paiement de la flotte envoyée, ce qui implique qu'il doit à ETP
-                //$caisse->solde = $caisse->solde - $montant;
-               //$caisse->save();
+                $caisse->solde = $caisse->solde - $montant;
+                $caisse->save();
 
                 $flottages = Approvisionnement::get();
 
@@ -408,7 +417,7 @@ class FlotageController extends Controller
                     //recuperer la demande correspondante
                     $demande = $flottage->demande_flote;
 
-                    //recuperer l'agent concerné
+                    //recuperer l'utilisateur concerné
                     $user = $demande->user;
 
                     //recuperer l'agent concerné

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Caisse;
 use App\User;
+use App\Agent as Agent_model;
 use Illuminate\Http\Request;
 use App\Utiles\ImageFromBase64;
 use App\Enums\Statut;
@@ -15,6 +16,7 @@ use App\Http\Controllers\Controller;
 use App\Zone;
 use Illuminate\Support\Facades\Auth;
 use App\Enums\Roles;
+use App\Http\Resources\Agent;
 use Illuminate\Support\Facades\Validator;
 
 
@@ -285,6 +287,7 @@ class UserController extends Controller
          }
     }
 
+    
     /**
      * supprimer un utilisateur
      *
@@ -711,5 +714,82 @@ class UserController extends Controller
                 'data' => null
             ]
         );
+    }
+
+
+    /**
+     * Solde de l'utilisateur connecté
+     *
+     * @return JsonResponse
+     */
+    public function solde($id)
+    {     
+        $user = User::find($id);
+        $caisse = Caisse::where('id_user', $user->id)->first();       
+        return response()->json(
+            [
+                'message' => '',
+                'status' => true,
+                'data' => ['caisse' => $caisse]
+            ]
+        );
+         
+    }
+
+    /**
+     * Recuperer le solde de tous les agents
+     *
+     * @return JsonResponse
+     */
+    public function agents_soldes()
+    {     
+        $agents = Agent_model::all();
+        $caisses = [];
+        $n = 1;
+
+        foreach ($agents as $agent) {
+            $user = $agent->user;
+            $caisse = Caisse::where('id_user', $user->id)->first();
+            $caisses[] = ["user $n" => $user, "caisse $n" => $caisse];
+            $n = $n + 1; 
+        }
+
+        return response()->json(
+            [
+                'message' => '',
+                'status' => true,
+                'data' => ['caisses' => $caisses]
+            ]
+        );
+         
+    }
+
+    /**
+     * //Recuperer le solde de tous les responsables de zonnes
+     *
+     * @return JsonResponse
+     */
+    public function rz_soldes()
+    {     
+        $role = Role::where('name', Roles::RECOUVREUR)->first();
+        $recouvreurs = $role->users;
+        $caisses = [];
+        $n = 1;
+
+        foreach ($recouvreurs as $recouvreurs) {
+            $user = $recouvreurs;
+            $caisse = Caisse::where('id_user', $user->id)->first();
+            $caisses[] = ["user $n" => $user, "caisse $n" => $caisse];
+            $n = $n + 1; 
+        }
+
+        return response()->json(
+            [
+                'message' => '',
+                'status' => true,
+                'data' => ['caisses' => $caisses]
+            ]
+        );
+         
     }
 }
