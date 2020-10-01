@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\User;
+use App\Caisse;
 use Illuminate\Http\Request;
 use App\Enums\Statut;
 use Illuminate\Http\JsonResponse;
@@ -198,6 +199,36 @@ class LoginController extends Controller
             );
          }
     } 
+
+    /**
+     * Solde de l'utilisateur connecté
+     *
+     * @return JsonResponse
+     */
+    public function solde()
+    {
+        if (Auth::check()) {
+                
+            $user = Auth::user();
+            $caisse = Caisse::where('id_user', $user->id)->first();       
+            return response()->json(
+                [
+                    'message' => '',
+                    'status' => true,
+                    'data' => ['caisse' => $caisse]
+                ]
+            );
+         }else{
+            return response()->json(
+                [
+                    'message' => 'Vous n etes pas connecte',
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+         }
+    }
+
 
     /**
      * Réinitialisation du mot de passe

@@ -348,7 +348,7 @@ class FlotageController extends Controller
             $montant = $request->montant;
 
             //Caisse de l'agent concerné
-            //$caisse = Caisse::where('id_user', $demande_flotte->id_user)->first();
+            $caisse = Caisse::where('id_user', $demande_flotte->id_user)->first();
 
             //La gestionnaire concernée
             $gestionnaire = Auth::user();
@@ -407,8 +407,8 @@ class FlotageController extends Controller
                 $puce_agent->save();
 
                 //On debite la caisse de l'Agent pour le paiement de la flotte envoyée, ce qui implique qu'il doit à ETP
-                //$caisse->solde = $caisse->solde - $montant;
-               //$caisse->save();
+                $caisse->solde = $caisse->solde - $montant;
+                $caisse->save();
 
                 $flottages = Approvisionnement::get();
 
