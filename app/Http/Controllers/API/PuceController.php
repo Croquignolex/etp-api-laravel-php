@@ -23,7 +23,8 @@ class PuceController extends Controller
         $responsable = Roles::RECOUVREUR;
         $superviseur = Roles::SUPERVISEUR;
         $ges_flotte = Roles::GESTION_FLOTTE;
-        $this->middleware("permission:$superviseur|$ges_flotte|$responsable");
+        $agent = Roles::AGENT;
+        $this->middleware("permission:$superviseur|$ges_flotte|$responsable|$agent");
 
     }
 

@@ -359,7 +359,7 @@ class FlotageController extends Controller
                 'id_demande_flote' => $demande_flotte->id,
                 'id_user' => $gestionnaire->id,
                 'reference' => null,
-                'statut' => Statut::EFFECTUER,
+                'statut' => Statut::EN_ATTENTE,
                 'note' => null,
                 'from' => $request->id_puce_flottage,
                 'montant' => $montant,

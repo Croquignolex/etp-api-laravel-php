@@ -42,7 +42,7 @@ class CreateAdminUserSeeder extends Seeder
 
         $user2 = User::create([
 
-        	'name' => 'JOE MANI',
+        	'name' => 'AGENT JOE MANI',
 
             'email' => 'agent1@etp.com',
 
@@ -58,7 +58,7 @@ class CreateAdminUserSeeder extends Seeder
 
 		$user22 = User::create([
 
-        	'name' => 'EMI WHITE',
+        	'name' => 'AGENT EMI WHITE',
 
             'email' => 'agent2@etp.com',
 
@@ -74,7 +74,7 @@ class CreateAdminUserSeeder extends Seeder
 
         $user3 = User::create([
 
-        	'name' => 'CLARISSE JOKO',
+        	'name' => 'GESTIONNAIRE CLARISSE JOKO',
 
             'email' => 'gestionnaire_flote@etp.com',
 
@@ -88,7 +88,7 @@ class CreateAdminUserSeeder extends Seeder
 
         $user4 = User::create([
 
-        	'name' => 'EMMA NUIP',
+        	'name' => 'RESPONSABLE EMMA NUIP',
 
             'email' => 'agent_recouvrement@etp.com',
 
@@ -104,7 +104,7 @@ class CreateAdminUserSeeder extends Seeder
 
         $user5 = User::create([
 
-        	'name' => 'MIREILLE KIKI',
+        	'name' => 'SUPPERVISEUR MIREILLE KIKI',
 
             'email' => 'supperviseur@etp.com',
 
@@ -119,25 +119,25 @@ class CreateAdminUserSeeder extends Seeder
 
         ///creation des types de puce par defaut
 
-        $puce_agent = Type_puce::create([
+        Type_puce::create([
 
         	'name' => \App\Enums\Statut::AGENT
 
         ]);
 
-        $puce_ETP = Type_puce::create([
+        Type_puce::create([
 
         	'name' => \App\Enums\Statut::ETP
 
         ]);
 
-        $puce_flottage = Type_puce::create([
+        Type_puce::create([
 
         	'name' => \App\Enums\Statut::FLOTTAGE
 
         ]);
 
-        $puce_agent_sencondaire = Type_puce::create([
+        Type_puce::create([
 
         	'name' => \App\Enums\Statut::FLOTTAGE_SECONDAIRE
 
@@ -152,49 +152,59 @@ class CreateAdminUserSeeder extends Seeder
 
         ///creation de la puce de distribution de flotte par defaut
 
-        $puce_principal_MTN = Puce::create([
+        Puce::create([
 
         	'id_flotte' => 1,
 
-			'numero' => '616000000',
+			'numero' => '676000000',
 
             'id_agent' => Null,
 
             'type' => 3,
 
-            'nom' => \App\Enums\Statut::MTN
+            'nom' => "Puce de flottage MTN"
 
         ]);
 
-        $puce_principal_Orange = Puce::create([
+        Puce::create([
 
             'id_flotte' => 2,
 
-			'numero' => '615000000',
+			'numero' => '695000000',
 
             'type' => 3,
 
             'id_agent' => Null,
 
-            'nom' => \App\Enums\Statut::ORANGE
+            'nom' => "Puce de flottage ORANGE"
 
         ]);
 
-        $puce_sencondaire_Orange = Puce::create([
+         Puce::create([
 
             'id_flotte' => 1,
 
-			'numero' => '614000000',
+			'numero' => '674000000',
 
             'type' => 4,
 
             'id_agent' => Null,
 
-            'nom' => "PUCE PRINCIPALE"
-
+            'nom' => "MASTER SIM MTN"
         ]);
 
+         Puce::create([
 
+            'id_flotte' => 2,
+
+            'numero' => '694000000',
+
+            'type' => 4,
+
+            'id_agent' => Null,
+
+            'nom' => "MASTER SIM ORANGE"
+        ]);
 
 
         //creer les roles
