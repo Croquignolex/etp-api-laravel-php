@@ -1,6 +1,8 @@
 <?php
 
 namespace App\Http\Controllers\API;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use App\Agent;
@@ -246,7 +248,8 @@ class AgentController extends Controller
 						'zone' => $user->zone,
 						'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
 						'agent' => $agent,
-						'puces' => $puces
+						'puces' => $puces,
+                        'caisse' => Caisse::where('id_user', $user->id)->first()
 					]
                 ]
             );
@@ -327,7 +330,8 @@ class AgentController extends Controller
 						'zone' => $user->zone,
 						'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
 						'agent' => $agent,
-						'puces' => $puces
+						'puces' => $puces,
+                        'caisse' => Caisse::where('id_user', $user->id)->first()
 					]
                 ]
             );
@@ -393,7 +397,8 @@ class AgentController extends Controller
 						'zone' => $user->zone,
 						'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
 						'agent' => $agent,
-						'puces' => $puces
+						'puces' => $puces,
+                        'caisse' => Caisse::where('id_user', $user->id)->first()
 					]
                 ]
             );
@@ -415,7 +420,7 @@ class AgentController extends Controller
     /**
      * liste des Agents
      *
-     * @return \Illuminate\Http\Response
+     * @return JsonResponse
      */
     public function list()
     {
@@ -434,7 +439,8 @@ class AgentController extends Controller
 					'zone' => $user->zone,
 					'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
 					'agent' => $agent,
-					'puces' => $puces
+					'puces' => $puces,
+                    'caisse' => Caisse::where('id_user', $user->id)->first()
 				];
 
             }
@@ -506,7 +512,8 @@ class AgentController extends Controller
 					'zone' => $user->zone,
 					'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
 					'agent' => $agent,
-					'puces' => $puces
+					'puces' => $puces,
+                    'caisse' => Caisse::where('id_user', $user->id)->first()
 				];
 
             }
@@ -596,7 +603,8 @@ class AgentController extends Controller
 						'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
 						'zone' => $user->zone,
 						'agent' => $agent,
-						'puces' => $puces
+						'puces' => $puces,
+                         'caisse' => Caisse::where('id_user', $user->id)->first()
 					]
                 ]
             );
@@ -616,7 +624,7 @@ class AgentController extends Controller
     /**
      * supprimer un Agents
      *
-     * @return \Illuminate\Http\Response
+     * @return JsonResponse
      */
     public function delete($id)
     {
@@ -647,7 +655,8 @@ class AgentController extends Controller
                     'zone' => $user->zone,
                     'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
                     'agent' => $agent,
-                    'puces' => $puces
+                    'puces' => $puces,
+                    'caisse' => Caisse::where('id_user', $user->id)->first()
                 ];
 
             }
@@ -675,7 +684,8 @@ class AgentController extends Controller
     }
 
     /**
-     * @param Base64ImageRequest $request
+     * @param Request $request
+     * @param $id
      * @return JsonResponse
      */
     public function edit_cni(Request $request, $id)
@@ -749,7 +759,8 @@ class AgentController extends Controller
 						'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
 						'zone' => $user->zone,
 						'agent' => $agent,
-						'puces' => $puces
+						'puces' => $puces,
+                        'caisse' => Caisse::where('id_user', $user->id)->first()
 					]
                 ]
             );
@@ -822,7 +833,8 @@ class AgentController extends Controller
 						'zone' => $user->zone,
 						'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
 						'agent' => $agent,
-						'puces' => $puces
+						'puces' => $puces,
+                        'caisse' => Caisse::where('id_user', $user->id)->first()
 					]
                 ]
             );
@@ -878,7 +890,8 @@ class AgentController extends Controller
 						'zone' => $user->zone,
 						'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
 						'agent' => $agent,
-						'puces' => $puces
+						'puces' => $puces,
+                        'caisse' => Caisse::where('id_user', $user->id)->first()
 					]
                 ]
             );

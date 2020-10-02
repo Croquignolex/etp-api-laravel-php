@@ -6,6 +6,7 @@ use App\User;
 use App\Puce;
 use App\Role;
 use App\Agent;
+use App\Caisse;
 use App\Enums\Roles;
 use App\Recouvrement;
 use App\Enums\Statut;
@@ -162,6 +163,23 @@ class RecouvrementController extends Controller
 
                 //Enregistrer les oppérations
                 $flottage->save();
+
+
+                //gestion de la caisse de l'agent qui recouvre
+                    $connected_user = Auth::user();
+
+                    //la caisse de l'utilisateur connecté
+                    $connected_caisse = Caisse::where('id_user', $connected_user->id)->first();
+
+                    //mise à jour de la caisse de l'utilisateur qui effectue l'oppération
+                    if ($connected_user->hasRole([Roles::GESTION_FLOTTE])) { 
+                        $connected_caisse->solde = $connected_caisse->solde + $montant;
+                    }else {
+                        $connected_caisse->solde = $connected_caisse->solde - $montant;
+                    }
+                    $connected_caisse->save();
+
+
 
                 //On recupere les recouvrement
                 $recouvrements = Recouvrement::where('user_destination', $recouvreur->id)->get();

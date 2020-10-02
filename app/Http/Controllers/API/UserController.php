@@ -19,21 +19,16 @@ use App\Enums\Roles;
 use App\Http\Resources\Agent;
 use Illuminate\Support\Facades\Validator;
 
-
 class UserController extends Controller
 {
-	/***
-
+	/**
      * les conditions de lecture des methodes
-
      */
-
     function __construct(){
 
         $superviseur = Roles::SUPERVISEUR;
         $this->middleware("permission:$superviseur");
-
-   }
+    }
 
     /**
      * Inscription d'un utilisateur
@@ -165,7 +160,8 @@ class UserController extends Controller
                     'data' => [
 						'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
 						'role' => $user->roles->first(),
-						'zone' => $user->zone
+						'zone' => $user->zone,
+                        'caisse' => Caisse::where('id_user', $user->id)->first()
 					]
                 ]
             );
@@ -222,7 +218,8 @@ class UserController extends Controller
                 $returenedUers[] = [
 					'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
 					'role' => $user->roles->first(),
-					'zone' => $user->zone
+					'zone' => $user->zone,
+                    'caisse' => Caisse::where('id_user', $user->id)->first()
 				];
 
             }
@@ -260,12 +257,14 @@ class UserController extends Controller
 
             $users = User::where('deleted_at', null)->get();
             $returenedUers = [];
+
             foreach($users as $user) {
 
                 $returenedUers[] = [
 					'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
 					'role' => $user->roles->first(),
-					'zone' => $user->zone
+					'zone' => $user->zone,
+                    'caisse' => Caisse::where('id_user', $user->id)->first()
 				];
 
             }
@@ -287,7 +286,6 @@ class UserController extends Controller
          }
     }
 
-    
     /**
      * supprimer un utilisateur
      *
@@ -331,7 +329,8 @@ class UserController extends Controller
 					$returenedUers[] = [
 						'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
 						'role' => $user->roles->first(),
-						'zone' => $user->zone
+						'zone' => $user->zone,
+                        'caisse' => Caisse::where('id_user', $user->id)->first()
 					];
 
 				}
@@ -370,7 +369,6 @@ class UserController extends Controller
      */
     public function edit_user(Request $request, $id)
     {
-
         //voir si l'utilisateur à modifier existe
         if(!User::Find($id)){
 
@@ -407,8 +405,6 @@ class UserController extends Controller
             );
         }
 
-
-
         // Récupérer les données validées
         $name = $request->name;
         $description = $request->description;
@@ -439,7 +435,8 @@ class UserController extends Controller
                    'data' => [
 						'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
 						'role' => $user->roles->first(),
-						'zone' => $user->zone
+						'zone' => $user->zone,
+                        'caisse' => Caisse::where('id_user', $user->id)->first()
 					]
                 ]
             );
@@ -517,6 +514,7 @@ class UserController extends Controller
                      'data' => [
 						'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
 						'role' => $user->roles->first(),
+                        'caisse' => Caisse::where('id_user', $user->id)->first()
 					]
                 ]
             );
@@ -591,6 +589,13 @@ class UserController extends Controller
                     ]
                 );
             }
+            // Detacher le responsable de l'ancienne zone
+            $ancienne_zone = Zone::where('id_responsable', $user->id)->first();
+            if($ancienne_zone !== null) {
+                $ancienne_zone->id_responsable = null;
+                $ancienne_zone->save();
+            }
+            // Sauvegarder le responsable dans la nouvelle zone
             $zoneExist->id_responsable = $user->id;
             $zoneExist->save();
         }
@@ -607,7 +612,8 @@ class UserController extends Controller
                     'status' => true,
                      'data' => [
 						'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
-						'zone' => $user->zone
+						'zone' => $user->zone,
+                        'caisse' => Caisse::where('id_user', $user->id)->first()
 					]
                 ]
             );
@@ -716,16 +722,15 @@ class UserController extends Controller
         );
     }
 
-
     /**
      * Solde de l'utilisateur connecté
      *
      * @return JsonResponse
      */
     public function solde($id)
-    {     
+    {
         $user = User::find($id);
-        $caisse = Caisse::where('id_user', $user->id)->first();       
+        $caisse = Caisse::where('id_user', $user->id)->first();
         return response()->json(
             [
                 'message' => '',
@@ -733,7 +738,7 @@ class UserController extends Controller
                 'data' => ['caisse' => $caisse]
             ]
         );
-         
+
     }
 
     /**
@@ -742,7 +747,7 @@ class UserController extends Controller
      * @return JsonResponse
      */
     public function agents_soldes()
-    {     
+    {
         $agents = Agent_model::all();
         $caisses = [];
         $n = 1;
@@ -751,7 +756,7 @@ class UserController extends Controller
             $user = $agent->user;
             $caisse = Caisse::where('id_user', $user->id)->first();
             $caisses[] = ["user $n" => $user, "caisse $n" => $caisse];
-            $n = $n + 1; 
+            $n = $n + 1;
         }
 
         return response()->json(
@@ -761,7 +766,7 @@ class UserController extends Controller
                 'data' => ['caisses' => $caisses]
             ]
         );
-         
+
     }
 
     /**
@@ -770,7 +775,7 @@ class UserController extends Controller
      * @return JsonResponse
      */
     public function rz_soldes()
-    {     
+    {
         $role = Role::where('name', Roles::RECOUVREUR)->first();
         $recouvreurs = $role->users;
         $caisses = [];
@@ -780,7 +785,7 @@ class UserController extends Controller
             $user = $recouvreurs;
             $caisse = Caisse::where('id_user', $user->id)->first();
             $caisses[] = ["user $n" => $user, "caisse $n" => $caisse];
-            $n = $n + 1; 
+            $n = $n + 1;
         }
 
         return response()->json(
@@ -790,6 +795,6 @@ class UserController extends Controller
                 'data' => ['caisses' => $caisses]
             ]
         );
-         
+
     }
 }
