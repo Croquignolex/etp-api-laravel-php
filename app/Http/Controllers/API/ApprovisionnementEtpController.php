@@ -309,33 +309,30 @@ class ApprovisionnementEtpController extends Controller
             if (isset($request->id_agent)) {
 
                 //recherche de la flotte concerné
-                $id_flotte = Puce::find($request->id_puce)->flote->id;
-
-
-
+                //$id_flotte = Puce::find($request->id_puce)->flote->id;
                 //On recupère la puce de l'agent concerné et on debite
-                $puce_agent = Puce::where('id_agent', $request->id_agent)->where('id_flotte', $id_flotte)->first();
+                // $puce_agent = Puce::where('id_agent', $request->id_agent)->where('id_flotte', $id_flotte)->first();
 
-                if ($puce_agent == null){
+                // if ($puce_agent == null){
 
-                    // Renvoyer une erreur
-                    return response()->json(
-                        [
-                            'message' => "cet agent n'a pas de puce abilité à effectuer un destockage vers la puce ETP selectionnée",
-                            'status'=>false,
-                            'data' => null
-                        ]
-                    );
+                //     // Renvoyer une erreur
+                //     return response()->json(
+                //         [
+                //             'message' => "cet agent n'a pas de puce abilité à effectuer un destockage vers la puce ETP selectionnée",
+                //             'status'=>false,
+                //             'data' => null
+                //         ]
+                //     );
 
-                }
+                // }
 
-                $puce_agent->solde = $puce_agent->solde - $montant;
-                $puce_agent->save();
+                // $puce_agent->solde = $puce_agent->solde - $montant;
+                // $puce_agent->save();
 
-                //On recupère la caisse de l'agent concerné et on credite
-                $caisse = Caisse::where('id_user', $agent->user->id)->first();
-                $caisse->solde = $caisse->solde + $montant;
-                $caisse->save();
+                // //On recupère la caisse de l'agent concerné et on credite
+                // $caisse = Caisse::where('id_user', $agent->user->id)->first();
+                // $caisse->solde = $caisse->solde + $montant;
+                // $caisse->save();
 
                 //on notifie l'agent
                 $agent->user->notify(new Notif_destockage([
@@ -346,6 +343,20 @@ class ApprovisionnementEtpController extends Controller
             }
 
             $connected_user = Auth::user();
+            //$connect_user = User::find($connected_user->id);
+
+            //la caisse de l'utilisateur connecté
+            $connected_caisse = Caisse::where('id_user', $connected_user->id)->first();
+
+            //mise à jour de la caisse de l'utilisateur qui effectue l'oppération
+            if ($connected_user->hasRole([Roles::GESTION_FLOTTE])) { 
+                $connected_caisse->solde = $connected_caisse->solde - $montant;
+            }else {
+                $connected_caisse->solde = $connected_caisse->solde + $montant;
+            }
+            $connected_caisse->save();
+
+
             if($type == Statut::BY_AGENT) $destockages = Destockage::where('type', Statut::BY_AGENT)->get();
             else $destockages = Destockage::where('type', Statut::BY_DIGIT_PARTNER)->orWhere('type', Statut::BY_BANK)->get();
 
