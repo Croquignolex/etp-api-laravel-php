@@ -14,14 +14,8 @@ class Versement extends Model
     use SoftDeletes;
 
     protected $dates = ['deleted_at'];
-    protected $fillable = array('id_caisse', 'id_agent', 'id_flote', 'montant', 'note', 'reste_du_versement');
-    protected $visible = array('id_caisse', 'id_agent', 'id_flote', 'montant', 'note', 'reste_du_versement');
-
-
-    public function operation()
-    {
-        return $this->hasOne('App\Operation', 'id_versement');
-    }
+    protected $fillable = array('id_caisse', 'correspondant', 'add_by', 'montant', 'note', 'recu');
+    protected $visible = array('id_caisse', 'correspondant', 'add_by', 'montant', 'note', 'recu');
 
     public function caisse()
     {

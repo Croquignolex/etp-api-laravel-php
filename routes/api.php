@@ -587,5 +587,35 @@ Route::group(['middleware' => 'auth:api'], function(){
         Route::get('rz_soldes', 'API\UserController@rz_soldes');
 
 
+        /*
+    //////////////////////Encaissement (la gestionnaire de flotte recoit de l'argent d'un agent ou d'un responsable de zonne)/////////////////////
+    */
+
+        //creer un Encaissement
+        Route::post('encassement', 'API\CaisseController@encassement');
+
+        //Détails d'un encaissement precis
+        Route::get('encaissement_details/{id}', 'API\CaisseController@versement_details')
+        ->where('id', '[0-9]+');
+
+        //lister les Encaissements 
+        Route::get('encaissement_list', 'API\CaisseController@encaissement_list');
+
+
+
+        /*
+    //////////////////////Décaissement (la gestionnaire de flotte donne de l'argent à un responsable de zonne)/////////////////////
+    */
+
+        //creer un Decaissement
+        Route::post('decaissement', 'API\CaisseController@decaissement');
+
+        //Détails d'un Decaissement precis
+        Route::get('decaissement_details/{id}', 'API\CaisseController@versement_details')
+        ->where('id', '[0-9]+');
+
+        //lister les Decaissements 
+        Route::get('decaissement_list', 'API\CaisseController@decaissement_list');
+
 
 });

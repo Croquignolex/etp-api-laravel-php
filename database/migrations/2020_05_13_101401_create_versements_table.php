@@ -11,11 +11,11 @@ class CreateVersementsTable extends Migration {
 		Schema::create('versements', function(Blueprint $table) {
 			$table->increments('id');
 			$table->integer('id_caisse')->unsigned()->nullable()->index();
-			$table->integer('id_agent')->unsigned()->nullable()->index();
-			$table->integer('id_flote')->unsigned()->nullable()->index();
+			$table->integer('correspondant')->unsigned()->nullable()->index();
+			$table->integer('add_by')->unsigned()->nullable()->index();
 			$table->double('montant')->nullable();
-			$table->text('note');
-			$table->integer('reste_du_versement')->nullable();
+			$table->text('note')->nullable();
+			$table->string('recu')->nullable();
 			$table->timestamps();
 			$table->softDeletes();
 

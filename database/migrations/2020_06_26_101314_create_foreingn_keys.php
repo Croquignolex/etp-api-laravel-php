@@ -132,18 +132,12 @@ class CreateForeingnKeys extends Migration
 				->onUpdate('no action');
 
 
-			$table->foreign('id_agent')
+			$table->foreign('correspondant')
                 ->references('id')
-                ->on('agents')
+                ->on('users')
 				->onDelete('cascade')
 				->onUpdate('no action');
 
-
-			$table->foreign('id_flote')
-                ->references('id')
-                ->on('flotes')
-				->onDelete('cascade')
-				->onUpdate('no action');
         });
 
 
