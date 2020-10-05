@@ -10,7 +10,7 @@ use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
 use App\Zone;
-use App\Agent; 
+use App\Agent;
 use App\Utiles\ImageFromBase64;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -62,8 +62,8 @@ class LoginController extends Controller
 							'data' => null,
 						]
 					);
-				} 
-				
+				}
+
 				if ($userAnable->statut == Statut::DECLINE) {
 					return response()->json(
 						[
@@ -72,8 +72,8 @@ class LoginController extends Controller
 							'data' => null,
 						]
 					);
-				} 
-				
+				}
+
 			}
 
 
@@ -88,7 +88,7 @@ class LoginController extends Controller
             $token = auth()->user()->createToken(config('app.name', 'ETP'));
 
 			$user = auth()->user();
-			 
+
 			// recuperer l'agent et ses puces associé à l'utilisateur (utile pour l'agent)
 			$agent = Agent::where('id_user', $user->id)->first();
 			$puces = is_null($agent) ? [] : $agent->puces;
@@ -109,7 +109,8 @@ class LoginController extends Controller
 						'role' => $user->roles->first(),
 						'agent' => $agent,
 						'puces' => $puces,
-						'setting' => $user->setting->first()
+						'setting' => $user->setting->first(),
+                        //'caisse' => Caisse::where('id_user', $user->id)->first()
                     ]
                 ]
             );
@@ -198,7 +199,7 @@ class LoginController extends Controller
                 ]
             );
          }
-    } 
+    }
 
     /**
      * Solde de l'utilisateur connecté
@@ -208,9 +209,9 @@ class LoginController extends Controller
     public function solde()
     {
         if (Auth::check()) {
-                
+
             $user = Auth::user();
-            $caisse = Caisse::where('id_user', $user->id)->first();       
+            $caisse = Caisse::where('id_user', $user->id)->first();
             return response()->json(
                 [
                     'message' => '',
@@ -243,7 +244,7 @@ class LoginController extends Controller
             'current_pass' => 'required|string',
             'new_pass' => 'required|string|min:6',
         ]);
-        if ($validator->fails()) { 
+        if ($validator->fails()) {
 
             return response()->json(
                 [
@@ -252,7 +253,7 @@ class LoginController extends Controller
                     'data' => null
                 ]
             );
-                       
+
         }
 
         // Récupérer l'utilisateur concerné
@@ -277,7 +278,7 @@ class LoginController extends Controller
 
 
         // crypter le nouveau mot de passe
-        $pass_data['new_pass'] = bcrypt($pass_data['new_pass']);        
+        $pass_data['new_pass'] = bcrypt($pass_data['new_pass']);
 
         // Changer le mot de passe de l'utilisateur
         $user->password = $pass_data['new_pass'];
@@ -311,11 +312,11 @@ class LoginController extends Controller
     {
 
         // Valider données envoyées
-        $validator = Validator::make($request->all(), [ 
-            'base_64_image' => 'required|string', 
+        $validator = Validator::make($request->all(), [
+            'base_64_image' => 'required|string',
         ]);
-        
-        if ($validator->fails()) { 
+
+        if ($validator->fails()) {
 
             return response()->json(
                 [
@@ -324,9 +325,9 @@ class LoginController extends Controller
                     'data' => null
                 ]
             );
-                       
+
         }
-        
+
         // Get current user
         $user =  Auth::user();
         $user_avatar_path_name =  $user->avatar;
@@ -343,7 +344,7 @@ class LoginController extends Controller
         // Changer l' avatar de l'utilisateur
         $user->avatar = $server_image_name_path;
 
-        // Save image name in database      
+        // Save image name in database
         if ($user->save()) {
             return response()->json(
                 [
@@ -361,26 +362,26 @@ class LoginController extends Controller
                 ]
             );
         }
-        
+
     }
-	
-	/**
-     * @param Base64ImageRequest $request
+
+    /**
+     * @param Request $request
      * @return JsonResponse
      */
     public function update_setting(Request $request)
-    { 
+    {
         // Valider données envoyées
-        $validator = Validator::make($request->all(), [ 
-            'bars' => 'array', 
-            'cards' => 'array', 
-            'charts' => 'array', 
-            'sound' => 'required',  
-            'session' => 'required', 
-            //'description' => 'string', 
+        $validator = Validator::make($request->all(), [
+            'bars' => 'array',
+            'cards' => 'array',
+            'charts' => 'array',
+            'sound' => 'required',
+            'session' => 'required',
+            //'description' => 'string',
         ]);
-        
-        if ($validator->fails()) {  
+
+        if ($validator->fails()) {
             return response()->json(
                 [
                     'message' => ['error'=>$validator->errors()],
@@ -388,18 +389,17 @@ class LoginController extends Controller
                     'data' => null
                 ]
             );
-                       
         }
-        
-        // Get current user 
+
+        // Get current user
 		$setting = Auth::user()->setting->first();
 		$setting->sound = $request->sound;
-		$setting->session = $request->session;
+		$setting->session = $request['session'];
 		$setting->description = $request->description;
 		$setting->bars = json_encode($request->bars);
 		$setting->charts = json_encode($request->charts);
 		$setting->cards = json_encode($request->cards);
-        // Save image name in database      
+        // Save image name in database
         if ($setting->save()) {
             return response()->json(
                 [
@@ -417,14 +417,14 @@ class LoginController extends Controller
                 ]
             );
         }
-        
+
     }
 
-	/** 
-     * modification d'un utilisateur 
-     */ 
-    public function edit_profile(Request $request) 
-    {   
+	/**
+     * modification d'un utilisateur
+     */
+    public function edit_profile(Request $request)
+    {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
             'name' => ['required', 'string', 'max:255'],
@@ -437,17 +437,17 @@ class LoginController extends Controller
             // 'phone' => ['required', 'numeric', 'max:255']
 
         ]);
-        if ($validator->fails()) { 
+        if ($validator->fails()) {
             return response()->json(
                 [
                     'message' => ['error'=>$validator->errors()],
                     'status' => false,
                     'data' => null
                 ]
-            );            
+            );
         }
 
-          
+
         // Récupérer les données validées
         $name = $request->name;
         $description = $request->description;
@@ -470,7 +470,7 @@ class LoginController extends Controller
 
         if ($user->save()) {
 
-            // Renvoyer un message de succès          
+            // Renvoyer un message de succès
             return response()->json(
                 [
                     'message' => 'profil modifié',
