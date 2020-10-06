@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Caisse;
-use App\Enums\Roles;
-use App\Versement;
 use App\User;
-use Illuminate\Support\Facades\Validator;
+use App\Caisse;
+use App\Versement;
+use App\Enums\Roles;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Validator;
 
 class CaisseController extends Controller
 {
@@ -212,13 +212,28 @@ class CaisseController extends Controller
             $caisse->solde = $caisse->solde - $montant;
             $caisse->save();
 
+            $getionnaire_id = Auth::user()->id;
+            $versements = Versement::All();
+            $decaissements = [];
+            foreach ($versements as $versement) {
+                $id_caisse_gestionnaire = Caisse::where('id_user', $getionnaire_id)->first();
+                if ($id_caisse_gestionnaire->id != $versement->id_caisse) {
+                    $decaissements[] = [
+                        'versement' => $versement,
+                        'gestionnaire' => User::find($versement->add_by),
+                        'recouvreur' => User::find($versement->correspondant),
+                    ];
+                }
+            }
 
             // Renvoyer un message de succès
             return response()->json(
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => $versement
+                    'data' => [
+                        'versements' => $decaissements
+                    ]
                 ]
             );
         } else {
@@ -267,19 +282,26 @@ class CaisseController extends Controller
      */
     public function decaissement_list()
     {
+        $getionnaire_id = Auth::user()->id;
         $versements = Versement::All();
         $decaissements = [];
         foreach ($versements as $versement) {
-            $id_caisse_gestionnaire = Caisse::where('id_user', $versement->add_by)->first();
+            $id_caisse_gestionnaire = Caisse::where('id_user', $getionnaire_id)->first();
             if ($id_caisse_gestionnaire->id != $versement->id_caisse) {
-                $decaissements[] = $versement;
+                $decaissements[] = [
+                    'versement' => $versement,
+                    'gestionnaire' => User::find($versement->add_by),
+                    'recouvreur' => User::find($versement->correspondant),
+                ];
             }
         }
         return response()->json(
             [
                 'message' => '',
                 'status' => true,
-                'data' => $decaissements
+                'data' => [
+                    'versements' => $decaissements
+                ]
             ]
         );
     }
