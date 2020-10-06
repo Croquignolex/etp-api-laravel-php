@@ -31,7 +31,7 @@ class CaisseTableSeeder extends Seeder {
 		Caisse::create(array(
 			'nom' => 'Caisse GESTION_FLOTTE',
 			'description' => Null,
-			'id_user' => 3,
+			'id_user' => 4,
 			'reference' => Null,
 			'solde' => 0
 		));
@@ -40,7 +40,7 @@ class CaisseTableSeeder extends Seeder {
 		Caisse::create(array(
 			'nom' => 'Caisse RECOUVREUR',
 			'description' => Null,
-			'id_user' => 4,
+			'id_user' => 5,
 			'reference' => Null,
 			'solde' => 0
 		));
@@ -49,7 +49,7 @@ class CaisseTableSeeder extends Seeder {
 		Caisse::create(array(
 			'nom' => 'Caisse SUPERVISEUR',
 			'description' => Null,
-			'id_user' => 5,
+			'id_user' => 6,
 			'reference' => Null,
 			'solde' => 0
 		));

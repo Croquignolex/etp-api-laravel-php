@@ -14,9 +14,7 @@ use Illuminate\Support\Facades\Auth;
 class CaisseController extends Controller
 {
     /**
-
      * les conditions de lecture des methodes
-
      */
     function __construct(){
 
@@ -24,14 +22,13 @@ class CaisseController extends Controller
         $this->middleware("permission:$ges_flotte");
     }
 
-
     /**
      * //Creer un Encaissement
      */
     public function encassement(Request $request)
     {
         // Valider données envoyées
-        $validator = Validator::make($request->all(), [            
+        $validator = Validator::make($request->all(), [
             'id_donneur' => ['required', 'Numeric'], //id de l'utilisateur qui verse l'argent
             'montant' => ['required', 'Numeric'],
             'recu' => ['required', 'file', 'max:10000']
@@ -69,13 +66,13 @@ class CaisseController extends Controller
         $recu = null;
         if ($request->hasFile('recu') && $request->file('recu')->isValid()) {
             $recu = $request->recu->store('files/recu/versement');
-        } 
+        }
         $id_donneur = $request->id_donneur;
         $montant = $request->montant;
         $id_caisse = $caisse->id;
         $add_by = $user->id;
         $note = "pour un versement";
-        
+
         // Nouveau versement
         $versement = new Versement ([
             'recu' => $recu,
@@ -92,18 +89,32 @@ class CaisseController extends Controller
             //on credite le compte du donneur
             $caisse_donneur->solde = $caisse_donneur->solde + $montant;
             $caisse_donneur->save();
-            
+
             //on credite le compte de la gestionnaire de flotte
             $caisse->solde = $caisse->solde + $montant;
             $caisse->save();
 
+            $versements = Versement::All();
+            $encaissements = [];
+            foreach ($versements as $_versement) {
+                $id_caisse_gestionnaire = Caisse::where('id_user', $_versement->add_by)->first();
+                if ($id_caisse_gestionnaire->id == $_versement->id_caisse) {
+                    $encaissements[] = [
+                        'versement' => $_versement,
+                        'gestionnaire' => User::find($_versement->add_by),
+                        'recouvreur' => User::find($_versement->correspondant),
+                    ];
+                }
+            }
 
             // Renvoyer un message de succès
             return response()->json(
                 [
                     'message' => '',
                     'status' => true,
-                    'data' => $versement
+                    'data' => [
+                        'versements' => $encaissements
+                    ]
                 ]
             );
         } else {
@@ -124,7 +135,7 @@ class CaisseController extends Controller
     public function decaissement(Request $request)
     {
         // Valider données envoyées
-        $validator = Validator::make($request->all(), [            
+        $validator = Validator::make($request->all(), [
             'id_receveur' => ['required', 'Numeric'], //id de l'utilisateur qui recoit l'argent
             'montant' => ['required', 'Numeric'],
             'recu' => ['required', 'file', 'max:10000']
@@ -173,13 +184,13 @@ class CaisseController extends Controller
         $recu = null;
         if ($request->hasFile('recu') && $request->file('recu')->isValid()) {
             $recu = $request->recu->store('files/recu/versement');
-        } 
+        }
         $receveur = $request->id_receveur;
         $montant = $request->montant;
         $id_caisse = $caisse_receveur->id;
         $add_by = $user->id;
         $note = "pour un Decaissement";
-        
+
         // Nouveau versement
         $versement = new Versement ([
             'recu' => $recu,
@@ -196,7 +207,7 @@ class CaisseController extends Controller
             //on debite le compte du receveur
             $caisse_receveur->solde = $caisse_receveur->solde - $montant;
             $caisse_receveur->save();
-            
+
             //on debite le compte de la gestionnaire de flotte
             $caisse->solde = $caisse->solde - $montant;
             $caisse->save();
@@ -223,29 +234,36 @@ class CaisseController extends Controller
     }
 
     /**
-     * ////lister les Encaissements 
+     * ////lister les Encaissements
      */
     public function encaissement_list()
     {
+        $getionnaire_id = Auth::user()->id;
         $versements = Versement::All();
         $encaissements = [];
         foreach ($versements as $versement) {
-            $id_caisse_gestionnaire = Caisse::where('id_user', $versement->add_by)->first();
+            $id_caisse_gestionnaire = Caisse::where('id_user', $getionnaire_id)->first();
             if ($id_caisse_gestionnaire->id == $versement->id_caisse) {
-                $encaissements[] = $versement;
+                $encaissements[] = [
+                    'versement' => $versement,
+                    'gestionnaire' => User::find($versement->add_by),
+                    'recouvreur' => User::find($versement->correspondant),
+                ];
             }
         }
         return response()->json(
             [
                 'message' => '',
                 'status' => true,
-                'data' => $encaissements
+                'data' => [
+                    'versements' => $encaissements
+                ]
             ]
         );
     }
 
     /**
-     * ////lister les Decaissements 
+     * ////lister les Decaissements
      */
     public function decaissement_list()
     {

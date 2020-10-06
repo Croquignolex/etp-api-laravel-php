@@ -5,7 +5,7 @@ namespace App;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Versement extends Model 
+class Versement extends Model
 {
 
     protected $table = 'versements';
@@ -15,7 +15,7 @@ class Versement extends Model
 
     protected $dates = ['deleted_at'];
     protected $fillable = array('id_caisse', 'correspondant', 'add_by', 'montant', 'note', 'recu');
-    protected $visible = array('id_caisse', 'correspondant', 'add_by', 'montant', 'note', 'recu');
+    protected $visible = array('id', 'id_caisse', 'correspondant', 'add_by', 'montant', 'note', 'recu', 'created_at');
 
     public function caisse()
     {
