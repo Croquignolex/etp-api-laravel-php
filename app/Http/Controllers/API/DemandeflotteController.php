@@ -40,12 +40,16 @@ class DemandeflotteController extends Controller
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
             'montant' => ['required', 'numeric'],
+            'fdf' => ['required', 'numeric'],
+            'dfddd' => ['required', 'numeric'],
             'id_puce' => ['required', 'numeric']
         ]);
+
+
         if ($validator->fails()) {
             return response()->json(
                 [
-                    'message' => ['error'=>$validator->errors()],
+                    'message' => "Le formulaire contient des champs mal renseignés",
                     'status' => false,
                     'data' => null
                 ]
@@ -99,19 +103,19 @@ class DemandeflotteController extends Controller
         if ($demande_flote->save()) {
 
             ////Broadcast Notification
-            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();    
+            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
             $event = new NotificationsEvent($role->id, ['message' => 'Nouvelle demande flotte']);
             broadcast($event)->toOthers();
 
             //Database Notification
             $users = User::all();
             foreach ($users as $user) {
-                
+
                 if ($user->hasRole([$role->name])) {
-                    
+
                     $user->notify(new Notif_demande_flotte([
                         'data' => $demande_flote,
-                        'message' => "Nouvelle demande de flotte"                    
+                        'message' => "Nouvelle demande de flotte"
                     ]));
                 }
             }
@@ -150,7 +154,7 @@ class DemandeflotteController extends Controller
         if ($validator->fails()) {
             return response()->json(
                 [
-                    'message' => ['error'=>$validator->errors()],
+                    'message' => "Le formulaire contient des champs mal renseignés",
                     'status' => false,
                     'data' => null
                 ]
@@ -167,21 +171,21 @@ class DemandeflotteController extends Controller
 			$user = $demande_flote->user;
 			$agent = Agent::where('id_user', $user->id)->first();
             $demandeur = User::Find($demande_flote->add_by);
-            
+
             ////Broadcast Notification
-            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();    
+            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
             $event = new NotificationsEvent($role->id, ['message' => "Modification d'une emande de flotte"]);
             broadcast($event)->toOthers();
 
             //Database Notification
             $users = User::all();
             foreach ($users as $user) {
-                
+
                 if ($user->hasRole([$role->name])) {
-                    
+
                     $user->notify(new Notif_demande_flotte([
                         'data' => $demande_flote,
-                        'message' => "Modification d'une emande de flotte"                    
+                        'message' => "Modification d'une emande de flotte"
                     ]));
                 }
             }
@@ -225,7 +229,7 @@ class DemandeflotteController extends Controller
         if ($validator->fails()) {
             return response()->json(
                 [
-                    'message' => ['error'=>$validator->errors()],
+                    'message' => "Le formulaire contient des champs mal renseignés",
                     'status' => false,
                     'data' => null
                 ]
@@ -241,21 +245,21 @@ class DemandeflotteController extends Controller
 			$agent = Agent::where('id_user', $user->id)->first();
             $demandeur = User::Find($demande_flote->add_by);
 
-            
+
             ////Broadcast Notification
-            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();    
+            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
             $event = new NotificationsEvent($role->id, ['message' => "Modification d'une demande de flotte"]);
             broadcast($event)->toOthers();
 
             //Database Notification
             $users = User::all();
             foreach ($users as $user) {
-                
+
                 if ($user->hasRole([$role->name])) {
-                    
+
                     $user->notify(new Notif_demande_flotte([
                         'data' => $demande_flote,
-                        'message' => "Modification d'une emande de flotte"                    
+                        'message' => "Modification d'une emande de flotte"
                     ]));
                 }
             }
@@ -446,21 +450,21 @@ class DemandeflotteController extends Controller
 
 				$demandes_flotes[] = ['demande' => $demande_flote, 'demandeur' => $demandeur, 'agent' => $agent, 'user' => $user, 'puce' => $demande_flote->puce];
             }
-            
+
             ////Broadcast Notification
-            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();    
+            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
             $event = new NotificationsEvent($role->id, ['message' => "Annulation d'une emande de flotte"]);
             broadcast($event)->toOthers();
 
             //Database Notification
             $users = User::all();
             foreach ($users as $user) {
-                
+
                 if ($user->hasRole([$role->name])) {
-                    
+
                     $user->notify(new Notif_demande_flotte([
                         'data' => $demande_floteDB,
-                        'message' => "Annulation d'une emande de flotte"                    
+                        'message' => "Annulation d'une emande de flotte"
                     ]));
                 }
             }

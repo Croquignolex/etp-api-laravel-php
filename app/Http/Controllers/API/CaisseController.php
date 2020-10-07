@@ -31,7 +31,7 @@ class CaisseController extends Controller
     public function encassement(Request $request)
     {
         // Valider données envoyées
-        $validator = Validator::make($request->all(), [            
+        $validator = Validator::make($request->all(), [
             'id_donneur' => ['required', 'Numeric'], //id de l'utilisateur qui verse l'argent
             'montant' => ['required', 'Numeric'],
             'recu' => ['required', 'file', 'max:10000']
@@ -40,7 +40,7 @@ class CaisseController extends Controller
         if ($validator->fails()) {
             return response()->json(
                 [
-                    'message' => ['error'=>$validator->errors()],
+                    'message' => "Le formulaire contient des champs mal renseignés",
                     'status' => false,
                     'data' => null
                 ]
@@ -69,13 +69,13 @@ class CaisseController extends Controller
         $recu = null;
         if ($request->hasFile('recu') && $request->file('recu')->isValid()) {
             $recu = $request->recu->store('files/recu/versement');
-        } 
+        }
         $id_donneur = $request->id_donneur;
         $montant = $request->montant;
         $id_caisse = $caisse->id;
         $add_by = $user->id;
         $note = "pour un versement";
-        
+
         // Nouveau versement
         $versement = new Versement ([
             'recu' => $recu,
@@ -92,7 +92,7 @@ class CaisseController extends Controller
             //on credite le compte du donneur
             $caisse_donneur->solde = $caisse_donneur->solde + $montant;
             $caisse_donneur->save();
-            
+
             //on credite le compte de la gestionnaire de flotte
             $caisse->solde = $caisse->solde + $montant;
             $caisse->save();
@@ -124,7 +124,7 @@ class CaisseController extends Controller
     public function decaissement(Request $request)
     {
         // Valider données envoyées
-        $validator = Validator::make($request->all(), [            
+        $validator = Validator::make($request->all(), [
             'id_receveur' => ['required', 'Numeric'], //id de l'utilisateur qui recoit l'argent
             'montant' => ['required', 'Numeric'],
             'recu' => ['required', 'file', 'max:10000']
@@ -133,7 +133,7 @@ class CaisseController extends Controller
         if ($validator->fails()) {
             return response()->json(
                 [
-                    'message' => ['error'=>$validator->errors()],
+                    'message' => "Le formulaire contient des champs mal renseignés",
                     'status' => false,
                     'data' => null
                 ]
@@ -173,13 +173,13 @@ class CaisseController extends Controller
         $recu = null;
         if ($request->hasFile('recu') && $request->file('recu')->isValid()) {
             $recu = $request->recu->store('files/recu/versement');
-        } 
+        }
         $receveur = $request->id_receveur;
         $montant = $request->montant;
         $id_caisse = $caisse_receveur->id;
         $add_by = $user->id;
         $note = "pour un Decaissement";
-        
+
         // Nouveau versement
         $versement = new Versement ([
             'recu' => $recu,
@@ -196,7 +196,7 @@ class CaisseController extends Controller
             //on debite le compte du receveur
             $caisse_receveur->solde = $caisse_receveur->solde - $montant;
             $caisse_receveur->save();
-            
+
             //on debite le compte de la gestionnaire de flotte
             $caisse->solde = $caisse->solde - $montant;
             $caisse->save();
@@ -223,7 +223,7 @@ class CaisseController extends Controller
     }
 
     /**
-     * ////lister les Encaissements 
+     * ////lister les Encaissements
      */
     public function encaissement_list()
     {
@@ -245,7 +245,7 @@ class CaisseController extends Controller
     }
 
     /**
-     * ////lister les Decaissements 
+     * ////lister les Decaissements
      */
     public function decaissement_list()
     {

@@ -49,7 +49,7 @@ class Demande_destockage_recouvreurController extends Controller
         if ($validator->fails()) {
             return response()->json(
                 [
-                    'message' => ['error'=>$validator->errors()],
+                    'message' => "Le formulaire contient des champs mal renseignés",
                     'status' => false,
                     'data' => null
                 ]
@@ -110,8 +110,8 @@ class Demande_destockage_recouvreurController extends Controller
         if ($demande_destockage->save()) {
 
             //Broadcast Notification
-            $role = Role::where('name', Roles::RECOUVREUR)->first();  
-            $role2 = Role::where('name', Roles::GESTION_FLOTTE)->first();  
+            $role = Role::where('name', Roles::RECOUVREUR)->first();
+            $role2 = Role::where('name', Roles::GESTION_FLOTTE)->first();
             $event = new NotificationsEvent($role->id, ['message' => 'Nouvelle demande de destockage']);
             broadcast($event)->toOthers();
 
@@ -119,12 +119,12 @@ class Demande_destockage_recouvreurController extends Controller
             $users = User::all();
                 //notifier les RZ et les GF
                 foreach ($users as $user) {
-                    
+
                     if ($user->hasRole([$role->name]) || $user->hasRole([$role2->name])) {
-                        
+
                         $user->notify(new Notif_demande_destockage([
                             'data' => $demande_destockage,
-                            'message' => "Nouvelle demande de Destockage"                    
+                            'message' => "Nouvelle demande de Destockage"
                         ]));
                     }
                 }
@@ -248,9 +248,9 @@ class Demande_destockage_recouvreurController extends Controller
 
 				$demandes_destockages[] = ['demande' => $demande_destockage, 'demandeur' => $demandeur, 'agent' => $agent, 'user' => $user, 'puce' => $demande_destockage->puce];
             }
-            
+
             //Broadcast Notification
-            $role = Role::where('name', Roles::RECOUVREUR)->first();    
+            $role = Role::where('name', Roles::RECOUVREUR)->first();
             $event = new NotificationsEvent($role->id, ['message' => 'Une demande de Destockage Annulée']);
             broadcast($event)->toOthers();
 
@@ -258,12 +258,12 @@ class Demande_destockage_recouvreurController extends Controller
             //Database Notification
             $users = User::all();
             foreach ($users as $user) {
-                
+
                 if ($user->hasRole([$role->name])) {
-                    
+
                     $user->notify(new Notif_demande_destockage([
                         'data' => $demande_destockageDB,
-                        'message' => "Une demande de Destockage Annulée"                    
+                        'message' => "Une demande de Destockage Annulée"
                     ]));
 
                 }
@@ -303,7 +303,7 @@ class Demande_destockage_recouvreurController extends Controller
         if ($validator->fails()) {
             return response()->json(
                 [
-                    'message' => ['error'=>$validator->errors()],
+                    'message' => "Le formulaire contient des champs mal renseignés",
                     'status' => false,
                     'data' => null
                 ]
@@ -320,9 +320,9 @@ class Demande_destockage_recouvreurController extends Controller
         // update de La demande
         if ($demande_destockage->save()) {
             $user = $demande_destockage->user;
-            
+
             //Broadcast Notification
-            $role = Role::where('name', Roles::RECOUVREUR)->first();    
+            $role = Role::where('name', Roles::RECOUVREUR)->first();
             $event = new NotificationsEvent($role->id, ['message' => 'Une demande de Destockage modifiée']);
             broadcast($event)->toOthers();
 
@@ -330,12 +330,12 @@ class Demande_destockage_recouvreurController extends Controller
             //Database Notification
             $users = User::all();
             foreach ($users as $user) {
-                
+
                 if ($user->hasRole([$role->name])) {
-                    
+
                     $user->notify(new Notif_demande_destockage([
                         'data' => $demande_destockage,
-                        'message' => "Une demande de Destockage modifiée"                    
+                        'message' => "Une demande de Destockage modifiée"
                     ]));
 
                 }
@@ -373,7 +373,7 @@ class Demande_destockage_recouvreurController extends Controller
         if ($validator->fails()) {
             return response()->json(
                 [
-                    'message' => ['error'=>$validator->errors()],
+                    'message' => "Le formulaire contient des champs mal renseignés",
                     'status' => false,
                     'data' => null
                 ]
@@ -403,19 +403,19 @@ class Demande_destockage_recouvreurController extends Controller
         if ($demande_destockage->save()) {
 
             //Broadcast Notification
-            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();    
+            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
             $event = new NotificationsEvent($role->id, ['message' => 'Une demande traitée']);
             broadcast($event)->toOthers();
 
             //Database Notification
             $users = User::all();
             foreach ($users as $user) {
-                
+
                 if ($user->hasRole([$role->name])) {
-                    
+
                     $user->notify(new Notif_destockage([
                         'data' => $demande_destockage,
-                        'message' => "Une demande en cours de traitement"                    
+                        'message' => "Une demande en cours de traitement"
                     ]));
                 }
             }

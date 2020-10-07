@@ -48,7 +48,7 @@ class ApprovisionnementEtpController extends Controller
             if ($validator->fails()) {
                 return response()->json(
                     [
-                        'message' => ['error'=>$validator->errors()],
+                        'message' => "Le formulaire contient des champs mal renseignés",
                         'status' => false,
                         'data' => null
                     ]
@@ -146,7 +146,7 @@ class ApprovisionnementEtpController extends Controller
             if ($validator->fails()) {
                 return response()->json(
                     [
-                        'message' => ['error'=>$validator->errors()],
+                        'message' => "Le formulaire contient des champs mal renseignés",
                         'status' => false,
                         'data' => null
                     ]
@@ -228,7 +228,7 @@ class ApprovisionnementEtpController extends Controller
         if ($validator->fails()) {
             return response()->json(
                 [
-                    'message' => ['error'=>$validator->errors()],
+                    'message' => "Le formulaire contient des champs mal renseignés",
                     'status' => false,
                     'data' => null
                 ]
@@ -299,7 +299,7 @@ class ApprovisionnementEtpController extends Controller
                         ]));
                     }
                 }
-                
+
 
             //la puce de ETP concernée et on credite
             $puce_etp = Puce::find($request->id_puce);
@@ -349,7 +349,7 @@ class ApprovisionnementEtpController extends Controller
             $connected_caisse = Caisse::where('id_user', $connected_user->id)->first();
 
             //mise à jour de la caisse de l'utilisateur qui effectue l'oppération
-            if ($connected_user->hasRole([Roles::GESTION_FLOTTE])) { 
+            if ($connected_user->hasRole([Roles::GESTION_FLOTTE])) {
                 $connected_caisse->solde = $connected_caisse->solde - $montant;
             }else {
                 $connected_caisse->solde = $connected_caisse->solde + $montant;
