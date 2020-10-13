@@ -14,8 +14,8 @@ class Puce extends Model
 
     protected $dates = ['deleted_at'];
 
-    protected $fillable = array('id', 'nom', 'id_flotte', 'corporate', 'id_agent', 'reference', 'numero', 'type', 'solde', 'description');
-    protected $visible = array('id', 'nom', 'id_flotte', 'id_agent', 'corporate', 'numero', 'reference', 'type', 'description', 'created_at');
+    protected $fillable = array('id', 'nom', 'id_flotte', 'corporate', 'id_agent', 'reference', 'numero', 'type', 'id_rz', 'solde', 'description');
+    protected $visible = array('id', 'nom', 'id_flotte', 'id_agent', 'corporate', 'numero', 'reference', 'type', 'id_rz', 'description', 'created_at');
 
     public function flote()
     {
@@ -25,6 +25,11 @@ class Puce extends Model
     public function agent()
     {
         return $this->belongsTo('App\Agent', 'id_agent');
+    }
+
+    public function rz()
+    {
+        return $this->belongsTo('App\User', 'id_rz');
     }
 
 	public function type_puce()

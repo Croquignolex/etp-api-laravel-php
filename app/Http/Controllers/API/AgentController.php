@@ -14,10 +14,12 @@ use App\User;
 use App\Puce;
 use Spatie\Permission\Models\Role;
 use App\Enums\Roles;
-use App\Utiles\ImageFromBase64;
+use App\Type_puce;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+
+use function PHPSTORM_META\type;
 
 class AgentController extends Controller
 {
@@ -808,7 +810,7 @@ class AgentController extends Controller
         $reference = $request->reference;
         $description = $request->description;
 
-        // rechercher la flote
+        // rechercher l'agent'
         $agent = Agent::find($id);
 
         // ajout de mla nouvelle puce
@@ -851,7 +853,7 @@ class AgentController extends Controller
     }
 
 	/**
-     * ajouter une puce à un agent
+     * retirer une puce à un agent
      */
     public function delete_puce(Request $request, $id)
     {
@@ -872,7 +874,7 @@ class AgentController extends Controller
         // Récupérer les données validées
 		$id_puce = $request->id_puce;
 
-        // rechercher la flote
+        // recuperer la puce
 		$puce = Puce::find($id_puce);
         $puce->deleted_at = now();
 		$puce->save();
@@ -892,6 +894,155 @@ class AgentController extends Controller
 						'agent' => $agent,
 						'puces' => $puces,
                         'caisse' => Caisse::where('id_user', $user->id)->first()
+					]
+                ]
+            );
+        } else {
+            // Renvoyer une erreur
+            return response()->json(
+                [
+                    'message' => "Erreur l'ors de la suppression d'une puce",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+    }
+
+    /**
+     * // ajouter une puce à un responsable de zonne
+     */
+    public function ajouter_puce_rz(Request $request, $id)
+    {
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [
+			'numero' => ['required', 'string', 'max:255', 'unique:puces,numero'],
+            'reference' => ['nullable', 'string', 'max:255','unique:puces,reference'],
+            'id_flotte' => ['required', 'numeric'],
+            'nom' => ['required', 'string'],
+            'description' => ['nullable', 'string'],
+        ]);
+        if ($validator->fails()) {
+            return response()->json(
+                [
+                    'message' => "Le formulaire contient des champs mal renseignés",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+        
+        //si l'utilisateur n'est pas responsable de zonne'
+        $rz = User::find($id);
+        if (is_null($rz)) {
+            return response()->json(
+                [
+                    'message' => "Vous devez choisir un Responsable de zonne qui existe",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+
+        if (!($rz->hasRole([Roles::RECOUVREUR]))) {
+            return response()->json(
+                [
+                    'message' => "Vous devez choisir un Responsable de zonne",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+
+        //recuperer le type de puce
+        $type_puce = Type_puce::where('name', Statut::PUCE_RZ)->first();
+
+        // Récupérer les données validées
+		$nom = $request->nom;
+        $type = $type_puce->id;
+        $numero = $request->numero;
+		$id_flotte = $request->id_flotte;
+        $reference = $request->reference;
+        $description = $request->description;
+
+        // ajout de la nouvelle puce
+        $puce = $rz->puces()->create([
+            'nom' => $nom,
+			'type' => $type,
+			'numero' => $numero,
+			'id_flotte' => $id_flotte,
+            'reference' => $reference,
+            'description' => $description
+		]);
+        
+        if ($puce !== null) {
+
+			$puces = $rz->puces;
+            // Renvoyer un message de succès
+            return response()->json(
+                [
+                    'message' => '',
+                    'status' => true,
+                    'data' => [
+						'zone' => $rz->zone,
+						'user' => $rz->setHidden(['deleted_at', 'add_by', 'id_zone']),
+						'puces' => $puces,
+                        'caisse' => Caisse::where('id_user', $rz->id)->first()
+					]
+                ]
+            );
+        } else {
+            // Renvoyer une erreur
+            return response()->json(
+                [
+                    'message' => "Erreur l'ors de l'ajout de la nouvelle puce",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+    }
+
+    /**
+     * retirrer une puce à un responsable de zonne
+     */
+    public function delete_puce_rz(Request $request, $id)
+    {
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [
+            'id_puce' => ['required', 'numeric']
+        ]);
+        if ($validator->fails()) {
+            return response()->json(
+                [
+                    'message' => "Le formulaire contient des champs mal renseignés",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+
+        // Récupérer les données validées
+		$id_puce = $request->id_puce;
+
+        // recuperer la puce
+		$puce = Puce::find($id_puce);
+        $puce->deleted_at = now();
+		$puce->save();
+
+        if ($puce !== null) {
+			$rz = User::find($id);
+			$puces = is_null($rz) ? [] : $rz->puces;
+            // Renvoyer un message de succès
+            return response()->json(
+                [
+                    'message' => '',
+                    'status' => true,
+                    'data' => [
+						'zone' => $rz->zone,
+						'user' => $rz->setHidden(['deleted_at', 'add_by', 'id_zone']),
+						'puces' => $puces,
+                        'caisse' => Caisse::where('id_user', $rz->id)->first()
 					]
                 ]
             );

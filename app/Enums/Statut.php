@@ -28,6 +28,7 @@ class Statut
     const FLOTTAGE = 'FLOTTAGE';
     const CORPORATE = 'CORPORATE';
     const FLOTTAGE_SECONDAIRE = 'MASTER SIM';
+    const PUCE_RZ = 'RESPONSABLE DE ZONNE';
 
 
     //types d'approvisionnement'

@@ -396,6 +396,12 @@ class FlotageController extends Controller
                         }
                     }
 
+                    //notification de l'agent flotté
+                        $agent->notify(new Notif_flottage([
+                            'data' => $flottage,
+                            'message' => "Nouveau flottage"
+                        ]));
+
                 ////ce que le flottage implique
 
                 //On debite la puce de ETP
