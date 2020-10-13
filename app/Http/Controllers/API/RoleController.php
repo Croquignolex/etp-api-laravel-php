@@ -4,7 +4,7 @@ namespace App\Http\Controllers\API;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator; 
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Enums\Roles;
@@ -17,11 +17,11 @@ class RoleController extends Controller
 
         $superviseur = Roles::SUPERVISEUR;
         $this->middleware("permission:$superviseur");
-        
+
     }
 
 
-    
+
 
 /**
 
@@ -49,9 +49,9 @@ class RoleController extends Controller
                     'status' => false,
                     'data' => null
                 ]
-            ); 
+            );
          }
-         
+
 
     }
 
@@ -69,18 +69,18 @@ class RoleController extends Controller
     {
 
         // Valider données envoyées
-        $validator = Validator::make($request->all(), [ 
+        $validator = Validator::make($request->all(), [
             'name' => 'required|unique:roles,name',
             'permission' => 'required',
         ]);
-        if ($validator->fails()) { 
+        if ($validator->fails()) {
             return response()->json(
                 [
-                    'message' => ['error'=>$validator->errors()],
+                    'message' => "Le formulaire contient des champs mal renseignés",
                     'status' => false,
                     'data' => null
                 ]
-            );            
+            );
                 }
 
         //si le role est créé
@@ -104,9 +104,9 @@ class RoleController extends Controller
                     'data' => null
                 ]
             );
-        }     
+        }
 
-        
+
 
     }
 
@@ -137,7 +137,7 @@ class RoleController extends Controller
 
             ->get();
 
-            
+
             return response()->json(
                 [
                     'message' => '',
@@ -171,18 +171,18 @@ class RoleController extends Controller
     {
 
         // Valider données envoyées
-        $validator = Validator::make($request->all(), [ 
+        $validator = Validator::make($request->all(), [
             'name' => 'required',
             'permission' => 'required',
         ]);
-        if ($validator->fails()) { 
+        if ($validator->fails()) {
             return response()->json(
                 [
-                    'message' => ['error'=>$validator->errors()],
+                    'message' => "Le formulaire contient des champs mal renseignés",
                     'status' => false,
                     'data' => null
                 ]
-            );            
+            );
         }
 
         // si le role est trouvé
@@ -198,7 +198,7 @@ class RoleController extends Controller
                     'status' => true,
                     'data' => ['role' => $role]
                 ]
-            ); 
+            );
         }
 
         //On retourne une erreur
@@ -208,7 +208,7 @@ class RoleController extends Controller
                 'status' => false,
                 'data' => null
             ]
-        ); 
+        );
 
     }
 
@@ -225,14 +225,14 @@ class RoleController extends Controller
     {
 
         // si le role est supprimé
-        if(DB::table("roles")->where('id',$id)->delete()){            
+        if(DB::table("roles")->where('id',$id)->delete()){
             return response()->json(
                 [
                     'message' => 'Role supprimé',
                     'status' => true,
                     'data' => null
                 ]
-            ); 
+            );
         }
 
         //On retourne une erreur
@@ -242,7 +242,7 @@ class RoleController extends Controller
                 'status' => false,
                 'data' => null
             ]
-        ); 
+        );
 
     }
 }

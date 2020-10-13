@@ -618,4 +618,30 @@ Route::group(['middleware' => 'auth:api'], function(){
         Route::get('decaissement_list', 'API\CaisseController@decaissement_list');
 
 
+/*
+    //////////////////////Attribuer une puce à un responsable de zonne/////////////////////
+    */
+        // ajouter une puce à un responsable de zonne
+        Route::post('ajouter_puce_rz/{id}', 'API\AgentController@ajouter_puce_rz')
+        ->where('id', '[0-9]+');
+
+		// supprimer une puce depuis un responsable de zonne
+        Route::post('delete_puce_rz/{id}', 'API\AgentController@delete_puce_rz')
+        ->where('id', '[0-9]+');
+
+                    /*
+    //////////////////////Flottage Responsable de zonne/////////////////////
+    */
+
+        //Creer un Flottage Responsable de zonne
+        Route::post('flottage_rz', 'API\Flottage_rzController@store');
+
+        //Details d'un Flottage Responsable de zonne
+        Route::get('detail_flottage_rz/{id}', 'API\Flottage_rzController@show')
+        ->where('id', '[0-9]+');
+
+        //lister les Flottages Responsable de zonne
+        Route::get('list_all_flottage_rz', 'API\Flottage_rzController@list_all');
+
+
 });

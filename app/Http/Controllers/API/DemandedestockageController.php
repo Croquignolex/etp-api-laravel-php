@@ -45,7 +45,7 @@ class DemandedestockageController extends Controller
         if ($validator->fails()) {
             return response()->json(
                 [
-                    'message' => ['error'=>$validator->errors()],
+                    'message' => "Le formulaire contient des champs mal renseignés",
                     'status' => false,
                     'data' => null
                 ]
@@ -91,8 +91,8 @@ class DemandedestockageController extends Controller
         if ($demande_destockage->save()) {
 
             //Broadcast Notification
-            $role = Role::where('name', Roles::RECOUVREUR)->first(); 
-            $role2 = Role::where('name', Roles::GESTION_FLOTTE)->first();   
+            $role = Role::where('name', Roles::RECOUVREUR)->first();
+            $role2 = Role::where('name', Roles::GESTION_FLOTTE)->first();
             $event = new NotificationsEvent($role->id, ['message' => 'Nouvelle demande de Destockage']);
             broadcast($event)->toOthers();
 
@@ -101,12 +101,12 @@ class DemandedestockageController extends Controller
                 $users = User::all();
                 //notifier les GF et les GF
                 foreach ($users as $user) {
-                    
+
                     if ($user->hasRole([$role->name]) || $user->hasRole([$role2->name])) {
-                        
+
                         $user->notify(new Notif_demande_destockage([
                             'data' => $demande_destockage,
-                            'message' => "Nouvelle demande de Destockage"                    
+                            'message' => "Nouvelle demande de Destockage"
                         ]));
                     }
                 }
@@ -144,7 +144,7 @@ class DemandedestockageController extends Controller
         if ($validator->fails()) {
             return response()->json(
                 [
-                    'message' => ['error'=>$validator->errors()],
+                    'message' => "Le formulaire contient des champs mal renseignés",
                     'status' => false,
                     'data' => null
                 ]
@@ -167,7 +167,7 @@ class DemandedestockageController extends Controller
             $demandeur = User::find($demande_destockage->add_by);
 
             //Broadcast Notification
-            $role = Role::where('name', Roles::RECOUVREUR)->first();    
+            $role = Role::where('name', Roles::RECOUVREUR)->first();
             $event = new NotificationsEvent($role->id, ['message' => 'Une demande de Destockage modifiée']);
             broadcast($event)->toOthers();
 
@@ -175,12 +175,12 @@ class DemandedestockageController extends Controller
             //Database Notification
             $users = User::all();
             foreach ($users as $user) {
-                
+
                 if ($user->hasRole([$role->name])) {
-                    
+
                     $user->notify(new Notif_demande_destockage([
                         'data' => $demande_destockage,
-                        'message' => "Une demande de Destockage modifiée"                    
+                        'message' => "Une demande de Destockage modifiée"
                     ]));
 
                 }
@@ -318,7 +318,7 @@ class DemandedestockageController extends Controller
 
 
             //Broadcast Notification
-            $role = Role::where('name', Roles::RECOUVREUR)->first();    
+            $role = Role::where('name', Roles::RECOUVREUR)->first();
             $event = new NotificationsEvent($role->id, ['message' => 'Une demande de Destockage Annulée']);
             broadcast($event)->toOthers();
 
@@ -326,12 +326,12 @@ class DemandedestockageController extends Controller
             //Database Notification
             $users = User::all();
             foreach ($users as $user) {
-                
+
                 if ($user->hasRole([$role->name])) {
-                    
+
                     $user->notify(new Notif_demande_destockage([
                         'data' => $demandes_destockage,
-                        'message' => "Une demande de Destockage Annulée"                    
+                        'message' => "Une demande de Destockage Annulée"
                     ]));
 
                 }

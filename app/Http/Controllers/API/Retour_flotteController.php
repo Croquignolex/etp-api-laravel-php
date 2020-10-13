@@ -50,7 +50,7 @@ class Retour_flotteController extends Controller
         if ($validator->fails()) {
             return response()->json(
                 [
-                    'message' => ['error'=>$validator->errors()],
+                    'message' => "Le formulaire contient des champs mal renseignés",
                     'status' => false,
                     'data' => null
                 ]

@@ -52,7 +52,7 @@ class FlotageController extends Controller
         if ($validator->fails()) {
             return response()->json(
                 [
-                    'message' => ['error'=>$validator->errors()],
+                    'message' => "Le formulaire contient des champs mal renseignés",
                     'status' => false,
                     'data' => null
                 ]
@@ -244,7 +244,7 @@ class FlotageController extends Controller
         if ($validator->fails()) {
             return response()->json(
                 [
-                    'message' => ['error'=>$validator->errors()],
+                    'message' => "Le formulaire contient des champs mal renseignés",
                     'status' => false,
                     'data' => null
                 ]
@@ -299,7 +299,7 @@ class FlotageController extends Controller
             $id_puce = $request->id_puce_agent;
 
         // Nouvelle demande fictive de flotte
-        $demande_flotte = new Demande_flote([ 
+        $demande_flotte = new Demande_flote([
             'id_user' => $id_user,
             'add_by' => $add_by,
             'reference' => $reference,
@@ -395,6 +395,12 @@ class FlotageController extends Controller
                             ]));
                         }
                     }
+
+                    //notification de l'agent flotté
+                        $agent->notify(new Notif_flottage([
+                            'data' => $flottage,
+                            'message' => "Nouveau flottage"
+                        ]));
 
                 ////ce que le flottage implique
 

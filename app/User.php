@@ -58,6 +58,12 @@ class User extends Authenticatable
         return $this->hasMany('App\Operation', 'id_user');
     }
 
+    //les puce d'un responsable de zonne
+    public function puces()
+    {
+        return $this->hasMany('App\Puce', 'id_rz');
+    }
+
     //les demande de destockages enregistrées pour un utilisateur precis
     public function demande_destockages() {
         return $this->hasMany('App\Demande_destockage', 'id_user');

@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
+use App\Notifications\Recouvrement as Notif_recouvrement;
 
 class CaisseController extends Controller
 {
@@ -37,7 +38,7 @@ class CaisseController extends Controller
         if ($validator->fails()) {
             return response()->json(
                 [
-                    'message' => ['error'=>$validator->errors()],
+                    'message' => "Le formulaire contient des champs mal renseignés",
                     'status' => false,
                     'data' => null
                 ]
@@ -67,6 +68,7 @@ class CaisseController extends Controller
         if ($request->hasFile('recu') && $request->file('recu')->isValid()) {
             $recu = $request->recu->store('files/recu/versement');
         }
+        
         $id_donneur = $request->id_donneur;
         $montant = $request->montant;
         $id_caisse = $caisse->id;
@@ -85,6 +87,13 @@ class CaisseController extends Controller
 
         // creation du versement
         if ($versement->save()) {
+
+            //notification du donneur
+            $donneur = User::find($request->id_donneur);
+            $donneur->notify(new Notif_recouvrement([
+                'data' => $versement,
+                'message' => "Nouveau versement de votre part"
+            ]));
 
             //on credite le compte du donneur
             $caisse_donneur->solde = $caisse_donneur->solde + $montant;
@@ -144,7 +153,7 @@ class CaisseController extends Controller
         if ($validator->fails()) {
             return response()->json(
                 [
-                    'message' => ['error'=>$validator->errors()],
+                    'message' => "Le formulaire contient des champs mal renseignés",
                     'status' => false,
                     'data' => null
                 ]
@@ -191,8 +200,8 @@ class CaisseController extends Controller
         $add_by = $user->id;
         $note = "pour un Decaissement";
 
-        // Nouveau versement
-        $versement = new Versement ([
+        // Nouveau decaissement
+        $decaissement = new Versement ([
             'recu' => $recu,
             'correspondant' => $receveur,
             'montant' => $montant,
@@ -201,8 +210,15 @@ class CaisseController extends Controller
             'note' => $note
         ]);
 
-        // creation du versement
-        if ($versement->save()) {
+        // creation du decaissement
+        if ($decaissement->save()) {
+
+            //notification du receveur
+            $receveur = User::find($receveur);
+            $receveur->notify(new Notif_recouvrement([
+                'data' => $decaissement,
+                'message' => "Nouveau decaissement de votre part"
+            ]));
 
             //on debite le compte du receveur
             $caisse_receveur->solde = $caisse_receveur->solde - $montant;
@@ -211,7 +227,6 @@ class CaisseController extends Controller
             //on debite le compte de la gestionnaire de flotte
             $caisse->solde = $caisse->solde - $montant;
             $caisse->save();
-
             $getionnaire_id = Auth::user()->id;
             $versements = Versement::All();
             $decaissements = [];
@@ -221,7 +236,7 @@ class CaisseController extends Controller
                     $decaissements[] = [
                         'versement' => $versement,
                         'gestionnaire' => User::find($versement->add_by),
-                        'recouvreur' => User::find($versement->correspondant),
+                        'receveur' => User::find($versement->correspondant),
                     ];
                 }
             }
