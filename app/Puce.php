@@ -15,7 +15,7 @@ class Puce extends Model
     protected $dates = ['deleted_at'];
 
     protected $fillable = array('id', 'nom', 'id_flotte', 'corporate', 'id_agent', 'reference', 'numero', 'type', 'id_rz', 'solde', 'description');
-    protected $visible = array('id', 'nom', 'id_flotte', 'id_agent', 'corporate', 'numero', 'reference', 'type', 'id_rz', 'description', 'created_at');
+    protected $visible = array('id', 'nom', 'id_flotte', 'id_agent', 'corporate', 'numero', 'reference', 'type', 'id_rz', 'solde', 'description', 'created_at');
 
     public function flote()
     {

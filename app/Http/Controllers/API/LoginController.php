@@ -2,21 +2,20 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Enums\Roles;
 use App\User;
-use App\Caisse;
-use Illuminate\Http\Request;
-use App\Enums\Statut;
-use Illuminate\Http\JsonResponse;
-use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Validator;
 use App\Zone;
 use App\Agent;
+use App\Caisse;
+use App\Enums\Statut;
+use Illuminate\Http\Request;
 use App\Utiles\ImageFromBase64;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\DB;
-use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class LoginController extends Controller
 {
@@ -90,13 +89,15 @@ class LoginController extends Controller
 			$user = auth()->user();
 
 			// recuperer l'agent et ses puces associé à l'utilisateur (utile pour l'agent)
-			$agent = Agent::where('id_user', $user->id)->first();
-			$puces = is_null($agent) ? [] : $agent->puces;
+            $agent = null;
+            $puces = [];
 
-            // Définir quand le token va s'expirer
-            /*$token->token->expires_at = Carbon::now()->addHour();
-
-            $token->token->save();*/
+            if($user->roles->first()->name === Roles::AGENT) {
+                $agent = Agent::where('id_user', $user->id)->first();
+                $puces = $agent->puces;
+            } else if($user->roles->first()->name === Roles::RECOUVREUR) {
+                $puces = $user->puces;
+            }
 
             return response()->json(
                 [
@@ -109,8 +110,7 @@ class LoginController extends Controller
 						'role' => $user->roles->first(),
 						'agent' => $agent,
 						'puces' => $puces,
-						'setting' => $user->setting->first(),
-                        //'caisse' => Caisse::where('id_user', $user->id)->first()
+						'setting' => $user->setting->first()
                     ]
                 ]
             );
@@ -305,7 +305,7 @@ class LoginController extends Controller
     }
 
     /**
-     * @param Base64ImageRequest $request
+     * @param Request $request
      * @return JsonResponse
      */
     public function update_picture(Request $request)

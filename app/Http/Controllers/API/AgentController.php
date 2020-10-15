@@ -1,34 +1,28 @@
 <?php
 
 namespace App\Http\Controllers\API;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Http\Request;
-use App\Agent;
-use App\Http\Resources\Agent as AgentResource;
+
 use App\Zone;
-use App\Enums\Statut;
-use App\Caisse;
 use App\User;
 use App\Puce;
-use Spatie\Permission\Models\Role;
-use App\Enums\Roles;
+use App\Agent;
+use App\Caisse;
 use App\Type_puce;
-use Illuminate\Support\Facades\Validator;
+use App\Enums\Roles;
+use App\Enums\Statut;
+use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Spatie\Permission\Models\Role;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
-
-use function PHPSTORM_META\type;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class AgentController extends Controller
 {
     /**
-
      * les conditions de lecture des methodes
-
      */
-
     function __construct()
     {
         $superviseur = Roles::SUPERVISEUR;
@@ -40,6 +34,8 @@ class AgentController extends Controller
 
     /**
      * creer un Agent
+     * @param Request $request
+     * @return JsonResponse
      */
     public function store(Request $request)
     {
@@ -231,6 +227,8 @@ class AgentController extends Controller
 
     /**
      * details d'un Agent
+     * @param $id
+     * @return JsonResponse
      */
     public function show($id)
     {
@@ -271,6 +269,9 @@ class AgentController extends Controller
 
     /**
      * Modifier un Agent
+     * @param Request $request
+     * @param $id
+     * @return JsonResponse
      */
     public function edit(Request $request, $id)
     {
@@ -351,9 +352,11 @@ class AgentController extends Controller
 
     }
 
-
     /**
      * Modifier le dossier d'un agent
+     * @param Request $request
+     * @param Agent $agent
+     * @return JsonResponse
      */
     public function edit_folder(Request $request, Agent $agent)
     {
@@ -418,7 +421,6 @@ class AgentController extends Controller
 
     }
 
-
     /**
      * liste des Agents
      *
@@ -466,8 +468,10 @@ class AgentController extends Controller
 
     }
 
-	/**
+    /**
      * //Approuver ou desapprouver un agent
+     * @param $id
+     * @return JsonResponse
      */
     public function edit_agent_status($id)
     {
@@ -541,8 +545,11 @@ class AgentController extends Controller
 
     }
 
-	/**
+    /**
      * modification la zone de l'agent
+     * @param Request $request
+     * @param $id
+     * @return JsonResponse
      */
     public function edit_zone_agent(Request $request, $id)
     {
@@ -626,6 +633,7 @@ class AgentController extends Controller
     /**
      * supprimer un Agents
      *
+     * @param $id
      * @return JsonResponse
      */
     public function delete($id)
@@ -778,8 +786,11 @@ class AgentController extends Controller
 
     }
 
-	/**
+    /**
      * ajouter une puce à un agent
+     * @param Request $request
+     * @param $id
+     * @return JsonResponse
      */
     public function ajouter_puce(Request $request, $id)
     {
@@ -852,8 +863,11 @@ class AgentController extends Controller
         }
     }
 
-	/**
+    /**
      * retirer une puce à un agent
+     * @param Request $request
+     * @param $id
+     * @return JsonResponse
      */
     public function delete_puce(Request $request, $id)
     {
@@ -911,6 +925,9 @@ class AgentController extends Controller
 
     /**
      * // ajouter une puce à un responsable de zonne
+     * @param Request $request
+     * @param $id
+     * @return JsonResponse
      */
     public function ajouter_puce_rz(Request $request, $id)
     {
@@ -931,7 +948,7 @@ class AgentController extends Controller
                 ]
             );
         }
-        
+
         //si l'utilisateur n'est pas responsable de zonne'
         $rz = User::find($id);
         if (is_null($rz)) {
@@ -974,7 +991,7 @@ class AgentController extends Controller
             'reference' => $reference,
             'description' => $description
 		]);
-        
+
         if ($puce !== null) {
 
 			$puces = $rz->puces;
@@ -1005,6 +1022,9 @@ class AgentController extends Controller
 
     /**
      * retirrer une puce à un responsable de zonne
+     * @param Request $request
+     * @param $id
+     * @return JsonResponse
      */
     public function delete_puce_rz(Request $request, $id)
     {

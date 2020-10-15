@@ -20,12 +20,21 @@ class CaisseTableSeeder extends Seeder {
 
 		// 'caisse2'
 		Caisse::create(array(
-			'nom' => 'Caisse AGENT',
+			'nom' => 'Caisse AGENT 1',
 			'description' => Null,
 			'id_user' => 2,
 			'reference' => Null,
 			'solde' => 0
 			));
+
+        // 'caisse2'
+        Caisse::create(array(
+            'nom' => 'Caisse AGENT 2',
+            'description' => Null,
+            'id_user' => 3,
+            'reference' => Null,
+            'solde' => 0
+        ));
 
 		// 'caisse1'
 		Caisse::create(array(

@@ -2,21 +2,18 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Caisse;
 use App\User;
-use App\Agent as Agent_model;
-use Illuminate\Http\Request;
-use App\Utiles\ImageFromBase64;
+use App\Zone;
+use App\Caisse;
+use App\Enums\Roles;
 use App\Enums\Statut;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\Request;
+use App\Agent as Agent_model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
 use App\Http\Controllers\Controller;
-use App\Zone;
 use Illuminate\Support\Facades\Auth;
-use App\Enums\Roles;
-use App\Http\Resources\Agent;
 use Illuminate\Support\Facades\Validator;
 
 class UserController extends Controller
@@ -162,6 +159,7 @@ class UserController extends Controller
 						'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
 						'role' => $user->roles->first(),
 						'zone' => $user->zone,
+						'puces' => $user->puces,
                         'caisse' => Caisse::where('id_user', $user->id)->first()
 					]
                 ]
@@ -220,6 +218,7 @@ class UserController extends Controller
 					'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
 					'role' => $user->roles->first(),
 					'zone' => $user->zone,
+                    'puces' => $user->puces,
                     'caisse' => Caisse::where('id_user', $user->id)->first()
 				];
 
@@ -265,6 +264,7 @@ class UserController extends Controller
 					'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
 					'role' => $user->roles->first(),
 					'zone' => $user->zone,
+                    'puces' => $user->puces,
                     'caisse' => Caisse::where('id_user', $user->id)->first()
 				];
 
@@ -295,8 +295,6 @@ class UserController extends Controller
      */
     public function delete($id)
     {
-
-
         if (Auth::user()->id == $id) {
             // Renvoyer une erreur
             return response()->json(
@@ -331,6 +329,7 @@ class UserController extends Controller
 						'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
 						'role' => $user->roles->first(),
 						'zone' => $user->zone,
+                        'puces' => $user->puces,
                         'caisse' => Caisse::where('id_user', $user->id)->first()
 					];
 
@@ -381,7 +380,6 @@ class UserController extends Controller
                     'data' => null
                 ]
             );
-
         }
 
         // Valider données envoyées
@@ -437,6 +435,7 @@ class UserController extends Controller
 						'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
 						'role' => $user->roles->first(),
 						'zone' => $user->zone,
+                       'puces' => $user->puces,
                         'caisse' => Caisse::where('id_user', $user->id)->first()
 					]
                 ]
@@ -515,6 +514,7 @@ class UserController extends Controller
                      'data' => [
 						'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
 						'role' => $user->roles->first(),
+                         'puces' => $user->puces,
                         'caisse' => Caisse::where('id_user', $user->id)->first()
 					]
                 ]
@@ -614,6 +614,7 @@ class UserController extends Controller
                      'data' => [
 						'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
 						'zone' => $user->zone,
+                         'puces' => $user->puces,
                         'caisse' => Caisse::where('id_user', $user->id)->first()
 					]
                 ]
