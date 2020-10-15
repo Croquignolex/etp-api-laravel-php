@@ -252,7 +252,7 @@ class FlotageController extends Controller
         }
 
         //On verifi si l'agent passé existe réellement
-        if (!Agent::Find($request->id_agent)) {
+        if (!Agent::find($request->id_agent)) {
             return response()->json(
                 [
                     'message' => "Cet Agent n'existe pas",
@@ -263,7 +263,7 @@ class FlotageController extends Controller
         }
 
         //On verifi si la puce agent passée existe réellement
-        if (!Puce::Find($request->id_puce_agent)) {
+        if (!Puce::find($request->id_puce_agent)) {
             return response()->json(
                 [
                     'message' => "Cette Puce Agent n'existe pas",
@@ -274,7 +274,7 @@ class FlotageController extends Controller
         }
 
         //On verifi si la puce de  flottage passée existe réellement
-        if (!Puce::Find($request->id_puce_flottage)) {
+        if (!Puce::find($request->id_puce_flottage)) {
             return response()->json(
                 [
                     'message' => "Cette Puce de flottage n'existe pas",
@@ -285,12 +285,13 @@ class FlotageController extends Controller
         }
 
         //recuperer l'agent concerné
-        $agent = Agent::Find($request->id_agent);
+        $agent = Agent::find($request->id_agent);
         $user = $agent->user;
+        $connected_user = Auth::user();
 
         // Récupérer les données pour la création d'une demande fictive de flotte
             $id_user = $user->id;
-            $add_by = $user->id;
+            $add_by = ($connected_user->roles->first()->name === Roles::RECOUVREUR) ? $connected_user->id : $user->id;
             $reference = null;
             $montant = $request->montant;
             $statut = Statut::EFFECTUER;
@@ -322,7 +323,7 @@ class FlotageController extends Controller
             $type_puce = Type_puce::find($puce_etp->type)->name;
 
             //On se rassure que la puce passée en paramettre est reelement l'une des puces de flottage sollicités
-            if ($type_puce == Statut::AGENT || $type_puce == Statut::ETP || $puce_etp->id_flotte != $puce_agent->id_flotte) {
+            if ($type_puce == Statut::CORPORATE || $type_puce == Statut::AGENT || $type_puce == Statut::ETP || $puce_etp->id_flotte != $puce_agent->id_flotte) {
                 return response()->json(
                     [
                         'message' => "cette puce n'est pas capable d'effectuer un flottagage",
@@ -351,13 +352,12 @@ class FlotageController extends Controller
             $caisse = Caisse::where('id_user', $demande_flotte->id_user)->first();
 
             //La gestionnaire concernée
-            $gestionnaire = Auth::user();
-
+            //$gestionnaire = Auth::user();
 
             // Nouveau flottage
             $flottage = new Approvisionnement([
                 'id_demande_flote' => $demande_flotte->id,
-                'id_user' => $gestionnaire->id,
+                'id_user' => $connected_user->id,
                 'reference' => null,
                 'statut' => Statut::EN_ATTENTE,
                 'note' => null,
@@ -385,11 +385,11 @@ class FlotageController extends Controller
 
                     //noifier les responsables de zonne
                     $users = User::all();
-                    foreach ($users as $user) {
+                    foreach ($users as $_user) {
 
-                        if ($user->hasRole([$role->name])) {
+                        if ($_user->hasRole([$role->name])) {
 
-                            $user->notify(new Notif_flottage([
+                            $_user->notify(new Notif_flottage([
                                 'data' => $flottage,
                                 'message' => "Nouveau flottage"
                             ]));
@@ -397,7 +397,7 @@ class FlotageController extends Controller
                     }
 
                     //notification de l'agent flotté
-                        $agent->notify(new Notif_flottage([
+                        $user->notify(new Notif_flottage([
                             'data' => $flottage,
                             'message' => "Nouveau flottage"
                         ]));
