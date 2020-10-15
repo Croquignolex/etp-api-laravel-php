@@ -17,8 +17,8 @@ use Illuminate\Http\JsonResponse;
 use App\Events\NotificationsEvent;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
-use App\Notifications\Flottage as Notif_flottage;
 use Illuminate\Support\Facades\Validator;
+use App\Notifications\Flottage as Notif_flottage;
 
 class FlotageController extends Controller
 {

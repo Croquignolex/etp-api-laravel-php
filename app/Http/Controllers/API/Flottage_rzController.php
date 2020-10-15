@@ -46,10 +46,10 @@ class Flottage_rzController extends Controller
                 ]
             );
         }
-        
+
         // On verifi que la puce passée en paramettre existe
         if (!is_null(Puce::find($request->id_puce_from)) && !is_null(Puce::find($request->id_puce_to))) {
-            
+
             //On recupère la puce qui envoie
             $puce_from = Puce::find($request->id_puce_from);
 
@@ -84,7 +84,7 @@ class Flottage_rzController extends Controller
             );
         }
 
-        
+
 
         //On se rassure que le solde est suffisant
         if ($puce_from->solde < $request->montant) {
@@ -96,7 +96,7 @@ class Flottage_rzController extends Controller
                 ]
             );
         }
-        
+
         //on debite le solde du gestionnaire de flotte
         $puce_from->solde = $puce_from->solde - $request->montant;
 
@@ -105,7 +105,7 @@ class Flottage_rzController extends Controller
 
         //On debite la caisse du rz
         $rz = $puce_to->rz->caisse->first();
-        $rz->solde = $rz->solde - $request->montant; 
+        $rz->solde = $rz->solde - $request->montant;
 
         $gestionnaire = Auth::user();
 
@@ -120,7 +120,7 @@ class Flottage_rzController extends Controller
             'montant' => $request->montant,
             'reste' => null
         ]);
-        
+
         //si l'enregistrement du flottage a lieu
         if ($flottage_rz->save()) {
 
@@ -151,7 +151,7 @@ class Flottage_rzController extends Controller
             foreach($flottage_internes as $flottage_interne) {
 
                 $puce_gf = Puce::find($flottage_interne->id_sim_from );
-                if ($puce_gf->type_puce->name == Statut::FLOTTAGE) {
+                //if ($puce_gf->type_puce->name == Statut::FLOTTAGE) {
 
                     //recuperer la puce d'envoie
                     $puce_emetrice = Puce::find($flottage_interne->id_sim_from);
@@ -169,7 +169,7 @@ class Flottage_rzController extends Controller
                         'rz' => $rz,
                         'flottage' => $flottage_interne
                     ];
-                }
+                //}
             }
 
                 // Renvoyer un message de succès
