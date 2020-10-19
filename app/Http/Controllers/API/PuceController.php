@@ -2,34 +2,32 @@
 
 namespace App\Http\Controllers\API;
 
-use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
 use App\Puce;
-use App\Type_puce;
-use App\Flote;
 use App\User;
+use App\Type_puce;
 use App\Enums\Roles;
+use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
 
 class PuceController extends Controller
 {
     /**
-
      * les conditions de lecture des methodes
-
      */
-
      function __construct(){
-        $responsable = Roles::RECOUVREUR;
-        $superviseur = Roles::SUPERVISEUR;
-        $ges_flotte = Roles::GESTION_FLOTTE;
-        $agent = Roles::AGENT;
-        $this->middleware("permission:$superviseur|$ges_flotte|$responsable|$agent");
-
+         $agent = Roles::AGENT;
+         $responsable = Roles::RECOUVREUR;
+         $superviseur = Roles::SUPERVISEUR;
+         $ges_flotte = Roles::GESTION_FLOTTE;
+         $this->middleware("permission:$superviseur|$ges_flotte|$responsable|$agent");
     }
 
     /**
      * //Creer une puce.
+     * @param Request $request
+     * @return JsonResponse
      */
     public function store(Request $request)
     {
@@ -101,6 +99,8 @@ class PuceController extends Controller
 
     /**
      * //details d'une puce'
+     * @param $id
+     * @return JsonResponse
      */
     public function show($id)
     {
@@ -123,6 +123,7 @@ class PuceController extends Controller
                         'agent' => $agent,
                         'user' => $user,
                         'corporate' => $puce->company,
+                        'recouvreur' => $puce->rz,
                     ]
                 ]
             );
@@ -139,6 +140,9 @@ class PuceController extends Controller
 
     /**
      * modification d'une puce
+     * @param Request $request
+     * @param $id
+     * @return JsonResponse
      */
     public function update(Request $request, $id)
     {
@@ -198,6 +202,7 @@ class PuceController extends Controller
                         'agent' => $agent,
                         'user' => $user,
                         'corporate' => $puce->company,
+                        'recouvreur' => $puce->rz,
                     ]
                 ]
             );
@@ -215,6 +220,9 @@ class PuceController extends Controller
 
     /**
      * modification de l'opérateur de la puce
+     * @param Request $request
+     * @param $id
+     * @return JsonResponse
      */
     public function update_flote(Request $request, $id)
     {
@@ -257,6 +265,7 @@ class PuceController extends Controller
                         'agent' => $agent,
                         'user' => $user,
                         'corporate' => $puce->company,
+                        'recouvreur' => $puce->rz,
                     ]
                 ]
             );
@@ -272,8 +281,11 @@ class PuceController extends Controller
         }
     }
 
-	/**
+    /**
      * modification de l'agent de la puce
+     * @param Request $request
+     * @param $id
+     * @return JsonResponse
      */
     public function update_agent(Request $request, $id)
     {
@@ -316,6 +328,7 @@ class PuceController extends Controller
                         'agent' => $agent,
                         'user' => $user,
                         'corporate' => $puce->company,
+                        'recouvreur' => $puce->rz,
                     ]
                 ]
             );
@@ -333,6 +346,9 @@ class PuceController extends Controller
 
     /**
      * modification de l'entreprise de la puce
+     * @param Request $request
+     * @param $id
+     * @return JsonResponse
      */
     public function update_corporate(Request $request, $id)
     {
@@ -375,6 +391,7 @@ class PuceController extends Controller
                         'agent' => $agent,
                         'user' => $user,
                         'corporate' => $puce->company,
+                        'recouvreur' => $puce->rz,
                     ]
                 ]
             );
@@ -406,7 +423,14 @@ class PuceController extends Controller
 				$user = is_null($id_agent) ? $id_agent : User::find($puce->agent->id_user);
 				//$flote = Flote::find($puce->id_flotte);
 				//$nom = $flote->nom;
-                $returenedPuces[] = ['puce' => $puce, 'flote' => $puce->flote, 'type' => $puce->type_puce, 'agent' => $agent, 'user' => $user];
+                $returenedPuces[] = [
+                    'puce' => $puce,
+                    'flote' => $puce->flote,
+                    'type' => $puce->type_puce,
+                    'agent' => $agent,
+                    'user' => $user,
+                    'recouvreur' => $puce->rz
+                ];
             }
 
             return response()->json(
@@ -429,6 +453,8 @@ class PuceController extends Controller
 
     /**
      * //lister les puces
+     * @param $id
+     * @return JsonResponse
      */
     public function list_puce_agent($id)
     {
@@ -455,6 +481,8 @@ class PuceController extends Controller
 
     /**
      * //lister les puces
+     * @param $id
+     * @return JsonResponse
      */
     public function list_puce_flotte($id)
     {
@@ -484,6 +512,8 @@ class PuceController extends Controller
 
     /**
      * //supprimer une puce
+     * @param $id
+     * @return JsonResponse
      */
     public function destroy($id)
     {
@@ -501,7 +531,14 @@ class PuceController extends Controller
 					$user = is_null($id_agent) ? $id_agent : User::find($puce->agent->id_user);
 					//$flote = Flote::find($puce->id_flotte);
 					//$nom = $flote->nom;
-					$returenedPuces[] = ['puce' => $puce, 'flote' => $puce->flote, 'type' => $puce->type_puce, 'agent' => $agent, 'user' => $user];
+					$returenedPuces[] = [
+					    'puce' => $puce,
+                        'flote' => $puce->flote,
+                        'type' => $puce->type_puce,
+                        'agent' => $agent,
+                        'user' => $user,
+                        'recouvreur' => $puce->rz,
+                    ];
 				}
                 // Renvoyer un message de succès
                 return response()->json(
@@ -533,9 +570,7 @@ class PuceController extends Controller
     }
 
 	/**
-
      * Liste des types de puces
-
      */
     public function types_puces_list()
     {
@@ -559,8 +594,6 @@ class PuceController extends Controller
                 ]
             );
          }
-
-
     }
 
 }
