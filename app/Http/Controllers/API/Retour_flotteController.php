@@ -160,7 +160,8 @@ class Retour_flotteController extends Controller
         if ($retour_flotte->save()) {
 
             //Notification du gestionnaire de flotte
-            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
+            $role = Role::where('name', Roles::GESTION_FLOTTE)
+            ->orWhere('name', Roles::RECOUVREUR)->first();
             $event = new NotificationsEvent($role->id, ['message' => 'Nouveau retour de flote']);
             broadcast($event)->toOthers();
 

@@ -124,7 +124,8 @@ class RecouvrementController extends Controller
         if ($recouvrement->save()) {
 
             //Notification du gestionnaire de flotte
-            $role = Role::where('name', Roles::RECOUVREUR)->first();
+            $role = Role::where('name', Roles::RECOUVREUR)
+            ->orWhere('name', Roles::GESTION_FLOTTE)->first();
             $event = new NotificationsEvent($role->id, ['message' => 'Nouveau recouvrement']);
             broadcast($event)->toOthers();
 
