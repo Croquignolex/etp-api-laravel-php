@@ -104,8 +104,8 @@ class Flottage_rzController extends Controller
         $puce_to->solde = $puce_to->solde + $request->montant;
 
         //On debite la caisse du rz
-        $rz = $puce_to->rz->caisse->first();
-        $rz->solde = $rz->solde - $request->montant;
+        $rz_caisse = $puce_to->rz->caisse->first();
+        $rz_caisse->solde = $rz_caisse->solde - $request->montant;
 
         $gestionnaire = Auth::user();
 
@@ -126,22 +126,17 @@ class Flottage_rzController extends Controller
 
             $puce_from->save();
             $puce_to->save();
-            $rz->save();
+            $rz_caisse->save();
 
             $role = Role::where('name', Roles::RECOUVREUR)->first();
 
             //Database Notification
-            $users = User::all();
-            foreach ($users as $user) {
+            //notifier le responsable de zone
+            $puce_to->rz->notify(new Notif_flottage([
+                'data' => $flottage_rz,
+                'message' => "Nouveau flottage Dans votre puce"
+            ]));
 
-                if ($user->hasRole([$role->name])) {
-
-                    $user->notify(new Notif_flottage([
-                        'data' => $flottage_rz,
-                        'message' => "Nouveau flottage Dans votre puce"
-                    ]));
-                }
-            }
 
             //On recupere les Flottages rz
             $flottage_internes = Flottage_interne::get();
@@ -159,14 +154,11 @@ class Flottage_rzController extends Controller
                     //recuperer la puce de reception
                     $puce_receptrice = Puce::find($flottage_interne->id_sim_to);
 
-                    //recuperer celui qui a éffectué le flottage
-                    $rz = User::find($flottage_interne->id_user);
-
-
                     $flottages[] = [
                         'puce_receptrice' => $puce_receptrice,
                         'puce_emetrice' => $puce_emetrice,
-                        'rz' => $rz,
+                        'gestionnaire' => $gestionnaire,
+                        'responsable_zone' => $puce_to->rz,
                         'flottage' => $flottage_interne
                     ];
                 //}
