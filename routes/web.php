@@ -14,7 +14,7 @@
 Auth::routes();
 Route::get('/', 'HomeController@index')->name('home');
 Route::get('/event', 'HomeController@event')->name('event');
-Route::get('/logout', 'HomeController@logout');
+Route::get('/l ogout', 'HomeController@logout');
 
 
 

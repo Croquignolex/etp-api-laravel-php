@@ -42,4 +42,9 @@ class Puce extends Model
         return $this->belongsTo('App\Corporate', 'corporate');
     }
 
+    public function flottage_rz()
+    {
+        return $this->hasMany('App\Flottage_Rz', 'id_sim_agent');
+    }
+
 }

@@ -367,7 +367,7 @@ Route::group(['middleware' => 'auth:api'], function(){
 
 
         /*
-    //////////////////////Flottage/////////////////////
+    //////////////////////Flottages/////////////////////
     */
         //Details d'un Flottage
         Route::get('detail_flottage/{id}', 'API\FlotageController@show')
@@ -385,7 +385,7 @@ Route::group(['middleware' => 'auth:api'], function(){
             ->where('id', '[0-9]+');
 
         //Creer un Flottage
-        Route::post('flottage', 'API\FlotageController@store'); 
+        Route::post('flottage', 'API\FlotageController@store');
 
         //lister les Flottages relatifs à une demande precise
         Route::get('list_flottage/{id}', 'API\FlotageController@list_flottage')
@@ -393,7 +393,29 @@ Route::group(['middleware' => 'auth:api'], function(){
 
         //Creer un Flottage pour un agent present à l'agence
         Route::post('flottage_express', 'API\FlotageController@flottage_express');
-        /*
+
+        ///// un responsable de zonne sert la flotte à un Agent un Agent
+
+        //Creer un Flottage d'un responsaple de zone vers un Agent
+        Route::post('flottage_by_rz', 'API\Flottage_rzController@flottage_by_rz');
+
+            //lister les Flottages d'un responsable de zonne
+        Route::get('list_flottage_rz_by_rz/{id}', 'API\Flottage_rzController@list_flottage_rz_by_rz')
+            ->where('id', '[0-9]+');
+
+        //lister les Flottages rz pour un agent precis
+        Route::get('list_flottage_rz_by_agent/{id}', 'API\Flottage_rzController@list_flottage_rz_by_agent')
+            ->where('id', '[0-9]+');
+
+        //lister tous les Flottages rz
+        Route::get('list_all_flottage_by_rz', 'API\Flottage_rzController@list_all_flottage_by_rz');
+
+        //détails d'un flottage effectué par un agent
+        Route::get('show_flottage_rz/{id}', 'API\Flottage_rzController@show_flottage_rz')
+            ->where('id', '[0-9]+');
+
+
+            /*
     //////////////////////Approvisionnement des Puces de ETP/////////////////////
     */
         //traitement d'une demande de destockage (juste pour signaler au système que je traite totalement ou en partie une demande)
@@ -598,7 +620,7 @@ Route::group(['middleware' => 'auth:api'], function(){
         Route::get('encaissement_details/{id}', 'API\CaisseController@versement_details')
         ->where('id', '[0-9]+');
 
-        //lister les Encaissements 
+        //lister les Encaissements
         Route::get('encaissement_list', 'API\CaisseController@encaissement_list');
 
 
@@ -614,7 +636,7 @@ Route::group(['middleware' => 'auth:api'], function(){
         Route::get('decaissement_details/{id}', 'API\CaisseController@versement_details')
         ->where('id', '[0-9]+');
 
-        //lister les Decaissements 
+        //lister les Decaissements
         Route::get('decaissement_list', 'API\CaisseController@decaissement_list');
 
 

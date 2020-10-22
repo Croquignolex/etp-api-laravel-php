@@ -95,6 +95,11 @@ class User extends Authenticatable
     {
         return $this->hasMany('App\Caisse', 'id_user');
     }
+
+    public function flottage_rz()
+    {
+        return $this->hasMany('App\Flottage_Rz', 'id_responsable_zone');
+    }
 	
        
     
