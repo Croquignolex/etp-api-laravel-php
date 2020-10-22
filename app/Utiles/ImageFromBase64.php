@@ -35,13 +35,6 @@ abstract class ImageFromBase64
         return $server_image_name_path;
 
     }
-
-
-
-
-
-
-
 }
 
 

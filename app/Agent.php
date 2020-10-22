@@ -29,6 +29,11 @@ class Agent extends Model
         return $this->belongsTo('App\User', 'id_user');
     }
 
+    public function flottage_rz()
+    {
+        return $this->hasMany('App\Flottage_Rz', 'id_agent');
+    }
+
     public static function boot()
     {
         parent::boot();        
