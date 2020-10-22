@@ -38,6 +38,7 @@ class PuceController extends Controller
             'id_flotte' => ['required', 'Numeric'],
             //'id_agent' => ['required', 'Numeric'],
             //'id_corporate' => ['required', 'Numeric'],
+            //'id_recouvreur' => ['required', 'Numeric'],
             'nom' => ['required', 'string'],
             'description' => ['nullable', 'string'],
 			'type' => ['required', 'numeric'],
@@ -59,6 +60,7 @@ class PuceController extends Controller
         $numero = $request->numero;
         $id_agent = $request->id_agent;
         $id_corporate = $request->id_corporate;
+        $id_recouvreur = $request->id_recouvreur;
         $reference = $request->reference;
         $id_flotte = $request->id_flotte;
         $description = $request->description;
@@ -73,6 +75,7 @@ class PuceController extends Controller
             'id_flotte' => $id_flotte,
             'corporate' => $id_corporate,
             'description' => $description,
+            'id_rz' => $id_recouvreur,
         ]);
 
         // creation de La puce
