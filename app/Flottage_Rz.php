@@ -13,7 +13,7 @@ class Flottage_Rz extends Model
 
     protected $dates = ['deleted_at'];
     protected $fillable = array('id', 'id_responsable_zone', 'id_agent', 'id_sim_agent', 'reference', 'statut', 'montant', 'reste');
-    protected $visible = array('id', 'id_responsable_zone', 'id_agent', 'id_sim_agent', 'reference', 'statut', 'montant', 'reste');
+    protected $visible = array('id', 'id_responsable_zone', 'id_agent', 'id_sim_agent', 'reference', 'statut', 'montant', 'reste', 'created_at');
 
     public function responsable_zone()
     {
@@ -22,7 +22,7 @@ class Flottage_Rz extends Model
 
     public function agent()
     {
-        return $this->belongsTo('App\User', 'id_agent');
+        return $this->belongsTo('App\Agent', 'id_agent');
     }
 
     public function puce_agent()
