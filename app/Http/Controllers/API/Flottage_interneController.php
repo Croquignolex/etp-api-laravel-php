@@ -114,6 +114,7 @@ class Flottage_interneController extends Controller
             'reference' => null,
             'statut' => Statut::EFFECTUER,
             'note' => null,
+            'type' => Roles::GESTION_FLOTTE,
             'montant' => $request->montant,
             'reste' => null
         ]);
@@ -191,6 +192,182 @@ class Flottage_interneController extends Controller
     }
 
     /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    Public function flottage_interne_rz(Request $request) {
+
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [
+            'montant' => ['required', 'numeric'],
+            'id_puce_from' => ['required', 'numeric'],
+            'id_puce_to' => ['required', 'numeric'],
+        ]);
+        if ($validator->fails()) {
+            return response()->json(
+                [
+                    'message' => "Le formulaire contient des champs mal renseignés",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+
+        // On verifi que les puces passées en paramettre existent
+        if (Puce::find($request->id_puce_from) && Puce::find($request->id_puce_to)) {
+
+            //On recupère la puce qui envoie
+            $puce_from = Puce::find($request->id_puce_from);
+
+            //On recupère la puce qui recoit
+            $puce_to = Puce::find($request->id_puce_to);
+
+            //on recupère les types de la puce qui envoie
+            $type_puce_from = Type_puce::find($puce_from->type)->name;
+
+            //on recupère les types de la puce qui recoit
+            $type_puce_to = Type_puce::find($puce_to->type)->name;
+
+            //on recupère la flotte des puces
+            $flote_to = $puce_to->flote;
+            $flote_from = $puce_from->flote;
+
+            //On se rassure que les puces passée en paramettre respectent toutes les conditions
+            if ($type_puce_from != Statut::FLOTTAGE_SECONDAIRE || $type_puce_to != Statut::PUCE_RZ) {
+                return response()->json(
+                    [
+                        'message' => "Choisir des puces valide pour la transation",
+                        'status' => false,
+                        'data' => null
+                    ]
+                );
+            }
+
+        }else {
+            return response()->json(
+                [
+                    'message' => "une ou plusieurs puces entrées n'existe pas",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+
+        //On verifie que c'est les puce du meme reseau
+        if ($flote_to != $flote_from) {
+            return response()->json(
+                [
+                    'message' => "Vous devez choisir les puces du meme réseau",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+
+        //On se rassure que le solde est suffisant
+        if ($puce_from->solde < $request->montant) {
+            return response()->json(
+                [
+                    'message' => "le montant est insuffisant",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+
+        //on debite le solde du supperviseur
+        $puce_from->solde = $puce_from->solde - $request->montant;
+
+        //On credite le solde du responsable de zonne
+        $puce_to->solde = $puce_to->solde + $request->montant;
+
+        //On debite la caisse du responsable de zonne
+        $caisse_rz = $puce_to->rz->caisse->first();
+        $caisse_rz->solde = $caisse_rz->solde - $request->montant;
+
+        //Le supperviseur
+        $supperviseur = Auth::user();
+
+        // Nouveau flottage
+        $flottage_interne = new Flottage_interne([
+            'id_user' => $supperviseur->id,
+            'id_sim_from' => $puce_from->id,
+            'id_sim_to' => $puce_to->id,
+            'reference' => null,
+            'statut' => Statut::EFFECTUER,
+            'note' => null,
+            'type' => Roles::RECOUVREUR,
+            'montant' => $request->montant,
+            'reste' => 0
+        ]);
+
+        //si l'enregistrement du flottage a lieu
+        if ($flottage_interne->save()) {
+
+            $puce_from->save();
+            $puce_to->save();
+            $caisse_rz->save();
+
+            //Notification du responsable de zone
+            $puce_to->rz->notify(new Notif_flottage([
+                'data' => $flottage_interne,
+                'message' => "Nouveau flottage Interne"
+            ]));
+
+
+            //On recupere les Flottages
+            $flottage_internes = Flottage_interne::where('type', Statut::PUCE_RZ)->get();
+
+            $flottages = [];
+
+            foreach($flottage_internes as $flottage_interne) {
+
+                //recuperer la puce du superviseur
+                $puce_emetrice = Puce::find($flottage_interne->id_sim_from);
+
+                //recuperer la puce du responsable de zonne
+                $puce_receptrice = Puce::find($flottage_interne->id_sim_to);
+
+                //recuperer le responsable de zone
+                $responsable = User::find($puce_receptrice->id_rz);
+
+                //recuperer celui qui a éffectué le flottage
+                $superviseur = User::find($flottage_interne->id_user);
+
+
+                $flottages[] = [
+                    'puce_receptrice' => $puce_receptrice,
+                    'puce_emetrice' => $puce_emetrice,
+                    'superviseur' => $superviseur,
+                    'responsable' => $responsable,
+                    'flottage' => $flottage_interne
+                ];
+            }
+
+            // Renvoyer un message de succès
+            return response()->json(
+                [
+                    'message' => "Le flottage c'est bien passé",
+                    'status' => true,
+                    'data' => ['flottages' => $flottages]
+                ]
+            );
+        }else {
+
+            // Renvoyer une erreur
+            return response()->json(
+                [
+                    'message' => 'erreur lors du flottage',
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+
+        }
+
+    }
+
+    /**
      * ////lister tous les flottages interne
      */
     public function list_all()
@@ -225,6 +402,47 @@ class Flottage_interneController extends Controller
                 }
             } else {
                 // Take all if it is not a collector
+                $flottages[] = [
+                    'puce_receptrice' => $puce_receptrice,
+                    'puce_emetrice' => $puce_emetrice,
+                    'superviseur' => $superviseur,
+                    'flottage' => $flottage_interne
+                ];
+            }
+        }
+
+        return response()->json(
+            [
+                'message' => '',
+                'status' => true,
+                'data' => ['flottages' => $flottages]
+            ]
+        );
+    }
+
+    /**
+     * ////lister les flottages faits par un superviseur vers un responsable de zonne precis
+     */
+    public function list_all_flottage_interne_by_rz($id)
+    {
+        //On recupere les Flottages
+        $flottage_internes = Flottage_interne::where('type', Roles::RECOUVREUR)->get();
+
+        $flottages = [];
+
+        foreach($flottage_internes as $flottage_interne)
+        {
+            //recuperer la puce du gestionnaire de flotte
+            $puce_receptrice = Puce::find($flottage_interne->id_sim_to);
+
+            //On recupère seulement les flotage du responsable passé en paramettre
+            if ($puce_receptrice->id_rz == $id){
+                //recuperer la puce du superviseur
+                $puce_emetrice = Puce::find($flottage_interne->id_sim_from);
+
+                //recuperer celui qui a éffectué le flottage
+                $superviseur = User::find($flottage_interne->id_user);
+
                 $flottages[] = [
                     'puce_receptrice' => $puce_receptrice,
                     'puce_emetrice' => $puce_emetrice,
