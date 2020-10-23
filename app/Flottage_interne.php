@@ -13,8 +13,8 @@ class Flottage_interne extends Model
     use SoftDeletes;
 
     protected $dates = ['deleted_at'];
-    protected $fillable = array('id', 'id_user', 'id_sim_from', 'id_sim_to', 'reference', 'statut', 'note', 'montant', 'reste');
-    protected $visible = array('id', 'id_user', 'id_sim_from', 'id_sim_to', 'reference', 'statut', 'note', 'montant', 'reste', 'created_at');
+    protected $fillable = array('id', 'id_user', 'type', 'id_sim_from', 'id_sim_to', 'reference', 'statut', 'note', 'montant', 'reste');
+    protected $visible = array('id', 'id_user', 'type', 'id_sim_from', 'id_sim_to', 'reference', 'statut', 'note', 'montant', 'reste', 'created_at');
 
     public function user()
     {

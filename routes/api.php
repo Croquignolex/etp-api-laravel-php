@@ -580,7 +580,7 @@ Route::group(['middleware' => 'auth:api'], function(){
     //////////////////////Flottage Interne/////////////////////
     */
 
-        //Creer un Flottage Interne
+        //Creer un Flottage Interne, superviseur vers gestionnaire de flotte
         Route::post('flottage_interne', 'API\Flottage_interneController@store');
 
         //Details d'un Flottage Interne
@@ -590,6 +590,26 @@ Route::group(['middleware' => 'auth:api'], function(){
         //lister les Flottages Interne
         Route::get('list_all_flottage_interne', 'API\Flottage_interneController@list_all');
 
+
+
+        //Creer un Flottage de la gestionnaire de flotte vers Responsable de zonne
+        Route::post('flottage_rz', 'API\Flottage_rzController@store');
+
+        //Details d'un Flottage de la gestionnaire de flotte vers Responsable de zonne
+        Route::get('detail_flottage_rz/{id}', 'API\Flottage_rzController@show')
+            ->where('id', '[0-9]+');
+
+        //lister les Flottages de la gestionnaire de flotte vers Responsable de zonne
+        Route::get('list_all_flottage_rz', 'API\Flottage_rzController@list_all');
+
+
+
+        //Creer un Flottage d'un superviseur vers un responsable de zone
+        Route::post('flottage_interne_rz', 'API\Flottage_interneController@flottage_interne_rz');
+
+        //lister les Flottages d'un superviseur vers un responsable de zone precis
+        Route::get('list_all_flottage_interne_by_rz/{id}', 'API\Flottage_interneController@list_all_flottage_interne_by_rz')
+            ->where('id', '[0-9]+');
 
         /*
     ////////////////////// Gestion des soldes/////////////////////
@@ -651,19 +671,6 @@ Route::group(['middleware' => 'auth:api'], function(){
         Route::post('delete_puce_rz/{id}', 'API\AgentController@delete_puce_rz')
         ->where('id', '[0-9]+');
 
-                    /*
-    //////////////////////Flottage Responsable de zonne/////////////////////
-    */
-
-        //Creer un Flottage Responsable de zonne
-        Route::post('flottage_rz', 'API\Flottage_rzController@store');
-
-        //Details d'un Flottage Responsable de zonne
-        Route::get('detail_flottage_rz/{id}', 'API\Flottage_rzController@show')
-        ->where('id', '[0-9]+');
-
-        //lister les Flottages Responsable de zonne
-        Route::get('list_all_flottage_rz', 'API\Flottage_rzController@list_all');
 
 
 });
