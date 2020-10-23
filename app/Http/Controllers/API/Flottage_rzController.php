@@ -117,6 +117,7 @@ class Flottage_rzController extends Controller
             'id_sim_to' => $puce_to->id,
             'reference' => null,
             'statut' => Statut::EFFECTUER,
+            'type' => 'GF->RZ',
             'note' => null,
             'montant' => $request->montant,
             'reste' => null
