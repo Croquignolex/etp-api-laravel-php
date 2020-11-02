@@ -611,6 +611,11 @@ Route::group(['middleware' => 'auth:api'], function(){
         Route::get('list_all_flottage_interne_by_rz/{id}', 'API\Flottage_interneController@list_all_flottage_interne_by_rz')
             ->where('id', '[0-9]+');
 
+
+        //Creer un Flottage d'un responsable de zone vers un gestionnaire de flotte
+        Route::post('flottage_interne_rz_gf', 'API\Flottage_interneController@flottage_interne_rz_gf');
+
+
         /*
     ////////////////////// Gestion des soldes/////////////////////
     */

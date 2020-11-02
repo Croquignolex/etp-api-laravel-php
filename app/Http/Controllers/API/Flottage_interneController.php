@@ -492,4 +492,188 @@ class Flottage_interneController extends Controller
         );
 
     }
+
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     * Creer un Flottage d'un responsable de zone vers un gestionnaire de flotte ou vers un superviseur
+     */
+
+    Public function flottage_interne_rz_gf(Request $request) {
+
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [
+            'montant' => ['required', 'numeric'],
+            'id_puce_from' => ['required', 'numeric'],
+            'id_puce_to' => ['required', 'numeric'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(
+                [
+                    'message' => "Le formulaire contient des champs mal renseignés",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+
+        // On verifi que la puce passée en paramettre existe
+        if (Puce::find($request->id_puce_from) && Puce::find($request->id_puce_to)) {
+
+            //On recupère la puce qui envoie
+            $puce_from = Puce::find($request->id_puce_from);
+            
+            //On recupère la puce qui recoit
+            $puce_to = Puce::find($request->id_puce_to);
+
+            //on recupère les types de la puce qui envoie
+            $type_puce_from = Type_puce::find($puce_from->type)->name;
+
+            //on recupère les types de la puce qui recoit
+            $type_puce_to = Type_puce::find($puce_to->type)->name;
+
+            //On se rassure que la puce qui recoit est RZ
+            if ($type_puce_from != Statut::PUCE_RZ) {
+                return response()->json(
+                    [
+                        'message' => "Choisier une puce valide pour la transation",
+                        'status' => false,
+                        'data' => null
+                    ]
+                );
+            }
+
+            //On se rassure que la puce qui recoit est GF ou SUP
+            if ($type_puce_to != Statut::FLOTTAGE && $type_puce_to != Statut::FLOTTAGE_SECONDAIRE) {
+                return response()->json(
+                    [
+                        'message' => "Choisier une puce valide pour la reception",
+                        'status' => false,
+                        'data' => null
+                    ]
+                );
+            }
+
+        }else {
+            return response()->json(
+                [
+                    'message' => "une ou plusieurs puces entrées n'existe pas",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+
+        //On se rassure que le solde est suffisant
+        if ($puce_from->solde < $request->montant) {
+            return response()->json(
+                [
+                    'message' => "le montant est insuffisant",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+
+        //on debite le solde du RZ
+        $puce_from->solde = $puce_from->solde - $request->montant;
+
+        //On credite le solde de la puce qui recoit
+        $puce_to->solde = $puce_to->solde + $request->montant;
+
+        //On credite la caisse du responsable de zonne, il rembourse sa dette
+        $caisse_rz = $puce_from->rz->caisse->first();
+        $caisse_rz->solde = $caisse_rz->solde + $request->montant;
+
+        //Le responsable de zonne
+        $rz = Auth::user();
+
+        // Nouveau flottage
+        $flottage_interne = new Flottage_interne([
+            'id_user' => $rz->id,
+            'id_sim_from' => $puce_from->id,
+            'id_sim_to' => $puce_to->id,
+            'reference' => null,
+            'statut' => Statut::EFFECTUER,
+            'note' => null,
+            'type' => Roles::RETOUR_RZ,
+            'montant' => $request->montant,
+            'reste' => null
+        ]);
+
+        //si l'enregistrement du flottage a lieu
+        if ($flottage_interne->save()) {
+
+            $puce_from->save();
+            $puce_to->save();
+            $caisse_rz->save();
+
+            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
+            $role2 = Role::where('name', Roles::SUPERVISEUR)->first();
+
+            //Database Notification
+            $users = User::all();
+            foreach ($users as $user) {
+
+                if ($user->hasRole([$role->name]) || $user->hasRole([$role2->name])) {
+
+                    $user->notify(new Notif_flottage([
+                        'data' => $flottage_interne,
+                        'message' => "Nouveau flottage Interne"
+                    ]));
+                }
+            }
+
+            //On recupere les Flottages
+            $flottage_internes = Flottage_interne::get();
+
+            $flottages = [];
+
+            foreach($flottage_internes as $flottage_interne) {
+
+                //recuperer la puce du rz
+                $puce_emetrice = Puce::find($flottage_interne->id_sim_from);
+
+                //recuperer la puce qui recoit
+                $puce_receptrice = Puce::find($flottage_interne->id_sim_to);
+
+                //recuperer celui qui a éffectué le flottage
+                $rz = User::find($flottage_interne->id_user);
+
+
+                $flottages[] = [
+                    'puce_receptrice' => $puce_receptrice,
+                    'puce_emetrice' => $puce_emetrice,
+                    '$rz' => $rz,
+                    'flottage' => $flottage_interne
+                ];
+
+            }
+
+            // Renvoyer un message de succès
+            return response()->json(
+                [
+                    'message' => "Le flottage c'est bien passé",
+                    'status' => true,
+                    'data' => ['flottages' => $flottages]
+                ]
+            );
+        }else {
+
+            // Renvoyer une erreur
+            return response()->json(
+                [
+                    'message' => 'erreur lors du flottage',
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+
+        }
+
+    }
+
+
 }

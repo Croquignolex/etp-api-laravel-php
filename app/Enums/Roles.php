@@ -11,7 +11,8 @@ class Roles
     const AGENT = 'AGENT';
     const GESTION_FLOTTE = 'GESTIONNAIRE DE FLOTTE';
     const RECOUVREUR = 'RESPONSABLE DE ZONNE';
-    const SUPERVISEUR = 'SUPERVISEUR';    
+    const SUPERVISEUR = 'SUPERVISEUR';
+    const RETOUR_RZ = 'RETOUR RZ';
 
     /**
      * Returns the list of all enum variants
