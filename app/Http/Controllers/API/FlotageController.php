@@ -23,9 +23,7 @@ use App\Notifications\Flottage as Notif_flottage;
 class FlotageController extends Controller
 {
     /**
-
      * les conditions de lecture des methodes
-
      */
     function __construct(){
 
@@ -34,7 +32,6 @@ class FlotageController extends Controller
         $superviseur = Roles::SUPERVISEUR;
         $ges_flotte = Roles::GESTION_FLOTTE;
         $this->middleware("permission:$recouvreur|$superviseur|$ges_flotte|$agent");
-
     }
 
     /**
@@ -232,8 +229,8 @@ class FlotageController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    Public function flottage_express(Request $request) {
-
+    Public function flottage_express(Request $request)
+    {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
             'montant' => ['required', 'Numeric'],

@@ -316,7 +316,8 @@ class Flottage_interneController extends Controller
 
 
             //On recupere les Flottages
-            $flottage_internes = Flottage_interne::where('type', Statut::PUCE_RZ)->get();
+            //$flottage_internes = Flottage_interne::where('type', Statut::PUCE_RZ)->get();
+            $flottage_internes = Flottage_interne::get();
 
             $flottages = [];
 
