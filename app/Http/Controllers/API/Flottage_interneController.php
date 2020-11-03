@@ -524,7 +524,7 @@ class Flottage_interneController extends Controller
 
             //On recupère la puce qui envoie
             $puce_from = Puce::find($request->id_puce_from);
-            
+
             //On recupère la puce qui recoit
             $puce_to = Puce::find($request->id_puce_to);
 
