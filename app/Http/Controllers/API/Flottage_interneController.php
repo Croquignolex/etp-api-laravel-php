@@ -392,7 +392,10 @@ class Flottage_interneController extends Controller
             $superviseur = User::find($flottage_interne->id_user);
 
             if ($connected_user_role === Roles::RECOUVREUR) {
-                if($puce_receptrice->rz !== null && $puce_receptrice->rz->id === Auth::user()->id) {
+                if(
+                    ($puce_emetrice->rz !== null && $puce_emetrice->rz->id === Auth::user()->id) ||
+                    ($puce_receptrice->rz !== null && $puce_receptrice->rz->id === Auth::user()->id)
+                ) {
                     // Take only the current collector receiving sims
                     $flottages[] = [
                         'puce_receptrice' => $puce_receptrice,
@@ -494,15 +497,13 @@ class Flottage_interneController extends Controller
 
     }
 
-
     /**
      * @param Request $request
      * @return JsonResponse
      * Creer un Flottage d'un responsable de zone vers un gestionnaire de flotte ou vers un superviseur
      */
-
-    Public function flottage_interne_rz_gf(Request $request) {
-
+    Public function flottage_interne_rz_gf(Request $request)
+    {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
             'montant' => ['required', 'numeric'],
@@ -525,7 +526,7 @@ class Flottage_interneController extends Controller
 
             //On recupère la puce qui envoie
             $puce_from = Puce::find($request->id_puce_from);
-            
+
             //On recupère la puce qui recoit
             $puce_to = Puce::find($request->id_puce_to);
 
@@ -643,14 +644,21 @@ class Flottage_interneController extends Controller
                 //recuperer celui qui a éffectué le flottage
                 $rz = User::find($flottage_interne->id_user);
 
+                //recuperer celui qui a éffectué le flottage
+                $superviseur = User::find($flottage_interne->id_user);
 
-                $flottages[] = [
-                    'puce_receptrice' => $puce_receptrice,
-                    'puce_emetrice' => $puce_emetrice,
-                    '$rz' => $rz,
-                    'flottage' => $flottage_interne
-                ];
-
+                if(
+                    ($puce_emetrice->rz !== null && $puce_emetrice->rz->id === Auth::user()->id) ||
+                    ($puce_receptrice->rz !== null && $puce_receptrice->rz->id === Auth::user()->id)
+                ) {
+                    // Take only the current collector receiving sims
+                    $flottages[] = [
+                        'puce_receptrice' => $puce_receptrice,
+                        'puce_emetrice' => $puce_emetrice,
+                        'superviseur' => $superviseur,
+                        'flottage' => $flottage_interne
+                    ];
+                }
             }
 
             // Renvoyer un message de succès
@@ -675,6 +683,4 @@ class Flottage_interneController extends Controller
         }
 
     }
-
-
 }

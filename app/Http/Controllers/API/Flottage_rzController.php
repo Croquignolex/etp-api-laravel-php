@@ -139,7 +139,6 @@ class Flottage_rzController extends Controller
                 'message' => "Nouveau flottage Dans votre puce"
             ]));
 
-
             //On recupere les Flottages rz
             $flottage_internes = Flottage_interne::get();
 
@@ -147,20 +146,19 @@ class Flottage_rzController extends Controller
 
             foreach($flottage_internes as $flottage_interne) {
 
-                $puce_gf = Puce::find($flottage_interne->id_sim_from );
-                //if ($puce_gf->type_puce->name == Statut::FLOTTAGE) {
+                //recuperer la puce du superviseur
+                $puce_emetrice = Puce::find($flottage_interne->id_sim_from);
 
-                    //recuperer la puce d'envoie
-                    $puce_emetrice = Puce::find($flottage_interne->id_sim_from);
+                //recuperer la puce du gestionnaire de flotte
+                $puce_receptrice = Puce::find($flottage_interne->id_sim_to);
 
-                    //recuperer la puce de reception
-                    $puce_receptrice = Puce::find($flottage_interne->id_sim_to);
+                //recuperer celui qui a éffectué le flottage
+                $superviseur = User::find($flottage_interne->id_user);
 
                     $flottages[] = [
                         'puce_receptrice' => $puce_receptrice,
                         'puce_emetrice' => $puce_emetrice,
-                        'gestionnaire' => $gestionnaire,
-                        'responsable_zone' => $puce_to->rz,
+                        'superviseur' => $superviseur,
                         'flottage' => $flottage_interne
                     ];
                 //}
