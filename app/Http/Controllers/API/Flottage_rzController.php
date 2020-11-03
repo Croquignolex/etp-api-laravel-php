@@ -2,17 +2,16 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Agent;
-use App\Flottage_Rz;
 use App\User;
 use App\Puce;
 use App\Role;
+use App\Agent;
 use App\Type_puce;
+use App\Flottage_Rz;
 use App\Enums\Roles;
 use App\Enums\Statut;
 use App\Flottage_interne;
 use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
@@ -140,7 +139,6 @@ class Flottage_rzController extends Controller
                 'message' => "Nouveau flottage Dans votre puce"
             ]));
 
-
             //On recupere les Flottages rz
             $flottage_internes = Flottage_interne::get();
 
@@ -148,20 +146,19 @@ class Flottage_rzController extends Controller
 
             foreach($flottage_internes as $flottage_interne) {
 
-                $puce_gf = Puce::find($flottage_interne->id_sim_from );
-                //if ($puce_gf->type_puce->name == Statut::FLOTTAGE) {
+                //recuperer la puce du superviseur
+                $puce_emetrice = Puce::find($flottage_interne->id_sim_from);
 
-                    //recuperer la puce d'envoie
-                    $puce_emetrice = Puce::find($flottage_interne->id_sim_from);
+                //recuperer la puce du gestionnaire de flotte
+                $puce_receptrice = Puce::find($flottage_interne->id_sim_to);
 
-                    //recuperer la puce de reception
-                    $puce_receptrice = Puce::find($flottage_interne->id_sim_to);
+                //recuperer celui qui a éffectué le flottage
+                $superviseur = User::find($flottage_interne->id_user);
 
                     $flottages[] = [
                         'puce_receptrice' => $puce_receptrice,
                         'puce_emetrice' => $puce_emetrice,
-                        'gestionnaire' => $gestionnaire,
-                        'responsable_zone' => $puce_to->rz,
+                        'superviseur' => $superviseur,
                         'flottage' => $flottage_interne
                     ];
                 //}
@@ -351,18 +348,20 @@ class Flottage_rzController extends Controller
 
             foreach($flottages_rz as $flottage_rz) {
 
-                $agent = $agent;
+                //recuperer l'agent concerné
+                $agent = $flottage_rz->agent;
 
-                $responsable = $responsable;
+                //recuperer l'utilisateur concerné
+                $user = $agent->user;
+
+                //puce de l'agenr
+                $puce_agent = Puce::find($flottage_rz->id_sim_agent);
 
                 $flottages[] = [
-
-                    'flottage' => $flottage_rz,
+                    'user' => $user,
                     'agent' => $agent,
-                    'responsable' => $responsable,
-                    'puce_from' => $puce_from,
-                    '$puce_to' => $puce_to,
-
+                    'puce_receptrice' => $puce_agent,
+                    'approvisionnement' => $flottage_rz,
                 ];
 
             }
@@ -389,7 +388,6 @@ class Flottage_rzController extends Controller
         }
 
     }
-
 
     /**
      * ////lister tous les flottages rz
@@ -432,7 +430,6 @@ class Flottage_rzController extends Controller
         );
     }
 
-
     /**
      * ////details d'un flottages interne
      */
@@ -470,7 +467,6 @@ class Flottage_rzController extends Controller
      */
     public function list_flottage_rz_by_rz($id)
     {
-
         //On recupere les Flottages rz
         $flottages_rz = Flottage_Rz::where('id_responsable_zone', $id)->get();
 
@@ -478,14 +474,21 @@ class Flottage_rzController extends Controller
 
         foreach($flottages_rz as $flottage_rz) {
 
+            //recuperer l'agent concerné
+            $agent = $flottage_rz->agent;
+
+            //recuperer l'utilisateur concerné
+            $user = $agent->user;
+
             //puce de l'agenr
-            $puce_agent = Puce::find($flottage_rz->id_agent);
+            $puce_agent = Puce::find($flottage_rz->id_sim_agent);
 
             $flottages[] = [
-                'puce_agent' => $puce_agent,
-                'flottage' => $flottage_rz
+                'user' => $user,
+                'agent' => $agent,
+                'puce_receptrice' => $puce_agent,
+                'approvisionnement' => $flottage_rz,
             ];
-
         }
 
         return response()->json(
@@ -584,5 +587,4 @@ class Flottage_rzController extends Controller
             ]
         );
     }
-
 }
