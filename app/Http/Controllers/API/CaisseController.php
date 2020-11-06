@@ -68,7 +68,7 @@ class CaisseController extends Controller
         if ($request->hasFile('recu') && $request->file('recu')->isValid()) {
             $recu = $request->recu->store('files/recu/versement');
         }
-        
+
         $id_donneur = $request->id_donneur;
         $montant = $request->montant;
         $id_caisse = $caisse->id;
@@ -349,17 +349,17 @@ class CaisseController extends Controller
             $caisse->solde = $caisse->solde - $montant;
             $caisse->save();
             $getionnaire_id = Auth::user()->id;
-            $versements = Versement::All();
+
+            $versements = Versement::where('recu', null)->get()->filter(function (Versement $versement) {
+                return $versement->add_by == Auth::user()->id || $versement->correspondant == Auth::user()->id;
+            });;
             $decaissements = [];
             foreach ($versements as $versement) {
-                $id_caisse_gestionnaire = Caisse::where('id_user', $getionnaire_id)->first();
-                if ($id_caisse_gestionnaire->id != $versement->id_caisse) {
                     $decaissements[] = [
                         'versement' => $versement,
-                        'gestionnaire' => User::find($versement->add_by),
-                        'receveur' => User::find($versement->correspondant),
+                        'emetteur' => User::find($versement->add_by),
+                        'recepteur' => User::find($versement->correspondant),
                     ];
-                }
             }
 
             // Renvoyer un message de succès
@@ -454,11 +454,11 @@ class CaisseController extends Controller
         foreach ($versements as $versement) {
             $passations[] = [
                 'versement' => $versement,
-                'Agent sortant' => User::find($versement->add_by),
-                'Agent entrant' => User::find($versement->correspondant),
+                'emetteur' => User::find($versement->add_by),
+                'recepteur' => User::find($versement->correspondant),
             ];
         }
-       
+
         return response()->json(
             [
                 'message' => '',
