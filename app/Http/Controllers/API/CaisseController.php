@@ -263,6 +263,127 @@ class CaisseController extends Controller
         }
     }
 
+
+    /**
+     * //Creer une passation de service
+     */
+    public function passation(Request $request)
+    {
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [
+            'id_receveur' => ['required', 'Numeric'], //id de l'utilisateur qui recoit l'argent
+            'montant' => ['required', 'Numeric']
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(
+                [
+                    'message' => "Le formulaire contient des champs mal renseignés",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+
+        //On verifi si le receveur est vraiment utilisateur
+        if (!($receveur = User::find($request->id_receveur))) {
+            return response()->json(
+                [
+                    'message' => "l'utilisateur en paramettre n'existe pas en BD",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+
+        //recuperer la caisse de l'utilisateur qui recoit le verssement
+        $caisse_receveur = $receveur->caisse->first();
+
+        //recuperer la caisse de l'utilisateur connecté
+        $user = Auth::user();
+        $caisse = $user->caisse->first();
+
+        //On verifi si le compte du payeur est suffisant
+        if ($caisse->solde < $request->montant) {
+            return response()->json(
+                [
+                    'message' => "le solde du payeur est insuffisant",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+
+        // Récupérer les données validées
+        $receveur = $request->id_receveur;
+        $montant = $request->montant;
+        $id_caisse = $caisse_receveur->id;
+        $add_by = $user->id;
+        $note = "pour une passation de service";
+
+        // Nouveau decaissement
+        $decaissement = new Versement ([
+            'recu' => null,
+            'correspondant' => $receveur,
+            'montant' => $montant,
+            'id_caisse' => $id_caisse,
+            'add_by' => $add_by,
+            'note' => $note
+        ]);
+
+        // creation du decaissement
+        if ($decaissement->save()) {
+
+            //notification du receveur
+            $receveur = User::find($receveur);
+            $receveur->notify(new Notif_recouvrement([
+                'data' => $decaissement,
+                'message' => "Nouvelle passation de service vers votre compte"
+            ]));
+
+            //on credite le compte du receveur
+            $caisse_receveur->solde = $caisse_receveur->solde + $montant;
+            $caisse_receveur->save();
+
+            //on debite le compte de la gestionnaire de flotte
+            $caisse->solde = $caisse->solde - $montant;
+            $caisse->save();
+            $getionnaire_id = Auth::user()->id;
+            $versements = Versement::All();
+            $decaissements = [];
+            foreach ($versements as $versement) {
+                $id_caisse_gestionnaire = Caisse::where('id_user', $getionnaire_id)->first();
+                if ($id_caisse_gestionnaire->id != $versement->id_caisse) {
+                    $decaissements[] = [
+                        'versement' => $versement,
+                        'gestionnaire' => User::find($versement->add_by),
+                        'receveur' => User::find($versement->correspondant),
+                    ];
+                }
+            }
+
+            // Renvoyer un message de succès
+            return response()->json(
+                [
+                    'message' => '',
+                    'status' => true,
+                    'data' => [
+                        'versements' => $decaissements
+                    ]
+                ]
+            );
+        } else {
+            // Renvoyer une erreur
+            return response()->json(
+                [
+                    'message' => 'erreur lors de la Creation',
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+    }
+
     /**
      * ////lister les Encaissements
      */
@@ -316,6 +437,34 @@ class CaisseController extends Controller
                 'status' => true,
                 'data' => [
                     'versements' => $decaissements
+                ]
+            ]
+        );
+    }
+
+    /**
+     * ////lister les passations de service
+     */
+    public function passations_list()
+    {
+        $versements = Versement::where('recu', null)->get()->filter(function (Versement $versement) {
+            return $versement->add_by == Auth::user()->id || $versement->correspondant == Auth::user()->id;
+        });;
+        $passations = [];
+        foreach ($versements as $versement) {
+            $passations[] = [
+                'versement' => $versement,
+                'Agent sortant' => User::find($versement->add_by),
+                'Agent entrant' => User::find($versement->correspondant),
+            ];
+        }
+       
+        return response()->json(
+            [
+                'message' => '',
+                'status' => true,
+                'data' => [
+                    'versements' => $passations
                 ]
             ]
         );

@@ -664,6 +664,16 @@ Route::group(['middleware' => 'auth:api'], function(){
         //lister les Decaissements
         Route::get('decaissement_list', 'API\CaisseController@decaissement_list');
 
+        /*
+    //////////////////////passation de service entre les gestionnaires de flotte/////////////////////
+    */
+
+        //creer une passation de service
+        Route::post('passation', 'API\CaisseController@passation');
+        
+        //lister les passation de service
+        Route::get('passations_list', 'API\CaisseController@passations_list');
+
 
 /*
     //////////////////////Attribuer une puce à un responsable de zonne/////////////////////
