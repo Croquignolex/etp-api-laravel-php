@@ -2,34 +2,28 @@
 
 namespace App\Http\Controllers\API;
 
-
-namespace App\Http\Controllers\API;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Http\Request;
-use App\Agent;
 use App\Zone;
+use App\User;
+use App\Agent;
 use App\Caisse;
+use App\Enums\Roles;
+use Illuminate\Http\Request;
 use App\Utiles\ImageFromBase64;
 use Spatie\Permission\Models\Role;
-use App\Enums\Roles;
-use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Controller;
-use App\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
 class ZoneController extends Controller
 {
-            /**
-
+    /**
      * les conditions de lecture des methodes
-
      */
-
-    function __construct(){
-
+    function __construct()
+    {
+        $recouvreur = Roles::RECOUVREUR;
         $superviseur = Roles::SUPERVISEUR;
-        $this->middleware("permission:$superviseur");
-
+        $this->middleware("permission:$superviseur|$recouvreur");
     }
 
     /**

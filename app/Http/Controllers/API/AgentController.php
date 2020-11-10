@@ -25,10 +25,10 @@ class AgentController extends Controller
      */
     function __construct()
     {
-        $superviseur = Roles::SUPERVISEUR;
-        $recouvreur = Roles::RECOUVREUR;
-        $ges_flotte = Roles::GESTION_FLOTTE;
         $agent = Roles::AGENT;
+        $recouvreur = Roles::RECOUVREUR;
+        $superviseur = Roles::SUPERVISEUR;
+        $ges_flotte = Roles::GESTION_FLOTTE;
         $this->middleware("permission:$recouvreur|$superviseur|$ges_flotte|$agent");
     }
 
@@ -39,7 +39,6 @@ class AgentController extends Controller
      */
     public function store(Request $request)
     {
-
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
 
@@ -428,7 +427,6 @@ class AgentController extends Controller
      */
     public function list()
     {
-
         if (Agent::where('deleted_at', null)) {
             $agents = Agent::where('deleted_at', null)->get();
             $returenedAgents = [];
@@ -444,9 +442,9 @@ class AgentController extends Controller
 					'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
 					'agent' => $agent,
 					'puces' => $puces,
-                    'caisse' => Caisse::where('id_user', $user->id)->first()
+                    'caisse' => Caisse::where('id_user', $user->id)->first(),
+                    'createur' => User::find($user->add_by)
 				];
-
             }
 
             return response()->json(
