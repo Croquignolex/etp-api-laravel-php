@@ -15,15 +15,14 @@ use Illuminate\Http\Request;
 use App\Events\NotificationsEvent;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
-use App\Notifications\Destockage as Notif_destockage;
 use Illuminate\Support\Facades\Validator;
+use App\Notifications\Destockage as Notif_destockage;
 use App\Http\Resources\Destockage as DestockageResource;
 
 class ApprovisionnementEtpController extends Controller
 {
     /**
      * les conditions de lecture des methodes
-
      */
     function __construct()
     {
@@ -131,8 +130,6 @@ class ApprovisionnementEtpController extends Controller
             }
     }
 
-
-
     /**
      * //////revoquer une demande.
      */
@@ -207,9 +204,6 @@ class ApprovisionnementEtpController extends Controller
 
     }
 
-
-
-
     /**
      * ////Effectuer un destockage
      */
@@ -250,20 +244,19 @@ class ApprovisionnementEtpController extends Controller
         }
 
         //On recupère les données validés
-            //enregistrer le recu
-            $recu = null;
-            if ($request->hasFile('recu') && $request->file('recu')->isValid()) {
-                $recu = $request->recu->store('recu');
-            }
-            $type = $request->type;
-            $fournisseur = $request->fournisseur;
-            $id_agent = $request->id_agent;
-            $id_puce = $request->id_puce;
-            $montant = $request->montant;
+        //enregistrer le recu
+        $recu = null;
+        if ($request->hasFile('recu') && $request->file('recu')->isValid()) {
+            $recu = $request->recu->store('recu');
+        }
+        $type = $request->type;
+        $fournisseur = $request->fournisseur;
+        $id_agent = $request->id_agent;
+        $id_puce = $request->id_puce;
+        $montant = $request->montant;
+        $user_role = Auth::user()->roles->first()->name;
 
-            $statut = Auth::user()->roles->first()->name === Roles::SUPERVISEUR
-                ? Statut::EFFECTUER
-                : Statut::EN_COURS;
+        $statut = $user_role === Roles::RECOUVREUR ? Statut::EN_COURS : Statut::EFFECTUER;
 
         //initier le destockage encore appelé approvisionnement de ETP
         $destockage = new Destockage([
@@ -288,18 +281,16 @@ class ApprovisionnementEtpController extends Controller
             broadcast($event)->toOthers();
 
             //Database Notification
-                $users = User::all();
-                foreach ($users as $user) {
+            $users = User::all();
+            foreach ($users as $user) {
+                if ($user->hasRole([$role->name]) || $user->hasRole([$role2->name])) {
 
-                    if ($user->hasRole([$role->name]) || $user->hasRole([$role2->name])) {
-
-                        $user->notify(new Notif_destockage([
-                            'data' => $destockage,
-                            'message' => "Nouvel approvisionnement de ETP"
-                        ]));
-                    }
+                    $user->notify(new Notif_destockage([
+                        'data' => $destockage,
+                        'message' => "Nouvel approvisionnement de ETP"
+                    ]));
                 }
-
+            }
 
             //la puce de ETP concernée et on credite
             $puce_etp = Puce::find($request->id_puce);
@@ -365,10 +356,10 @@ class ApprovisionnementEtpController extends Controller
                     'message' => "liste",
                     'status' => true,
                     'data' => DestockageResource::collection($destockages->filter(function(Destockage $destockage) use ($connected_user) {
-                        if($connected_user->roles->first()->name === Roles::SUPERVISEUR) {
-                            return true;
-                        } else {
+                        if($connected_user->roles->first()->name === Roles::RECOUVREUR) {
                             return ($destockage->id_recouvreur == $connected_user->id);
+                        } else {
+                            return true;
                         }
                     }))
                 ]

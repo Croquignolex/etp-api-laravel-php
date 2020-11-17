@@ -2,21 +2,16 @@
 
 namespace App;
 
-use Illuminate\Notifications\Notifiable;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Laravel\Passport\HasApiTokens;
-use Illuminate\Foundation\Auth\User as Authenticatable;
 use Spatie\Permission\Traits\HasRoles;
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Model;
-
-
+use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class User extends Authenticatable
 {
     protected $table = 'users';
     public $timestamps = true;
-    
 
     use SoftDeletes;
 	use Notifiable;
@@ -31,7 +26,7 @@ class User extends Authenticatable
     protected $fillable = [
         'name','avatar', 'email','add_by', 'id_zone', 'poste', 'statut', 'password', 'phone', 'adresse', 'description',
     ];
-	
+
 	protected $dates = ['deleted_at'];
     protected $visible = array('id','name','add_by','id_zone', 'created_at', 'poste', 'statut','avatar', 'password', 'phone', 'adresse', 'description', 'email');
 
@@ -52,7 +47,7 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
-	
+
     //les opérations enregistrées par un utilisateur precis
     public function operations() {
         return $this->hasMany('App\Operation', 'id_user');
@@ -68,16 +63,16 @@ class User extends Authenticatable
     public function demande_destockages() {
         return $this->hasMany('App\Demande_destockage', 'id_user');
     }
- 
+
     //les demande de flotes enregistrées pour un utilisateur precis
     public function demande_flotes() {
         return $this->hasMany('App\Demande_flote', 'id_user');
     }
-	
+
 	public function setting() {
         return $this->hasMany('App\Setting', 'id_user');
     }
-	
+
 	public function zone() {
         return $this->belongsTo('App\Zone', 'id_zone');
     }
@@ -100,25 +95,20 @@ class User extends Authenticatable
     {
         return $this->hasMany('App\Flottage_Rz', 'id_responsable_zone');
     }
-	
-       
-    
+
     public static function boot()
     {
-        parent::boot();        
+        parent::boot();
         static::deleting(function($user)
         {
             //on supprime ses puces
             $user->agent()->first()->puces()->delete();
-            
+
             //on supprime l'agent associé
-            $user->agent()->delete(); 
-            
+            $user->agent()->delete();
+
             //on supprime sa caisse
             $user->caisse()->delete();
-
-            
-            
         });
     }
 }

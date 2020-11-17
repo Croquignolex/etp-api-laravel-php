@@ -545,12 +545,23 @@ class Flottage_rzController extends Controller
 
         foreach($flottages_rz as $flottage_rz) {
 
-            //puce de l'agent
-            $puce_agent = Puce::find($flottage_rz->id_agent);
+            $recouvreur = $flottage_rz->responsable_zone;
+
+            //recuperer l'agent concerné
+            $agent = $flottage_rz->agent;
+
+            //recuperer l'utilisateur concerné
+            $user = $agent->user;
+
+            //puce de l'agenr
+            $puce_agent = Puce::find($flottage_rz->id_sim_agent);
 
             $flottages[] = [
-                'puce_agent' => $puce_agent,
-                'flottage' => $flottage_rz
+                'user' => $user,
+                'agent' => $agent,
+                'gestionnaire' => $recouvreur,
+                'puce_receptrice' => $puce_agent,
+                'approvisionnement' => $flottage_rz,
             ];
 
         }
