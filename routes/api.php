@@ -415,7 +415,26 @@ Route::group(['middleware' => 'auth:api'], function(){
             ->where('id', '[0-9]+');
 
 
-            /*
+                /*//////////////////////Flotage anonyme///////////////*/
+
+        //Creer un Flottage pour un anonyme
+        Route::post('flottage_anonyme', 'API\FlotageController@flottage_anonyme');
+
+        //détails d'un flottage anonyme
+        Route::get('show_flottage_anonyme/{id}', 'API\FlotageController@show_flottage_anonyme')
+            ->where('id', '[0-9]+');
+
+        //lister les Flottages anonymes pour un utilisateur precis
+        Route::get('list_flottage_anonyme/{id}', 'API\FlotageController@flottage_anonyme_by_user')
+            ->where('id', '[0-9]+');
+
+        //lister tous les Flottages anonymes
+        Route::get('list_flottage_anonyme', 'API\FlotageController@list_flottage_anonyme')
+            ->where('id', '[0-9]+');
+
+
+
+           /*
     //////////////////////Approvisionnement des Puces de ETP/////////////////////
     */
         //traitement d'une demande de destockage (juste pour signaler au système que je traite totalement ou en partie une demande)
@@ -670,7 +689,7 @@ Route::group(['middleware' => 'auth:api'], function(){
 
         //creer une passation de service
         Route::post('passation', 'API\CaisseController@passation');
-        
+
         //lister les passation de service
         Route::get('passations_list', 'API\CaisseController@passations_list');
 
