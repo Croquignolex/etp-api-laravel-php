@@ -699,7 +699,6 @@ class FlotageController extends Controller
 
     }
 
-
     /**
      * @param Request $request
      * @return JsonResponse
@@ -875,7 +874,6 @@ class FlotageController extends Controller
      */
     public function flottage_anonyme_by_user($id)
     {
-
         //On recupere les Flottages anonymes d'un utilisateur
         $flottages_anonymes = FlotageAnonyme::All();
 
@@ -911,7 +909,6 @@ class FlotageController extends Controller
      */
     public function list_flottage_anonyme()
     {
-
         //On recupere les Flottages anonymes d'un utilisateur
         $flottages_anonymes = FlotageAnonyme::All();
 
@@ -938,5 +935,4 @@ class FlotageController extends Controller
             ]
         );
     }
-
 }
