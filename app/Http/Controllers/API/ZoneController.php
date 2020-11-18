@@ -370,7 +370,7 @@ class ZoneController extends Controller
             // Renvoyer une erreur
             return response()->json(
                 [
-                    'message' => "Erreur l'ors de lsuppression d'un agent",
+                    'message' => "Erreur lors de la suppression d'un agent",
                     'status' => false,
                     'data' => null
                 ]
