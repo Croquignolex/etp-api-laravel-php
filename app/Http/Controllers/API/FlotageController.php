@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\API;
 
+use App\FlotageAnonyme;
+use App\Flottage_interne;
 use App\User;
 use App\Puce;
 use App\Role;
@@ -696,4 +698,245 @@ class FlotageController extends Controller
         );
 
     }
+
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     * Creer un Flottage pour un anonyme
+     */
+    Public function flottage_anonyme(Request $request)
+    {
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [
+            'montant' => ['required', 'numeric'],
+            'nom_agent' => ['nullable', 'string'], //le nom de celui qui recoit la flotte
+            'id_puce_from' => ['required', 'numeric'],
+            'nro_puce_to' => ['required', 'numeric'], //le numéro de la puce qui recoit la flotte
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(
+                [
+                    'message' => "Le formulaire contient des champs mal renseignés",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+
+        // On verifi que la puce d'envoie passée en paramettre existe
+        if (Puce::find($request->id_puce_from)) {
+
+            //On recupère la puce qui envoie
+            $puce_from = Puce::find($request->id_puce_from);
+
+            //on recupère les types de la puce qui envoie
+            $type_puce_from = Type_puce::find($puce_from->type)->name;
+
+        }else {
+            return response()->json(
+                [
+                    'message' => "une ou plusieurs puces entrées n'existe pas",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+
+        //On se rassure que le solde est suffisant
+        if ($puce_from->solde < $request->montant) {
+            return response()->json(
+                [
+                    'message' => "le montant est insuffisant",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+
+        //on debite le solde de celui qui envoie
+        $puce_from->solde = $puce_from->solde - $request->montant;
+
+        //L'utilisateur qui envoie
+        $user = Auth::user();
+
+        //On credite la caisse de celui qui envoie
+        $caisse = $user->caisse()->first();
+        $caisse->solde = $caisse->solde + $request->montant;
+
+
+
+        // Nouveau flottage
+        $flottage_anonyme = new FlotageAnonyme([
+            'id_user' => $user->id,
+            'id_sim_from' => $puce_from->id,
+            'nro_sim_to' => $request->nro_puce_to,
+            'reference' => null,
+            'statut' => Statut::EFFECTUER,
+            'nom_agent' => $request->nom_agent,
+            'montant' => $request->montant
+        ]);
+
+        //si l'enregistrement du flottage a lieu
+        if ($flottage_anonyme->save()) {
+
+            $puce_from->save();
+            $caisse->save();
+
+            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
+            $role2 = Role::where('name', Roles::SUPERVISEUR)->first();
+
+            //Database Notification
+            $users = User::all();
+            foreach ($users as $user) {
+
+                if ($user->hasRole([$role->name]) || $user->hasRole([$role2->name])) {
+
+                    $user->notify(new Notif_flottage([
+                        'data' => $flottage_anonyme,
+                        'message' => "Nouveau flottage anonyme"
+                    ]));
+                }
+            }
+
+            //On recupere les Flottages
+            $flottage_anonymes = FlotageAnonyme::get();
+
+            $flottages = [];
+
+            foreach($flottage_anonymes as $flottage_anonyme) {
+
+                //recuperer la puce qui envoie
+                $puce_emetrice = Puce::find($flottage_anonyme->id_sim_from);
+
+                //recuperer celui qui a éffectué le flottage
+                $user = $flottage_anonyme->user;
+
+                if(($flottage_anonyme->id_user === Auth::user()->id)) {
+                    // Take only the current user sending sims
+                    $flottages[] = [
+                        'puce_emetrice' => $puce_emetrice,
+                        'user' => $user,
+                        'flottage' => $flottage_anonyme
+                    ];
+                }
+            }
+
+            // Renvoyer un message de succès
+            return response()->json(
+                [
+                    'message' => "Le flottage c'est bien passé",
+                    'status' => true,
+                    'data' => ['flottages' => $flottages]
+                ]
+            );
+        }else {
+
+            // Renvoyer une erreur
+            return response()->json(
+                [
+                    'message' => 'erreur lors du flottage',
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+
+        }
+
+    }
+
+    /**
+     * ////détails d'un flottage effectué pour un anonyme
+     */
+    public function show_flottage_anonyme($id)
+    {
+
+        //On recupere la Flottages
+        $flottage = FlotageAnonyme::find($id);
+
+
+        if (!is_null($flottage)){
+            //puce de l'envoie
+            $puce_envoie = Puce::find($flottage->id_sim_from);
+        }
+
+        return response()->json(
+            [
+                'message' => '',
+                'status' => true,
+                'data' => ['flottage' => $flottage, 'puce_envoie' => $puce_envoie  ]
+            ]
+        );
+    }
+
+    /**
+     * ////lister les flottages anonyme effectués par un user precis
+     */
+    public function flottage_anonyme_by_user($id)
+    {
+
+        //On recupere les Flottages anonymes d'un utilisateur
+        $flottages_anonymes = FlotageAnonyme::All();
+
+        $flottages = [];
+
+        foreach($flottages_anonymes as $flottage) {
+
+            //puce de l'envoie
+            $puce_envoie = Puce::find($flottage->id_sim_from);
+
+            if(($flottage->id_user == $id)) {
+                // Take only the current user sending sims
+                $flottages[] = [
+                    'puce_emetrice' => $puce_envoie,
+                    'user' => User::find($id),
+                    'flottage' => $flottage
+                ];
+            }
+
+        }
+
+        return response()->json(
+            [
+                'message' => '',
+                'status' => true,
+                'data' => ['flottages' => $flottages ]
+            ]
+        );
+    }
+
+    /**
+     * ////lister les flottages anonyme effectués par un user precis
+     */
+    public function list_flottage_anonyme()
+    {
+
+        //On recupere les Flottages anonymes d'un utilisateur
+        $flottages_anonymes = FlotageAnonyme::All();
+
+        $flottages = [];
+
+        foreach($flottages_anonymes as $flottage) {
+
+            //puce de l'envoie
+            $puce_envoie = Puce::find($flottage->id_sim_from);
+
+            $flottages[] = [
+                'puce_emetrice' => $puce_envoie,
+                'user' => User::find($flottage->id_user),
+                'flottage' => $flottage
+            ];
+
+        }
+
+        return response()->json(
+            [
+                'message' => '',
+                'status' => true,
+                'data' => ['flottages' => $flottages ]
+            ]
+        );
+    }
+
 }

@@ -536,7 +536,7 @@ class Flottage_interneController extends Controller
             //on recupère les types de la puce qui recoit
             $type_puce_to = Type_puce::find($puce_to->type)->name;
 
-            //On se rassure que la puce qui recoit est RZ
+            //On se rassure que la puce qui envoie est RZ
             if ($type_puce_from != Statut::PUCE_RZ) {
                 return response()->json(
                     [
