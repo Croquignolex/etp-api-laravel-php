@@ -764,8 +764,6 @@ class FlotageController extends Controller
         $caisse = $user->caisse()->first();
         $caisse->solde = $caisse->solde + $request->montant;
 
-
-
         // Nouveau flottage
         $flottage_anonyme = new FlotageAnonyme([
             'id_user' => $user->id,
@@ -799,27 +797,21 @@ class FlotageController extends Controller
                 }
             }
 
-            //On recupere les Flottages
-            $flottage_anonymes = FlotageAnonyme::get();
+            //On recupere les Flottages anonymes d'un utilisateur
+            $flottages_anonymes = FlotageAnonyme::All();
 
             $flottages = [];
 
-            foreach($flottage_anonymes as $flottage_anonyme) {
+            foreach($flottages_anonymes as $flottage) {
 
-                //recuperer la puce qui envoie
-                $puce_emetrice = Puce::find($flottage_anonyme->id_sim_from);
+                //puce de l'envoie
+                $puce_envoie = Puce::find($flottage->id_sim_from);
 
-                //recuperer celui qui a éffectué le flottage
-                $user = $flottage_anonyme->user;
-
-                if(($flottage_anonyme->id_user === Auth::user()->id)) {
-                    // Take only the current user sending sims
-                    $flottages[] = [
-                        'puce_emetrice' => $puce_emetrice,
-                        'user' => $user,
-                        'flottage' => $flottage_anonyme
-                    ];
-                }
+                $flottages[] = [
+                    'puce_emetrice' => $puce_envoie,
+                    'user' => User::find($flottage->id_user),
+                    'flottage' => $flottage
+                ];
             }
 
             // Renvoyer un message de succès
@@ -929,9 +921,9 @@ class FlotageController extends Controller
 
         return response()->json(
             [
-                'message' => '',
+                'message' => 'list des flottages anonymes',
                 'status' => true,
-                'data' => ['flottages' => $flottages ]
+                'data' => ['flottages' => $flottages]
             ]
         );
     }
