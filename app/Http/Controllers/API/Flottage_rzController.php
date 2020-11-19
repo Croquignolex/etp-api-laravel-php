@@ -91,7 +91,7 @@ class Flottage_rzController extends Controller
         if ($puce_from->solde < $request->montant) {
             return response()->json(
                 [
-                    'message' => "le montant est insuffisant",
+                    'message' => "le solde est insuffisant",
                     'status' => false,
                     'data' => null
                 ]
