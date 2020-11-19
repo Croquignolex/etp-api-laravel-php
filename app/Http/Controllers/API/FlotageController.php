@@ -787,18 +787,23 @@ class FlotageController extends Controller
             //Database Notification
             $users = User::all();
             foreach ($users as $user) {
+                if($user->roles->first()->name !== Roles::RECOUVREUR) {
+                    if ($user->hasRole([$role->name]) || $user->hasRole([$role2->name])) {
 
-                if ($user->hasRole([$role->name]) || $user->hasRole([$role2->name])) {
-
-                    $user->notify(new Notif_flottage([
-                        'data' => $flottage_anonyme,
-                        'message' => "Nouveau flottage anonyme"
-                    ]));
+                        $user->notify(new Notif_flottage([
+                            'data' => $flottage_anonyme,
+                            'message' => "Nouveau flottage anonyme"
+                        ]));
+                    }
                 }
             }
 
             //On recupere les Flottages anonymes d'un utilisateur
-            $flottages_anonymes = FlotageAnonyme::All();
+            $flottages_anonymes = FlotageAnonyme::all()->filter(function(FlotageAnonyme $flottage) {
+                $connected_user = Auth::user();
+                if($connected_user->roles->first()->name === Roles::SUPERVISEUR) return true;
+                else return $flottage->id_user === $connected_user->id;
+            });
 
             $flottages = [];
 
@@ -902,7 +907,12 @@ class FlotageController extends Controller
     public function list_flottage_anonyme()
     {
         //On recupere les Flottages anonymes d'un utilisateur
-        $flottages_anonymes = FlotageAnonyme::All();
+        $flottages_anonymes = FlotageAnonyme::all()->filter(function(FlotageAnonyme $flottage)
+        {
+            $connected_user = Auth::user();
+            if($connected_user->roles->first()->name === Roles::SUPERVISEUR) return true;
+            else return $flottage->id_user === $connected_user->id;
+        });
 
         $flottages = [];
 
