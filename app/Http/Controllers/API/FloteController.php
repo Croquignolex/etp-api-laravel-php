@@ -17,10 +17,12 @@ class FloteController extends Controller
 
      */
 
-    function __construct(){
-
+    function __construct()
+    {
         $superviseur = Roles::SUPERVISEUR;
-        $this->middleware("permission:$superviseur");
+        $ges_flotte = Roles::GESTION_FLOTTE;
+        $recouvreur = Roles::RECOUVREUR;
+        $this->middleware("permission:$superviseur|$ges_flotte|$recouvreur");
 
     }
 

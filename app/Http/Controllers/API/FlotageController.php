@@ -699,7 +699,6 @@ class FlotageController extends Controller
 
     }
 
-
     /**
      * @param Request $request
      * @return JsonResponse
@@ -748,7 +747,7 @@ class FlotageController extends Controller
         if ($puce_from->solde < $request->montant) {
             return response()->json(
                 [
-                    'message' => "le montant est insuffisant",
+                    'message' => "le solde est insuffisant",
                     'status' => false,
                     'data' => null
                 ]
@@ -764,8 +763,6 @@ class FlotageController extends Controller
         //On credite la caisse de celui qui envoie
         $caisse = $user->caisse()->first();
         $caisse->solde = $caisse->solde + $request->montant;
-
-
 
         // Nouveau flottage
         $flottage_anonyme = new FlotageAnonyme([
@@ -790,37 +787,36 @@ class FlotageController extends Controller
             //Database Notification
             $users = User::all();
             foreach ($users as $user) {
+                if($user->roles->first()->name !== Roles::RECOUVREUR) {
+                    if ($user->hasRole([$role->name]) || $user->hasRole([$role2->name])) {
 
-                if ($user->hasRole([$role->name]) || $user->hasRole([$role2->name])) {
-
-                    $user->notify(new Notif_flottage([
-                        'data' => $flottage_anonyme,
-                        'message' => "Nouveau flottage anonyme"
-                    ]));
+                        $user->notify(new Notif_flottage([
+                            'data' => $flottage_anonyme,
+                            'message' => "Nouveau flottage anonyme"
+                        ]));
+                    }
                 }
             }
 
-            //On recupere les Flottages
-            $flottage_anonymes = FlotageAnonyme::get();
+            //On recupere les Flottages anonymes d'un utilisateur
+            $flottages_anonymes = FlotageAnonyme::all()->filter(function(FlotageAnonyme $flottage) {
+                $connected_user = Auth::user();
+                if($connected_user->roles->first()->name === Roles::SUPERVISEUR) return true;
+                else return $flottage->id_user === $connected_user->id;
+            });
 
             $flottages = [];
 
-            foreach($flottage_anonymes as $flottage_anonyme) {
+            foreach($flottages_anonymes as $flottage) {
 
-                //recuperer la puce qui envoie
-                $puce_emetrice = Puce::find($flottage_anonyme->id_sim_from);
+                //puce de l'envoie
+                $puce_envoie = Puce::find($flottage->id_sim_from);
 
-                //recuperer celui qui a éffectué le flottage
-                $user = $flottage_anonyme->user;
-
-                if(($flottage_anonyme->id_user === Auth::user()->id)) {
-                    // Take only the current user sending sims
-                    $flottages[] = [
-                        'puce_emetrice' => $puce_emetrice,
-                        'user' => $user,
-                        'flottage' => $flottage_anonyme
-                    ];
-                }
+                $flottages[] = [
+                    'puce_emetrice' => $puce_envoie,
+                    'user' => User::find($flottage->id_user),
+                    'flottage' => $flottage
+                ];
             }
 
             // Renvoyer un message de succès
@@ -875,7 +871,6 @@ class FlotageController extends Controller
      */
     public function flottage_anonyme_by_user($id)
     {
-
         //On recupere les Flottages anonymes d'un utilisateur
         $flottages_anonymes = FlotageAnonyme::All();
 
@@ -911,9 +906,13 @@ class FlotageController extends Controller
      */
     public function list_flottage_anonyme()
     {
-
         //On recupere les Flottages anonymes d'un utilisateur
-        $flottages_anonymes = FlotageAnonyme::All();
+        $flottages_anonymes = FlotageAnonyme::all()->filter(function(FlotageAnonyme $flottage)
+        {
+            $connected_user = Auth::user();
+            if($connected_user->roles->first()->name === Roles::SUPERVISEUR) return true;
+            else return $flottage->id_user === $connected_user->id;
+        });
 
         $flottages = [];
 
@@ -932,11 +931,10 @@ class FlotageController extends Controller
 
         return response()->json(
             [
-                'message' => '',
+                'message' => 'list des flottages anonymes',
                 'status' => true,
-                'data' => ['flottages' => $flottages ]
+                'data' => ['flottages' => $flottages]
             ]
         );
     }
-
 }
