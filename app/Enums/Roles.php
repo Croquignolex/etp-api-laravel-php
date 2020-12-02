@@ -13,6 +13,7 @@ class Roles
     const RECOUVREUR = 'RESPONSABLE DE ZONNE';
     const SUPERVISEUR = 'SUPERVISEUR';
     const RETOUR_RZ = 'RETOUR RZ';
+    const RETOUR_AE = 'RETOUR AE';
 
     /**
      * Returns the list of all enum variants

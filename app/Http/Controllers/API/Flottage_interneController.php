@@ -540,7 +540,7 @@ class Flottage_interneController extends Controller
             if ($type_puce_from != Statut::PUCE_RZ) {
                 return response()->json(
                     [
-                        'message' => "Choisier une puce valide pour la transation",
+                        'message' => "Choisisser une puce valide pour la transation",
                         'status' => false,
                         'data' => null
                     ]
@@ -656,6 +656,188 @@ class Flottage_interneController extends Controller
                         'puce_receptrice' => $puce_receptrice,
                         'puce_emetrice' => $puce_emetrice,
                         'superviseur' => $superviseur,
+                        'flottage' => $flottage_interne
+                    ];
+                }
+            }
+
+            // Renvoyer un message de succès
+            return response()->json(
+                [
+                    'message' => "Le flottage c'est bien passé",
+                    'status' => true,
+                    'data' => ['flottages' => $flottages]
+                ]
+            );
+        }else {
+
+            // Renvoyer une erreur
+            return response()->json(
+                [
+                    'message' => 'erreur lors du flottage',
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+
+        }
+
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     * Creer un Flottage d'un Agent ETP vers un gestionnaire de flotte
+     */
+    Public function flottage_interne_ae_gf(Request $request)
+    {
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [
+            'montant' => ['required', 'numeric'],
+            'id_puce_from' => ['required', 'numeric'],
+            'id_puce_to' => ['required', 'numeric'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(
+                [
+                    'message' => "Le formulaire contient des champs mal renseignés",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+
+        // On verifi que les puces passées en paramettre existent
+        if (Puce::find($request->id_puce_from) && Puce::find($request->id_puce_to)) {
+
+            //On recupère la puce qui envoie
+            $puce_from = Puce::find($request->id_puce_from);
+
+            //On recupère la puce qui recoit
+            $puce_to = Puce::find($request->id_puce_to);
+
+            //on recupère les types de la puce qui envoie
+            $type_puce_from = Type_puce::find($puce_from->type)->name;
+
+            //on recupère les types de la puce qui recoit
+            $type_puce_to = Type_puce::find($puce_to->type)->name;
+
+            //On se rassure que la puce qui envoie est bien AGENT ETP
+            if ($type_puce_from != Statut::ETP) {
+                return response()->json(
+                    [
+                        'message' => "Choisisser une puce valide pour la transation",
+                        'status' => false,
+                        'data' => null
+                    ]
+                );
+            }
+
+            //On se rassure que la puce qui recoit est GF
+            if ($type_puce_to != Statut::FLOTTAGE) {
+                return response()->json(
+                    [
+                        'message' => "Choisier une puce valide pour la reception",
+                        'status' => false,
+                        'data' => null
+                    ]
+                );
+            }
+
+        }else {
+            return response()->json(
+                [
+                    'message' => "une ou plusieurs puces entrées n'existe pas",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+
+        //On se rassure que le solde est suffisant
+        if ($puce_from->solde < $request->montant) {
+            return response()->json(
+                [
+                    'message' => "le montant est insuffisant",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+
+        //on debite le solde de l'agent ETP
+        $puce_from->solde = $puce_from->solde - $request->montant;
+
+        //On credite le solde de la puce qui recoit
+        $puce_to->solde = $puce_to->solde + $request->montant;
+
+        //On credite la caisse de l'agent ETP, il rembourse sa dette
+        $caisse_ae = $puce_from->agent->user->caisse->first();
+        $caisse_ae->solde = $caisse_ae->solde + $request->montant;
+
+        //La gestionnaire de flotte
+        $gf = Auth::user();
+
+        $ae = $puce_from->agent->user;
+
+
+        // Nouveau flottage
+        $flottage_interne = new Flottage_interne([
+            'id_user' => $gf->id,
+            'id_sim_from' => $puce_from->id,
+            'id_sim_to' => $puce_to->id,
+            'reference' => null,
+            'statut' => Statut::EFFECTUER,
+            'note' => null,
+            'type' => Roles::RETOUR_AE,
+            'montant' => $request->montant,
+            'reste' => null
+        ]);
+
+        //si l'enregistrement du flottage a lieu
+        if ($flottage_interne->save()) {
+
+            $puce_from->save();
+            $puce_to->save();
+            $caisse_ae->save();
+
+            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
+            $role2 = Role::where('name', Roles::SUPERVISEUR)->first();
+
+            //Database Notification
+            $ae->notify(new Notif_flottage([
+                'data' => $flottage_interne,
+                'message' => "Nouveau rembourssement par flotte"
+            ]));
+
+
+            //On recupere les Flottages
+            $flottage_internes = Flottage_interne::get();
+
+            $flottages = [];
+
+            foreach($flottage_internes as $flottage_interne) {
+
+                //recuperer la puce de l'agent ETP
+                $puce_emetrice = Puce::find($flottage_interne->id_sim_from);
+
+                //recuperer la puce qui recoit
+                $puce_receptrice = Puce::find($flottage_interne->id_sim_to);
+
+
+                //recuperer celui qui a éffectué le flottage
+                $gf = User::find($flottage_interne->id_user);
+
+                if(
+                    ($puce_emetrice->agent->user->id !== null && $puce_emetrice->agent->user->id === Auth::user()->id) ||
+                    ($puce_receptrice->agent->user->id !== null && $puce_receptrice->agent->user->id === Auth::user()->id)
+                ) {
+                    // Take only the current collector receiving sims
+                    $flottages[] = [
+                        'puce_receptrice' => $puce_receptrice,
+                        'puce_emetrice' => $puce_emetrice,
+                        'gestionnaire' => $gf,
                         'flottage' => $flottage_interne
                     ];
                 }

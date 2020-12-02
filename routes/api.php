@@ -634,10 +634,15 @@ Route::group(['middleware' => 'auth:api'], function(){
         //Creer un Flottage d'un responsable de zone vers un gestionnaire de flotte
         Route::post('flottage_interne_rz_gf', 'API\Flottage_interneController@flottage_interne_rz_gf');
 
+//todo: new code
+        //Creer un Flottage d'un Agent ETP vers un gestionnaire de flotte
+        Route::post('flottage_interne_ae_gf', 'API\Flottage_interneController@flottage_interne_ae_gf');
 
-        /*
-    ////////////////////// Gestion des soldes/////////////////////
-    */
+
+
+    /*
+////////////////////// Gestion des soldes/////////////////////
+*/
 
         //afficher mon solde
         Route::get('mon_solde', 'API\LoginController@solde');
