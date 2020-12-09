@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Events\NotificationsEvent;
+use App\Notifications\Recouvrement;
+use App\Operation;
+use App\Role;
 use App\User;
 use App\Caisse;
 use App\Versement;
@@ -449,7 +453,7 @@ class CaisseController extends Controller
     {
         $versements = Versement::where('recu', null)->get()->filter(function (Versement $versement) {
             return $versement->add_by == Auth::user()->id || $versement->correspondant == Auth::user()->id;
-        });;
+        });
         $passations = [];
         foreach ($versements as $versement) {
             $passations[] = [
@@ -482,6 +486,143 @@ class CaisseController extends Controller
                 'message' => '',
                 'status' => true,
                 'data' => $versement
+            ]
+        );
+    }
+
+
+    /**
+     * //Creer une zone.
+     */
+    public function depence(Request $request)
+    {
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [
+            'description' => ['required', 'string', 'max:255'],
+            'montant' => ['required', 'Numeric'],
+        ]);
+        if ($validator->fails()) {
+            return response()->json(
+                [
+                    'message' => "Le formulaire contient des champs mal renseignés",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+        // Récupérer les données validées
+        $description = $request->description;
+        $montant = $request->montant;
+
+        // Nouvelle zone
+        $operation = new Operation ([
+            'id_motif' => null,
+            'id_user' => Auth::user()->id,
+            'flux' => null,
+            'montant' => $montant,
+            'description' => $description
+        ]);
+
+        // creation de La zone
+        if ($operation->save()) {
+
+            //Database Notification
+            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
+            $users = User::all();
+            foreach ($users as $user) {
+
+                if ($user->hasRole([$role->name])) {
+
+                    $user->notify(new Recouvrement([
+                        'data' => $operation,
+                        'message' => "Nouvelle depence faite par un client"
+                    ]));
+                }
+            }
+
+            // Renvoyer un message de succès
+            return response()->json(
+                [
+                    'message' => 'Oppération créée',
+                    'status' => true,
+                    'data' => ['zone' => $operation]
+                ]
+            );
+        } else {
+            // Renvoyer une erreur
+            return response()->json(
+                [
+                    'message' => 'erreur lors de la Creation',
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+    }
+
+    /**
+     * ////Details d'une depence
+     */
+    public function depence_details($id)
+    {
+        $depence = Operation::find($id);
+        $user = User::find($depence->id_user);
+
+        return response()->json(
+            [
+                'message' => '',
+                'status' => true,
+                'data' => ['depence' => $depence, 'user' => $user]
+            ]
+        );
+    }
+
+    /**
+     * ////lister les depences
+     */
+    public function depence_user($id_utilisateur)
+    {
+        $depences = Operation::where('id_user', $id_utilisateur)->get();
+        $all_depence = [];
+        foreach ($depences as $depence) {
+            $all_depence[] = [
+                'depences' => $depence,
+                'user' => User::find($depence->id_user),
+            ];
+        }
+
+        return response()->json(
+            [
+                'message' => '',
+                'status' => true,
+                'data' => [
+                    'all_depence' => $all_depence
+                ]
+            ]
+        );
+    }
+
+    /**
+     * ////lister les depences par utilisateur
+     */
+    public function depence_list()
+    {
+        $depences = Operation::get();
+        $all_depence = [];
+        foreach ($depences as $depence) {
+            $all_depence[] = [
+                'depences' => $depence,
+                'user' => User::find($depence->id_user),
+            ];
+        }
+
+        return response()->json(
+            [
+                'message' => '',
+                'status' => true,
+                'data' => [
+                    'all_depence' => $all_depence
+                ]
             ]
         );
     }
