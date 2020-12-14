@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Enums\Roles;
 use App\User;
 use App\Zone;
 use App\Agent;
 use App\Caisse;
+use App\Enums\Roles;
 use App\Enums\Statut;
 use Illuminate\Http\Request;
 use App\Utiles\ImageFromBase64;
@@ -27,61 +27,38 @@ class LoginController extends Controller
      */
     public function login(Request $request)
     {
-        // Valider données envoyées
+        // valider données envoyées
         $rules = [
             'password' => ['required', 'string', 'min:6'],
-            'phone' => ['required', 'integer']
+            'phone' => ['required', 'integer', 'max:8', 'min:8']
         ];
 
-        $input = ['password' => $request->password, 'phone' => $request->phone];
+        // credentials
+        $credentials = ['password' => $request->password, 'phone' => $request->phone];
 
-        if(!Validator::make($input, $rules)->passes()){
-
-            $val = Validator::make($input, $rules);
-
-            return response()->json(
-                [
-                    'message' => 'Un ou plusieurs valeurs du formulaire incorrect',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+        if(!Validator::make($credentials, $rules)->passes()) {
+            return response()->json([
+                'message' => "Un ou plusieurs valeurs du formulaire incorrect",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
 		// on verifie que l'utilisateur n'est ni Archivé ni desactivé
-			$userAnable = User::where('phone', $request->phone)->first();
+        $userEnable = User::where('phone', $request->phone)->first();
 
-			if ($userAnable != null) {
+        if ($userEnable !== null) {
+            if ($userEnable->statut == Statut::DECLINE) {
+                return response()->json([
+                    'message' => "Utilisateur inactif",
+                    'status' => false,
+                    'data' => null
+                ]);
+            }
 
-				if ($userAnable->deleted_at != null) {
-					return response()->json(
-						[
-							'message' => 'Cet utilisateur est archivé',
-							'status' => false,
-							'data' => null,
-						]
-					);
-				}
+        }
 
-				if ($userAnable->statut == Statut::DECLINE) {
-					return response()->json(
-						[
-							'message' => 'Cet utilisateur est archivé',
-							'status' => false,
-							'data' => null,
-						]
-					);
-				}
-
-			}
-
-
-		$credentials = [
-			'phone' => $request->phone,
-			'password' => $request->password
-		];
-
-        //si la connexion est bonne
+        // si la connexion est bonne
         if (auth()->attempt($credentials)) {
             // Créer un token pour l'utilisateur
             $token = auth()->user()->createToken(config('app.name', 'ETP'));
@@ -99,29 +76,25 @@ class LoginController extends Controller
                 $puces = $user->puces;
             }
 
-            return response()->json(
-                [
-                    'message' => null,
-                    'status' => true,
-                    'data' => [
-                        'token' =>$token->accessToken,
-						'zone' => $user->zone,
-                        'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
-						'role' => $user->roles->first(),
-						'agent' => $agent,
-						'puces' => $puces,
-						'setting' => $user->setting->first()
-                    ]
+            return response()->json([
+                'message' => null,
+                'status' => true,
+                'data' => [
+                    'agent' => $agent,
+                    'puces' => $puces,
+                    'zone' => $user->zone,
+                    'token' =>$token->accessToken,
+                    'role' => $user->roles->first(),
+                    'setting' => $user->setting->first(),
+                    'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
                 ]
-            );
+            ]);
         } else {
-            return response()->json(
-                [
-                    'message' => "Combinaison login et mot de passe incorrect",
-                    'status' => false,
-                    'data' => null,
-                ]
-            );
+            return response()->json([
+                'message' => 'Combinaison login et mot de passe incorrect',
+                'status' => false,
+                'data' => null,
+            ]);
         }
     }
 
