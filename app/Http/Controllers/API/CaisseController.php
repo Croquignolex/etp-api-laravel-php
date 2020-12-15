@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Enums\Statut;
 use App\Events\NotificationsEvent;
 use App\Notifications\Recouvrement;
 use App\Operation;
@@ -492,7 +493,7 @@ class CaisseController extends Controller
 
 
     /**
-     * //Creer une zone.
+     * //Creer une depence.
      */
     public function depence(Request $request)
     {
@@ -514,16 +515,16 @@ class CaisseController extends Controller
         $description = $request->description;
         $montant = $request->montant;
 
-        // Nouvelle zone
+        // Nouvelle depence
         $operation = new Operation ([
             'id_motif' => null,
             'id_user' => Auth::user()->id,
-            'flux' => null,
+            'flux' => Statut::DEPENSE,
             'montant' => $montant,
             'description' => $description
         ]);
 
-        // creation de La zone
+        // creation de La depence
         if ($operation->save()) {
 
             //Database Notification
@@ -545,7 +546,7 @@ class CaisseController extends Controller
                 [
                     'message' => 'Oppération créée',
                     'status' => true,
-                    'data' => ['zone' => $operation]
+                    'data' => ['operation' => $operation]
                 ]
             );
         } else {
@@ -565,8 +566,8 @@ class CaisseController extends Controller
      */
     public function depence_details($id)
     {
-        $depence = Operation::find($id);
-        $user = User::find($depence->id_user);
+        $depence = Operation::where('flux', Statut::DEPENSE)->where('id', $id)->first();
+        $user = !is_null($depence) ? User::find($depence->id_user) : null;
 
         return response()->json(
             [
@@ -578,11 +579,39 @@ class CaisseController extends Controller
     }
 
     /**
-     * ////lister les depences
+     * ////lister les depences par utilisateur
      */
     public function depence_user($id_utilisateur)
     {
-        $depences = Operation::where('id_user', $id_utilisateur)->get();
+
+        $depences = Operation::where('flux', Statut::DEPENSE)->where('id_user', $id_utilisateur)->get();
+        $all_depence = [];
+        foreach ($depences as $depence) {
+            $all_depence[] = [
+                'depences' => $depence,
+                'user' => User::find($depence->id_user),
+                'user' => !is_null($depence) ? User::find($depence->id_user) : null,
+            ];
+        }
+
+        return response()->json(
+            [
+                'message' => '',
+                'status' => true,
+                'data' => [
+                    'all_depence' => $all_depence
+                ]
+            ]
+        );
+
+    }
+
+    /**
+     * ////lister toutes les depences
+     */
+    public function depence_list()
+    {
+        $depences = Operation::where('flux', Statut::DEPENSE)->get();
         $all_depence = [];
         foreach ($depences as $depence) {
             $all_depence[] = [
@@ -603,16 +632,109 @@ class CaisseController extends Controller
     }
 
     /**
-     * ////lister les depences par utilisateur
+     * //Creer une acquisition.
      */
-    public function depence_list()
+    public function acquisition(Request $request)
     {
-        $depences = Operation::get();
-        $all_depence = [];
-        foreach ($depences as $depence) {
-            $all_depence[] = [
-                'depences' => $depence,
-                'user' => User::find($depence->id_user),
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [
+            'description' => ['required', 'string', 'max:255'],
+            'montant' => ['required', 'Numeric'],
+        ]);
+        if ($validator->fails()) {
+            return response()->json(
+                [
+                    'message' => "Le formulaire contient des champs mal renseignés",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+        // Récupérer les données validées
+        $description = $request->description;
+        $montant = $request->montant;
+
+        // Nouvelle acquisition
+        $operation = new Operation ([
+            'id_motif' => null,
+            'id_user' => Auth::user()->id,
+            'flux' => Statut::ACQUISITION,
+            'montant' => $montant,
+            'description' => $description
+        ]);
+
+        // creation de La acquisition
+        if ($operation->save()) {
+
+            //On implique la dette
+            $caisse = Auth::user()->caisse->first();
+            $caisse->solde = $caisse->solde - $montant;
+            $caisse->save();
+
+            //Database Notification
+            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
+            $users = User::all();
+            foreach ($users as $user) {
+
+                if ($user->hasRole([$role->name])) {
+
+                    $user->notify(new Recouvrement([
+                        'data' => $operation,
+                        'message' => "Nouvelle depence faite par un client"
+                    ]));
+                }
+            }
+
+            // Renvoyer un message de succès
+            return response()->json(
+                [
+                    'message' => 'Oppération créée',
+                    'status' => true,
+                    'data' => ['operation' => $operation]
+                ]
+            );
+        } else {
+            // Renvoyer une erreur
+            return response()->json(
+                [
+                    'message' => 'erreur lors de la Creation',
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
+    }
+
+    /**
+     * ////Details d'une acquisition
+     */
+    public function acquisition_details($id)
+    {
+        $acquisition = Operation::where('flux', Statut::ACQUISITION)->where('id', $id)->first();
+
+        $user = !is_null($acquisition) ? User::find($acquisition->id_user) : null;
+
+        return response()->json(
+            [
+                'message' => '',
+                'status' => true,
+                'data' => ['acquisitions' => $acquisition, 'user' => $user]
+            ]
+        );
+    }
+
+    /**
+     * ////lister les acquisitions par acquisitions
+     */
+    public function acquisition_user($id_utilisateur)
+    {
+
+        $acquisitions = Operation::where('flux', Statut::ACQUISITION)->where('id_user', $id_utilisateur)->get();
+        $all_acquisitions = [];
+        foreach ($acquisitions as $acquisition) {
+            $all_acquisitions[] = [
+                'acquisition' => $acquisition,
+                'user' => !is_null($acquisition) ? User::find($acquisition->id_user) : null,
             ];
         }
 
@@ -621,7 +743,32 @@ class CaisseController extends Controller
                 'message' => '',
                 'status' => true,
                 'data' => [
-                    'all_depence' => $all_depence
+                    'all_acquisitions' => $all_acquisitions
+                ]
+            ]
+        );
+    }
+
+    /**
+     * ////lister toutes les acquisitions
+     */
+    public function acquisition_list()
+    {
+        $acquisitions = Operation::where('flux', Statut::ACQUISITION)->get();
+        $all_acquisitions = [];
+        foreach ($acquisitions as $acquisition) {
+            $all_acquisitions[] = [
+                'acquisition' => $acquisition,
+                'user' => !is_null($acquisition) ? User::find($acquisition->id_user) : null,
+            ];
+        }
+
+        return response()->json(
+            [
+                'message' => '',
+                'status' => true,
+                'data' => [
+                    'acquisitions' => $all_acquisitions
                 ]
             ]
         );

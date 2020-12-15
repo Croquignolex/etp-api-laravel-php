@@ -14,11 +14,11 @@ class CreateOperationsTable extends Migration {
 			$table->integer('id_motif')->unsigned()->nullable()->index();
 			$table->integer('id_user')->unsigned()->nullable()->index();
 			$table->text('description')->nullable();
-			$table->boolean('flux')->nullable();
+			$table->string('flux')->nullable();
 			$table->softDeletes();
 			$table->timestamps();
 
-			
+
 		});
 	}
 

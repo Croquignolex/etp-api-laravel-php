@@ -14,8 +14,8 @@ class Operation extends Model
     use SoftDeletes;
 
     protected $dates = ['deleted_at'];
-    protected $fillable = array('id_versement', 'id_motif', 'id_user', 'description', 'flux', 'montant');
-    protected $visible = array('id_versement', 'id_motif', 'id_user', 'description', 'flux', 'montant');
+    protected $fillable = array('id','id_versement', 'id_motif', 'id_user', 'description', 'flux', 'montant');
+    protected $visible = array('id','id_versement', 'id_motif', 'id_user', 'description', 'flux', 'montant');
 
     public function user()
     {
