@@ -712,7 +712,7 @@ Route::group(['middleware' => 'auth:api'], function(){
         Route::post('delete_puce_rz/{id}', 'API\AgentController@delete_puce_rz')
         ->where('id', '[0-9]+');
 
-        //todo: new code 09/12/2020, 04 routes créées pour les dépences
+        //todo: new code 09/12/2020, 04 routes créées pour les dépences spontannée par  un utilisateur
     /*
 //////////////////////Effectuer une dépense/////////////////////
 */
@@ -728,6 +728,26 @@ Route::group(['middleware' => 'auth:api'], function(){
 
     //lister les depences d'un utilisateur precis
     Route::get('depence_list/{id}', 'API\CaisseController@depence_user')
+        ->where('id', '[0-9]+');
+
+
+
+    //todo: new code 15/12/2020, 04 routes créées pour les Acquisition d'argent ou de flotte ne provenant pas de la gestionnaire de flotte
+    /*
+//////////////////////Effectuer une acquisition/////////////////////
+*/
+    //creer une acquisition
+    Route::post('acquisition', 'API\CaisseController@acquisition');
+
+    //Détails d'une acquisition
+    Route::get('acquisition_details/{id}', 'API\CaisseController@acquisition_details')
+        ->where('id', '[0-9]+');
+
+    //lister les acquisitions
+    Route::get('acquisition_list', 'API\CaisseController@acquisition_list');
+
+    //lister les acquisitions d'un utilisateur precis
+    Route::get('acquisition_list/{id}', 'API\CaisseController@acquisition_user')
         ->where('id', '[0-9]+');
 
 
