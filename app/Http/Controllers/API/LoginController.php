@@ -4,10 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\User;
 use App\Zone;
-use App\Agent;
 use App\Caisse;
-use App\Enums\Roles;
-use App\Enums\Statut;
 use Illuminate\Http\Request;
 use App\Utiles\ImageFromBase64;
 use Illuminate\Http\JsonResponse;
