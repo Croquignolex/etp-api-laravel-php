@@ -23,6 +23,9 @@ Route::get('not_login', 'API\LoginController@not_login')->name('not_login');
 //l'utilisateur se connecte
 Route::post('login', 'API\LoginController@login');
 
+// User identification
+Route::post('identification', 'API\LoginController@identification');
+
 Route::group(['middleware' => 'auth:api'], function(){
     /*
      ///////////////////////GESTION DES UTILISATEURS/////////////////////////

@@ -20,6 +20,47 @@ use Illuminate\Support\Facades\Validator;
 class LoginController extends Controller
 {
     /**
+     * Improve user identification
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+     public function identification(Request $request)
+     {
+         // valider données envoyées
+         $rules = ['phone' => ['required', 'string', 'max:9', 'min:9']];
+
+         // credentials
+         $credentials = ['phone' => $request->phone];
+
+         if(!Validator::make($credentials, $rules)->passes()) {
+             return response()->json([
+                 'message' => "Une ou plusieurs valeurs du formulaire incorrect",
+                 'status' => false,
+                 'data' => null
+             ]);
+         }
+
+         // Check if user exist into database
+         $userEnable = User::where('phone', $request->phone)->first();
+
+         // si la connexion est bonne
+         if ($userEnable !== null) {
+             return response()->json([
+                 'message' => null,
+                 'status' => true,
+                 'data' => null,
+             ]);
+         } else {
+             return response()->json([
+                 'message' => 'Utilisateur non reconnu',
+                 'status' => false,
+                 'data' => null,
+             ]);
+         }
+     }
+
+    /**
      * Connection d'un utilisateur
      *
      * @param Request $request
@@ -30,7 +71,7 @@ class LoginController extends Controller
         // valider données envoyées
         $rules = [
             'password' => ['required', 'string', 'min:6'],
-            'phone' => ['required', 'integer', 'max:8', 'min:8']
+            'phone' => ['required', 'string', 'max:9', 'min:9']
         ];
 
         // credentials
@@ -38,24 +79,10 @@ class LoginController extends Controller
 
         if(!Validator::make($credentials, $rules)->passes()) {
             return response()->json([
-                'message' => "Un ou plusieurs valeurs du formulaire incorrect",
+                'message' => "Une ou plusieurs valeurs du formulaire incorrect",
                 'status' => false,
                 'data' => null
             ]);
-        }
-
-		// on verifie que l'utilisateur n'est ni Archivé ni desactivé
-        $userEnable = User::where('phone', $request->phone)->first();
-
-        if ($userEnable !== null) {
-            if ($userEnable->statut == Statut::DECLINE) {
-                return response()->json([
-                    'message' => "Utilisateur inactif",
-                    'status' => false,
-                    'data' => null
-                ]);
-            }
-
         }
 
         // si la connexion est bonne
@@ -65,33 +92,17 @@ class LoginController extends Controller
 
 			$user = auth()->user();
 
-			// recuperer l'agent et ses puces associé à l'utilisateur (utile pour l'agent)
-            $agent = null;
-            $puces = [];
-
-            if($user->roles->first()->name === Roles::AGENT) {
-                $agent = Agent::where('id_user', $user->id)->first();
-                $puces = $agent->puces;
-            } else if($user->roles->first()->name === Roles::RECOUVREUR) {
-                $puces = $user->puces;
-            }
-
             return response()->json([
                 'message' => null,
                 'status' => true,
                 'data' => [
-                    'agent' => $agent,
-                    'puces' => $puces,
-                    'zone' => $user->zone,
-                    'token' =>$token->accessToken,
-                    'role' => $user->roles->first(),
-                    'setting' => $user->setting->first(),
-                    'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
+                    'token' => $token->accessToken,
+                    'role' => $user->roles->first()->id,
                 ]
             ]);
         } else {
             return response()->json([
-                'message' => 'Combinaison login et mot de passe incorrect',
+                'message' => 'Combinaison du login et mot de passe incorrect',
                 'status' => false,
                 'data' => null,
             ]);
