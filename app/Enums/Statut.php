@@ -42,6 +42,9 @@ class Statut
     const RECOUVREMENT = "Un recouvrement";
     const RETOUR_FLOTTE = "Retour de flotte";
 
+    //Flux d'opération
+    const DEPENSE = "Dépense d'argent";
+    const ACQUISITION = "Reception d'argent";
 
 
     /**
