@@ -97,7 +97,7 @@ class LoginController extends Controller
                 'status' => true,
                 'data' => [
                     'token' => $token->accessToken,
-                    'role' => $user->roles->first()->id,
+                    'role' => $user->roles->first()->name,
                 ]
             ]);
         } else {
