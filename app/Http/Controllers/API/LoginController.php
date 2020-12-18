@@ -58,6 +58,25 @@ class LoginController extends Controller
      }
 
     /**
+     * Improve user authentication
+     *
+     * @return JsonResponse
+     */
+    public function authentication()
+    {
+        $user = Auth::user();
+
+        return response()->json([
+            'message' => null,
+            'status' => true,
+            'data' => [
+                'settings' => $user->setting->first(),
+                'user' => $user,
+            ]
+        ]);
+    }
+
+    /**
      * Connection d'un utilisateur
      *
      * @param Request $request
@@ -133,7 +152,7 @@ class LoginController extends Controller
             Auth::user()->AauthAcessToken()->delete();
             return response()->json(
                 [
-                    'message' => 'utilisateur deconnecté',
+                    'message' => null,
                     'status' => true,
                     'data' => null
                 ]
@@ -141,7 +160,7 @@ class LoginController extends Controller
         }else{
             return response()->json(
                 [
-                    'message' => 'impossible de se deconnecter si on n est pas connecte',
+                    'message' => "impossible de se deconnecter si on n'est pas connecte",
                     'status' => false,
                     'data' => null
                 ]

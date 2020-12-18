@@ -27,6 +27,10 @@ Route::post('login', 'API\LoginController@login');
 Route::post('identification', 'API\LoginController@identification');
 
 Route::group(['middleware' => 'auth:api'], function(){
+
+    // User authentication
+    Route::post('authentication', 'API\LoginController@authentication');
+
     /*
      ///////////////////////GESTION DES UTILISATEURS/////////////////////////
     */
