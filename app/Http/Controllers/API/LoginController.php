@@ -50,7 +50,7 @@ class LoginController extends Controller
              ]);
          } else {
              return response()->json([
-                 'message' => 'Utilisateur non reconnu',
+                 'message' => "Utilisateur non reconnu",
                  'status' => false,
                  'data' => null,
              ]);
@@ -67,7 +67,7 @@ class LoginController extends Controller
         $user = Auth::user();
 
         return response()->json([
-            'message' => null,
+            'message' => "Bienvenue " . $user->name,
             'status' => true,
             'data' => [
                 'settings' => $user->setting->first(),
@@ -241,30 +241,26 @@ class LoginController extends Controller
     {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
-            'current_pass' => 'required|string',
-            'new_pass' => 'required|string|min:6',
+            'current_pass' => ['required', 'string', 'min:6'],
+            'new_pass' => ['required', 'string', 'min:6'],
         ]);
-        if ($validator->fails()) {
 
-            return response()->json(
-                [
+        if ($validator->fails()) {
+            return response()->json([
                     'message' => "Le formulaire contient des champs mal renseignés",
                     'status' => false,
                     'data' => null
                 ]
             );
-
         }
 
         // Récupérer l'utilisateur concerné
         $user = Auth::user();
 
         if (!Hash::check($request->current_pass, $user->password)) {
-
             // Mot de passe courant incorrect
-            return response()->json(
-                [
-                    'message' => 'Mot de passe courant incorrect',
+            return response()->json([
+                    'message' => "Mot de passe courant incorrect",
                     'status' => false,
                     'data' => null
                 ]
@@ -276,7 +272,6 @@ class LoginController extends Controller
             'new_pass' => $request->new_pass,
         );
 
-
         // crypter le nouveau mot de passe
         $pass_data['new_pass'] = bcrypt($pass_data['new_pass']);
 
@@ -285,18 +280,17 @@ class LoginController extends Controller
 
         if ($user->save()) {
             // Renvoyer un message de succès
-            return response()->json(
-                [
-                    'message' => 'Mot de passe réinitialisé avec succès',
+            return response()->json([
+                    'message' => "Mot de passe mis à jour avec succès",
                     'status' => true,
-                    'data' => ['user'=>$user]
+                    'data' => null
                 ]
             );
         } else {
             // Renvoyer une erreur
             return response()->json(
                 [
-                    'message' => 'Echec de réinitialisation du mot de passe',
+                    'message' => "Echec de réinitialisation du mot de passe",
                     'status' => false,
                     'data' => null
                 ]
@@ -310,22 +304,18 @@ class LoginController extends Controller
      */
     public function update_picture(Request $request)
     {
-
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
             'base_64_image' => 'required|string',
         ]);
 
         if ($validator->fails()) {
-
-            return response()->json(
-                [
+            return response()->json([
                     'message' => "Le formulaire contient des champs mal renseignés",
                     'status' => false,
                     'data' => null
                 ]
             );
-
         }
 
         // Get current user
@@ -336,7 +326,6 @@ class LoginController extends Controller
         if(Storage::exists($user_avatar_path_name) && $user_avatar_path_name != 'users/default.png')
             Storage::delete($user_avatar_path_name);
 
-
         // Convert base 64 image to normal image for the server and the data base
         $server_image_name_path = ImageFromBase64::imageFromBase64AndSave($request->input('base_64_image'),
             'images/avatars/');
@@ -346,23 +335,20 @@ class LoginController extends Controller
 
         // Save image name in database
         if ($user->save()) {
-            return response()->json(
-                [
-                    'message' => 'Photo de profil mise à jour avec succès',
+            return response()->json([
+                    'message' => "Photo de profil mise à jour avec succès",
                     'status' => true,
-                    'data' => ['user'=>$user]
+                    'data' => null
                 ]
             );
         }else {
-            return response()->json(
-                [
-                    'message' => 'erreur de modification de l avatar',
+            return response()->json([
+                    'message' => "Erreur lors de la modification de photo de profil",
                     'status' => true,
-                    'data' => ['user'=>$user]
+                    'data' => null
                 ]
             );
         }
-
     }
 
     /**
@@ -427,19 +413,15 @@ class LoginController extends Controller
     {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
-            'name' => ['required', 'string', 'max:255'],
-            // 'statut' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string', 'max:255'],
-            'poste' => ['nullable', 'string', 'max:255'],
             'email' => ['nullable', 'string', 'email'],
+            'name' => ['required', 'string', 'max:255'],
+            'poste' => ['nullable', 'string', 'max:255'],
             'adresse' => ['nullable', 'string', 'max:255'],
-            // 'roles' => ['required'],
-            // 'phone' => ['required', 'numeric', 'max:255']
-
+            'description' => ['nullable', 'string', 'max:255'],
         ]);
+
         if ($validator->fails()) {
-            return response()->json(
-                [
+            return response()->json([
                     'message' => "Le formulaire contient des champs mal renseignés",
                     'status' => false,
                     'data' => null
@@ -447,21 +429,16 @@ class LoginController extends Controller
             );
         }
 
-
         // Récupérer les données validées
         $name = $request->name;
         $description = $request->description;
         $email = $request->email;
         $adresse = $request->adresse;
-        // $status = $request->status;
         $poste = $request->poste;
-        // $phone = $request->phone;
 
         // Get current user
         $user =  Auth::user();
         $user->name = $name;
-        // $user->statut = $status;
-        // $user->phone = $phone;
         $user->poste = $poste;
 
         $user->description = $description;
@@ -469,21 +446,17 @@ class LoginController extends Controller
         $user->adresse = $adresse;
 
         if ($user->save()) {
-
             // Renvoyer un message de succès
-            return response()->json(
-                [
-                    'message' => 'profil modifié',
+            return response()->json([
+                    'message' => "Informations du profil mis à jour avec succès",
                     'status' => true,
-                    'data' => ['user'=>$user]
+                    'data' => null
                 ]
             );
         } else {
-
             // Renvoyer une erreur
-            return response()->json(
-                [
-                    'message' => 'erreur lors de la modification',
+            return response()->json([
+                    'message' => "Erreur lors de la modification",
                     'status' => false,
                     'data' => null
                 ]
