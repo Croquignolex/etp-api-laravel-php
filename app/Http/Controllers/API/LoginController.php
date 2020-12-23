@@ -62,17 +62,27 @@ class LoginController extends Controller
      *
      * @return JsonResponse
      */
-    public function authentication()
+    public function authentication(Request $request)
     {
         $user = Auth::user();
+        $role = $request->role;
+        $user_role = $user->roles->first()->name;
 
+        if($user_role === $role) {
+            return response()->json([
+                'message' => "Bienvenue " . $user->name,
+                'status' => true,
+                'data' => [
+                    'settings' => $user->setting->first(),
+                    'user' => $user,
+                    'role' => $user_role
+                ]
+            ]);
+        }
         return response()->json([
-            'message' => "Bienvenue " . $user->name,
-            'status' => true,
-            'data' => [
-                'settings' => $user->setting->first(),
-                'user' => $user,
-            ]
+            'message' => "Utilisateur non authorisé sur ce rôle",
+            'status' => false,
+            'data' => null,
         ]);
     }
 
