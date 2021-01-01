@@ -374,17 +374,14 @@ class LoginController extends Controller
             'charts' => 'array',
             'sound' => 'required',
             'session' => 'required',
-            //'description' => 'string',
         ]);
 
         if ($validator->fails()) {
-            return response()->json(
-                [
-                    'message' => "Le formulaire contient des champs mal renseignés",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         // Get current user
@@ -399,7 +396,7 @@ class LoginController extends Controller
         if ($setting->save()) {
             return response()->json(
                 [
-                    'message' => 'Setting upadated',
+                    'message' => 'Paramètres mis à jour avec succès',
                     'status' => true,
                     'data' => null
                 ]
@@ -407,9 +404,9 @@ class LoginController extends Controller
         }else {
             return response()->json(
                 [
-                    'message' => 'erreur de modification de l avatar',
+                    'message' => "Erreur l'ors de la mise à jours des paramètres",
                     'status' => true,
-                    'data' => []
+                    'data' => null
                 ]
             );
         }

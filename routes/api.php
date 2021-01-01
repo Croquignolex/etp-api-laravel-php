@@ -598,7 +598,7 @@ Route::group(['middleware' => 'auth:api'], function(){
 
 
             //Supprimer notification
-            Route::post('delette_notifications/{id}', 'API\NotificationsController@delette_notifications');
+            Route::post('delete_notifications/{id}', 'API\NotificationsController@delete_notifications');
 
 
             /*
