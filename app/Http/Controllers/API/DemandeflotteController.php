@@ -329,7 +329,7 @@ class DemandeflotteController extends Controller
      */
     public function list_demandes_flote_general()
     {
-        $demandes_flote = Demande_flote::orderBy('created_at', 'desc')->paginate(10);
+        $demandes_flote = Demande_flote::orderBy('created_at', 'desc')->paginate(21);
 
         $demandes_flotes = [];
 

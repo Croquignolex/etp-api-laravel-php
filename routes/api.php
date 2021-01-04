@@ -196,8 +196,11 @@ Route::group(['middleware' => 'auth:api'], function(){
         //Creer une puce
         Route::post('store_puce', 'API\PuceController@store');
 
-        //liste des puce
+        //liste des puces
         Route::get('puce_list', 'API\PuceController@list');
+
+        //liste de toiutes les puces
+        Route::get('puce_list_all', 'API\PuceController@list_all');
 
         //details d'une puce'
         Route::get('show_puce/{id}', 'API\PuceController@show')
