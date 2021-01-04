@@ -3,19 +3,17 @@
 namespace App\Http\Controllers\API;
 
 use App\Agent;
-use App\Demande_flote;
-use App\Notifications\Demande_flotte as Notif_demande_flotte;
-use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
-use \App\Enums\Roles;
 use App\User;
-use Illuminate\Support\Facades\Validator;
-use App\Events\NotificationsEvent;
-use App\Flote;
 use App\Role;
 use App\Puce;
+use \App\Enums\Roles;
+use App\Demande_flote;
+use Illuminate\Http\Request;
+use App\Events\NotificationsEvent;
 use Illuminate\Support\Facades\Auth;
-use App\Approvisionnement;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Validator;
+use App\Notifications\Demande_flotte as Notif_demande_flotte;
 
 class DemandeflotteController extends Controller
 {
@@ -331,12 +329,11 @@ class DemandeflotteController extends Controller
      */
     public function list_demandes_flote_general()
     {
-        //On recupere toutes 'demande de flotte'
-        $demandes_flote = Demande_flote::all();
+        $demandes_flote = Demande_flote::orderBy('created_at', 'desc')->paginate(10);
 
         $demandes_flotes = [];
 
-        foreach($demandes_flote as $demande_flote) {
+        foreach($demandes_flote->items() as $demande_flote) {
 			//recuperer l'utilisateur concerné
             $user = $demande_flote->user;
 
@@ -344,30 +341,19 @@ class DemandeflotteController extends Controller
             $agent = Agent::where('id_user', $user->id)->first();
 
             //recuperer le demandeur
-			$demandeur = User::Find($demande_flote->add_by);
+			$demandeur = User::find($demande_flote->add_by);
 
             $demandes_flotes[] = ['demande' => $demande_flote, 'demandeur' => $demandeur, 'agent' => $agent, 'user' => $user, 'puce' => $demande_flote->puce];
         }
 
-        if (!empty($demandes_flote)) {
-
-            return response()->json(
-                [
-                    'message' => '',
-                    'status' => true,
-                    'data' => ['demandes' => $demandes_flotes]
-                ]
-            );
-
-         }else{
-            return response()->json(
-                [
-                    'message' => 'pas de dmande de flote à lister',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
-         }
+        return response()->json([
+            'message' => "",
+            'status' => true,
+            'data' => [
+                'demandes' => $demandes_flotes,
+                'hasMoreData' => $demandes_flote->hasMorePages(),
+            ]
+        ]);
     }
 
     /**
