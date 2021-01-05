@@ -219,24 +219,19 @@ class LoginController extends Controller
     public function solde()
     {
         if (Auth::check()) {
-
             $user = Auth::user();
             $caisse = Caisse::where('id_user', $user->id)->first();
-            return response()->json(
-                [
-                    'message' => '',
-                    'status' => true,
-                    'data' => ['caisse' => $caisse]
-                ]
-            );
-         }else{
-            return response()->json(
-                [
-                    'message' => 'Vous n etes pas connecte',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => '',
+                'status' => true,
+                'data' => ['balance' => $caisse->solde]
+            ]);
+        } else {
+            return response()->json([
+                'message' => 'Utilisateur non identifié',
+                'status' => false,
+                'data' => null
+            ]);
          }
     }
 
