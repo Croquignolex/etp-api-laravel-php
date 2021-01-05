@@ -323,6 +323,9 @@ Route::group(['middleware' => 'auth:api'], function(){
             //lister mes demandes de destockage peu importe le statut
             Route::get('list_demandes_destockage', 'API\Demande_destockage_recouvreurController@list_all_status');
 
+            //lister toutes mes demandes de destockage peu importe le statut
+            Route::get('list_demandes_destockage_all', 'API\Demande_destockage_recouvreurController@list_all_status_all');
+
             //reponse d'un responsable a une demande
             Route::post('reponse_demandes_destockage/{id}', 'API\Demande_destockage_recouvreurController@reponse');
         /*

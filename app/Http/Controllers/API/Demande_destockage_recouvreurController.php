@@ -2,36 +2,31 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Agent;
-use App\Demande_destockage;
-use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
 use App\User;
-use Illuminate\Support\Facades\Validator;
-use App\Events\NotificationsEvent;
-use App\Notifications\Demande_destockage as Notif_demande_destockage;
-use App\Notifications\Destockage as Notif_destockage;
-use App\Flote;
-use App\Enums\Roles;
 use App\Role;
 use App\Puce;
+use App\Agent;
+use App\Enums\Roles;
+use App\Demande_destockage;
+use Illuminate\Http\Request;
+use App\Events\NotificationsEvent;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Validator;
+use App\Notifications\Destockage as Notif_destockage;
+use App\Notifications\Demande_destockage as Notif_demande_destockage;
 
 class Demande_destockage_recouvreurController extends Controller
 {
     /**
-
      * les conditions de lecture des methodes
-
      */
-
-    function __construct(){
-
+    function __construct()
+    {
         $recouvreur = Roles::RECOUVREUR;
         $superviseur = Roles::SUPERVISEUR;
         $ges_flotte = Roles::GESTION_FLOTTE;
         $this->middleware("permission:$recouvreur|$superviseur|$ges_flotte");
-
     }
 
     /**
@@ -150,38 +145,38 @@ class Demande_destockage_recouvreurController extends Controller
     }
 
     /**
-     * ////lister toutes mes demandes de destockage peu importe le statut
+     * ////lister mes demandes de destockage peu importe le statut
      */
     public function list_all_status()
     {
-        //On recupere les 'demande de destockage'
-//        $demandes_destockage = Demande_destockage::where('add_by', Auth::user()->id)->get();
-        // tous lister car le responsable de zone peut voir toutes les démande de déstockage et agir en conséquence
-        $demandes_destockage = Demande_destockage::all();
+        $demandes_destockage = Demande_destockage::orderBy('created_at', 'desc')->paginate(6);
 
-		$demandes_destockages = [];
+        $clearance_response =  $this->clearancesResponse($demandes_destockage->items());
 
-		foreach($demandes_destockage as $demande_destockage) {
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'demandes' => $clearance_response,
+                'hasMoreData' => $demandes_destockage->hasMorePages()
+            ]
+        ]);
+    }
 
-            //recuperer l'utilisateur concerné
-                $user = $demande_destockage->user;
+    /**
+     * ////lister toutes mes demandes de destockage peu importe le statut
+     */
+    public function list_all_status_all()
+    {
+        $demandes_destockage = Demande_destockage::orderBy('created_at', 'desc')->get();
 
-            //recuperer l'agent concerné
-                $agent = Agent::where('id_user', $user->id)->first();
-
-            //recuperer le demandeur
-            $demandeur = User::find($demande_destockage->add_by);
-
-            $demandes_destockages[] = ['demande' => $demande_destockage, 'demandeur' => $demandeur, 'agent' => $agent, 'user' => $user, 'puce' => $demande_destockage->puce];
-        }
-
-        return response()->json(
-			[
-				'message' => '',
-				'status' => true,
-				'data' => ['demandes' => $demandes_destockages]
-			]
-		);
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'demandes' => $demandes_destockage
+            ]
+        ]);
     }
 
 	/**
@@ -456,5 +451,27 @@ class Demande_destockage_recouvreurController extends Controller
                 ]
             );
         }
+    }
+
+    // Build clearances return data
+    private function clearancesResponse($clearances)
+    {
+        $demandes_destockages = [];
+
+        foreach($clearances as $demande_destockage)
+        {
+            //recuperer l'utilisateur concerné
+            $user = $demande_destockage->user;
+
+            //recuperer l'agent concerné
+            $agent = Agent::where('id_user', $user->id)->first();
+
+            //recuperer le demandeur
+            $demandeur = User::find($demande_destockage->add_by);
+
+            $demandes_destockages[] = ['demande' => $demande_destockage, 'demandeur' => $demandeur, 'agent' => $agent, 'user' => $user, 'puce' => $demande_destockage->puce];
+        }
+
+        return $demandes_destockages;
     }
 }

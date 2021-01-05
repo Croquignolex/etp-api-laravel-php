@@ -417,8 +417,8 @@ class PuceController extends Controller
     {
         $puces = Puce::orderBy('created_at', 'desc')->paginate(6);
 
-        $sims_response =  $this->simssResponse($puces->items());
-f
+        $sims_response =  $this->simsResponse($puces->items());
+
         return response()->json([
             'message' => '',
             'status' => true,
@@ -440,7 +440,7 @@ f
             'message' => '',
             'status' => true,
             'data' => [
-                'puces' => $this->simssResponse($puces)
+                'puces' => $this->simsResponse($puces)
             ]
         ]);
     }
@@ -591,7 +591,7 @@ f
     }
 
     // Build sims return data
-    private function simssResponse($sims)
+    private function simsResponse($sims)
     {
         $returenedPuces = [];
 
