@@ -415,75 +415,32 @@ class PuceController extends Controller
      */
     public function list()
     {
-        if (Puce::where('deleted_at', null)) {
-            $puces = Puce::where('deleted_at', null)->get();
+        $puces = Puce::orderBy('created_at', 'desc')->paginate(21);
 
-            $returenedPuces = [];
-
-            foreach($puces as $puce) {
-                $id_agent = $puce->id_agent;
-                $agent = is_null($id_agent) ? $id_agent : $puce->agent;
-                $user = is_null($id_agent) ? $id_agent : User::find($puce->agent->id_user);
-                //$flote = Flote::find($puce->id_flotte);
-                //$nom = $flote->nom;
-                $returenedPuces[] = [
-                    'puce' => $puce,
-                    'flote' => $puce->flote,
-                    'type' => $puce->type_puce,
-                    'agent' => $agent,
-                    'user' => $user,
-                    'recouvreur' => $puce->rz
-                ];
-            }
-
-            return response()->json(
-                [
-                    'message' => '',
-                    'status' => true,
-                    'data' => ['puces' => $returenedPuces]
-                ]
-            );
-        }else{
-            return response()->json(
-                [
-                    'message' => 'Pas de puce à lister',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
-        }
-    }
-
-    /**
-     * //lister toutes les puces
-     */
-    public function list_all()
-    {
-        $puces = Puce::all();
-
-        $returenedPuces = [];
-
-        foreach($puces as $puce) {
-
-            $id_agent = $puce->id_agent;
-            $agent = is_null($id_agent) ? $id_agent : $puce->agent;
-            $user = is_null($id_agent) ? $id_agent : User::find($puce->agent->id_user);
-
-            $returenedPuces[] = [
-                'puce' => $puce,
-                'user' => $user,
-                'agent' => $agent,
-                'flote' => $puce->flote,
-                'recouvreur' => $puce->rz,
-                'type' => $puce->type_puce,
-            ];
-        }
+        $sims_response =  $this->simssResponse($puces->items());
 
         return response()->json([
             'message' => '',
             'status' => true,
             'data' => [
-                'puces' => $returenedPuces
+                'puces' => $sims_response,
+                'hasMoreData' => $sims_response->hasMorePages(),
+            ]
+        ]);
+    }
+
+    /**
+     * //lister toutes les $sims_response
+     */
+    public function list_all()
+    {
+        $puces = Puce::orderBy('created_at', 'desc')->get();
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'puces' => $this->simssResponse($puces)
             ]
         ]);
     }
@@ -633,4 +590,27 @@ class PuceController extends Controller
          }
     }
 
+    // Build sims return data
+    private function simssResponse($sims)
+    {
+        $returenedPuces = [];
+
+        foreach($sims as $puce) {
+
+            $id_agent = $puce->id_agent;
+            $agent = is_null($id_agent) ? $id_agent : $puce->agent;
+            $user = is_null($id_agent) ? $id_agent : User::find($puce->agent->id_user);
+
+            $returenedPuces[] = [
+                'puce' => $puce,
+                'user' => $user,
+                'agent' => $agent,
+                'flote' => $puce->flote,
+                'recouvreur' => $puce->rz,
+                'type' => $puce->type_puce,
+            ];
+        }
+
+        return $returenedPuces;
+    }
 }

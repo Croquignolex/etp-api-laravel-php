@@ -331,20 +331,7 @@ class DemandeflotteController extends Controller
     {
         $demandes_flote = Demande_flote::orderBy('created_at', 'desc')->paginate(21);
 
-        $demandes_flotes = [];
-
-        foreach($demandes_flote->items() as $demande_flote) {
-			//recuperer l'utilisateur concerné
-            $user = $demande_flote->user;
-
-            //recuperer l'agent concerné
-            $agent = Agent::where('id_user', $user->id)->first();
-
-            //recuperer le demandeur
-			$demandeur = User::find($demande_flote->add_by);
-
-            $demandes_flotes[] = ['demande' => $demande_flote, 'demandeur' => $demandeur, 'agent' => $agent, 'user' => $user, 'puce' => $demande_flote->puce];
-        }
+        $demandes_flotes =  $this->fleetsResponse($demandes_flote->items());
 
         return response()->json([
             'message' => "",
@@ -352,6 +339,22 @@ class DemandeflotteController extends Controller
             'data' => [
                 'demandes' => $demandes_flotes,
                 'hasMoreData' => $demandes_flote->hasMorePages(),
+            ]
+        ]);
+    }
+
+    /**
+     * //lister toutes mes demandes de flotes (gestionnaire de flotte ou les admin)
+     */
+    public function list_demandes_flote_general_all()
+    {
+        $demandes_flote = Demande_flote::orderBy('created_at', 'desc')->get();
+
+        return response()->json([
+            'message' => "",
+            'status' => true,
+            'data' => [
+                'demandes' => $this->fleetsResponse($demandes_flote)
             ]
         ]);
     }
@@ -473,5 +476,26 @@ class DemandeflotteController extends Controller
                 ]
             );
         }
+    }
+
+    // Build fleets return data
+    private function fleetsResponse($fleets)
+    {
+        $demandes_flotes = [];
+
+        foreach($fleets as $demande_flote) {
+            //recuperer l'utilisateur concerné
+            $user = $demande_flote->user;
+
+            //recuperer l'agent concerné
+            $agent = Agent::where('id_user', $user->id)->first();
+
+            //recuperer le demandeur
+            $demandeur = User::find($demande_flote->add_by);
+
+            $demandes_flotes[] = ['demande' => $demande_flote, 'demandeur' => $demandeur, 'agent' => $agent, 'user' => $user, 'puce' => $demande_flote->puce];
+        }
+
+        return $demandes_flotes;
     }
 }

@@ -277,7 +277,10 @@ Route::group(['middleware' => 'auth:api'], function(){
 			//lister mes demandes de flotes (gestionnaire de flotte ou les admin)
             Route::get('list_demandes_flote_general', 'API\DemandeflotteController@list_demandes_flote_general');
 
-			//modifier d'une demande de flote (gestionnaire de flotte ou les admin)
+            //lister toutes mes demandes de flotes (gestionnaire de flotte ou les admin)
+            Route::get('list_demandes_flote_general_all', 'API\DemandeflotteController@list_demandes_flote_general_all');
+
+            //modifier d'une demande de flote (gestionnaire de flotte ou les admin)
             Route::post('modifier_demandes_flote_general/{id}', 'API\DemandeflotteController@modifier_general')
             ->where('id', '[0-9]+');
         /*
