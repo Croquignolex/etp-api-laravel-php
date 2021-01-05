@@ -415,16 +415,16 @@ class PuceController extends Controller
      */
     public function list()
     {
-        $puces = Puce::orderBy('created_at', 'desc')->paginate(21);
+        $puces = Puce::orderBy('created_at', 'desc')->paginate(6);
 
         $sims_response =  $this->simssResponse($puces->items());
-
+f
         return response()->json([
             'message' => '',
             'status' => true,
             'data' => [
                 'puces' => $sims_response,
-                'hasMoreData' => $sims_response->hasMorePages(),
+                'hasMoreData' => $puces->hasMorePages(),
             ]
         ]);
     }
