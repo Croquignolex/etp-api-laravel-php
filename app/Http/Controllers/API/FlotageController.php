@@ -91,7 +91,7 @@ class FlotageController extends Controller
             $type_puce = Type_puce::find($puce_etp->type)->name;
 
             //On se rassure que la puce passée en paramettre est reelement l'une des puces de flottage sollicités
-            if ($type_puce == Statut::AGENT || $type_puce == Statut::ETP || $puce_etp->id_flotte != $puce_agent->id_flotte) {
+            if ($type_puce == Statut::AGENT || $type_puce == Statut::RESOURCE || $puce_etp->id_flotte != $puce_agent->id_flotte) {
                 return response()->json([
                     'message' => "Cette puce n'est pas capable d'effectuer ce flottagage",
                     'status' => false,
@@ -298,7 +298,7 @@ class FlotageController extends Controller
             $type_puce = Type_puce::find($puce_etp->type)->name;
 
             //On se rassure que la puce passée en paramettre est reelement l'une des puces de flottage sollicités
-            if ($type_puce == Statut::CORPORATE || $type_puce == Statut::AGENT || $type_puce == Statut::ETP || $puce_etp->id_flotte != $puce_agent->id_flotte) {
+            if ($type_puce == Statut::CORPORATE || $type_puce == Statut::AGENT || $type_puce == Statut::RESOURCE || $puce_etp->id_flotte != $puce_agent->id_flotte) {
                 return response()->json(
                     [
                         'message' => "cette puce n'est pas capable d'effectuer un flottagage",

@@ -427,43 +427,36 @@ class AgentController extends Controller
      */
     public function list()
     {
-        if (Agent::where('deleted_at', null)) {
-            $agents = Agent::where('deleted_at', null)->get();
-            $returenedAgents = [];
+        $agents = Agent::orderBy('created_at', 'desc')->paginate(6);
 
-            foreach($agents as $agent) {
+        $agents_response =  $this->agentsResponse($agents->items());
 
-                $user = User::find($agent->id_user);
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'agents' => $agents_response,
+                'hasMoreData' => $agents->hasMorePages(),
+            ]
+        ]);
+    }
 
-				$puces = is_null($agent) ? [] : $agent->puces;
+    /**
+     * liste des Agents
+     *
+     * @return JsonResponse
+     */
+    public function list_all()
+    {
+        $agents = Agent::orderBy('created_at', 'desc')->get();
 
-                $returenedAgents[] = [
-					'zone' => $user->zone,
-					'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
-					'agent' => $agent,
-					'puces' => $puces,
-                    'caisse' => Caisse::where('id_user', $user->id)->first(),
-                    'createur' => User::find($user->add_by)
-				];
-            }
-
-            return response()->json(
-                [
-                    'message' => '',
-                    'status' => true,
-                    'data' => ['agents' => $returenedAgents]
-                ]
-            );
-         }else{
-            return response()->json(
-                [
-                    'message' => 'erreur lors de la modification',
-                    'status'=>false,
-                    'data' => null
-                ]
-            );
-         }
-
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'agents' => $this->agentsResponse($agents)
+            ]
+        ]);
     }
 
     /**
@@ -1074,5 +1067,26 @@ class AgentController extends Controller
                 ]
             );
         }
+    }
+
+    // Build agents return data
+    private function agentsResponse($agents)
+    {
+        $returenedAgents = [];
+
+        foreach($agents as $agent) {
+
+            $user = User::find($agent->id_user);
+
+            $returenedAgents[] = [
+                'zone' => $user->zone,
+                'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
+                'agent' => $agent,
+                'caisse' => Caisse::where('id_user', $user->id)->first(),
+                'createur' => User::find($user->add_by)
+            ];
+        }
+
+        return $returenedAgents;
     }
 }

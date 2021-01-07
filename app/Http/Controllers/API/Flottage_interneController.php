@@ -724,7 +724,7 @@ class Flottage_interneController extends Controller
             $type_puce_to = Type_puce::find($puce_to->type)->name;
 
             //On se rassure que la puce qui envoie est bien AGENT ETP
-            if ($type_puce_from != Statut::ETP) {
+            if ($type_puce_from != Statut::RESOURCE) {
                 return response()->json(
                     [
                         'message' => "Choisisser une puce valide pour la transation",

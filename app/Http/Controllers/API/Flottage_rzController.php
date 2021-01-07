@@ -311,7 +311,7 @@ class Flottage_rzController extends Controller
         $puce_from->solde = $puce_from->solde - $request->montant;
 
         //on credite la flotte de l'agent s'il est de ETP
-        if ($type_puce_to != Statut::ETP){
+        if ($type_puce_to != Statut::RESOURCE){
             $puce_to->solde = $puce_to->solde + $request->montant;
         }
 

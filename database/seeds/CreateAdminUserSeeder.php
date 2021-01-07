@@ -127,7 +127,7 @@ class CreateAdminUserSeeder extends Seeder
 
         Type_puce::create([
 
-        	'name' => \App\Enums\Statut::ETP 
+        	'name' => \App\Enums\Statut::RESOURCE
 
         ]);
 
