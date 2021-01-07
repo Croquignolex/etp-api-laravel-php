@@ -111,33 +111,29 @@ class PuceController extends Controller
         $puce = Puce::find($id);
 
         //Envoie des information
-        if(puce::find($id)){
+        if(Puce::find($id)) {
 			$id_agent = $puce->id_agent;
 			$agent = is_null($id_agent) ? $id_agent : $puce->agent;
 			$user = is_null($id_agent) ? $id_agent : User::find($puce->agent->id_user);
-            return response()->json(
-                [
-                    'message' => '',
-                    'status' => true,
-                    'data' => [
-                        'puce' => $puce,
-                        'flote' => $puce->flote,
-                        'type' => $puce->type_puce,
-                        'agent' => $agent,
-                        'user' => $user,
-                        'corporate' => $puce->company,
-                        'recouvreur' => $puce->rz,
-                    ]
+            return response()->json([
+                'message' => '',
+                'status' => true,
+                'data' => [
+                    'puce' => $puce,
+                    'flote' => $puce->flote,
+                    'type' => $puce->type_puce,
+                    'agent' => $agent,
+                    'user' => $user,
+                    'corporate' => $puce->company,
+                    'recouvreur' => $puce->rz,
                 ]
-            );
-        }else{
-            return response()->json(
-                [
-                    'message' => "Cette puce n'existe pas",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            ]);
+        } else {
+            return response()->json([
+                'message' => "Cette puce n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
         }
     }
 
