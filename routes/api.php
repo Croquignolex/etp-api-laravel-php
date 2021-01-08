@@ -342,6 +342,9 @@ Route::group(['middleware' => 'auth:api'], function(){
         //liste des zone
         Route::get('zone_list', 'API\ZoneController@list');
 
+        //liste de toutes les zone
+        Route::get('zone_list_all', 'API\ZoneController@list_all');
+
         //details d'une zone'
         Route::get('show_zone/{id}', 'API\ZoneController@show')
         ->where('id', '[0-9]+');

@@ -66,15 +66,12 @@ class AgentController extends Controller
 
 
         if ($validator->fails()) {
-            return response()->json(
-                [
-                    'message' => "Le formulaire contient des champs mal renseignés",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
         }
-
 
         if (isset($request->id_zone)) {
             // on verifie si la zone est définie
@@ -82,14 +79,13 @@ class AgentController extends Controller
             if (!Zone::Find($request->id_zone)) {
                 return response()->json(
                     [
-                        'message' => "la zonne n'est pas definie",
+                        'message' => "La zonne n'est pas definie",
                         'status' => false,
                         'data' => null
                     ]
                 );
             }
         }
-
 
         // Récupérer les données validées
             // users
@@ -127,7 +123,6 @@ class AgentController extends Controller
                 if ($request->hasFile('base_64_image_back') && $request->file('base_64_image_back')->isValid()) {
                     $img_cni_back = $request->base_64_image_back->store('files/CNI_arriere/agents');
                 }
-
 
         //l'utilisateur connecté
             $add_by_id = Auth::user()->id;
@@ -190,36 +185,34 @@ class AgentController extends Controller
                     //$success['agent'] =  $agent;
 
                     // Renvoyer un message de succès
-                    return response()->json(
-                        [
-                            'message' => 'agent cree',
-                            'status' => true,
-                            'data' => ['agent' => $agent]
+                    return response()->json([
+                        'message' => 'Agent crée avec succès',
+                        'status' => true,
+                        'data' => [
+                            'zone' => $user->zone,
+                            'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
+                            'agent' => $agent,
+                            'caisse' => Caisse::where('id_user', $user->id)->first(),
+                            'createur' => User::find($user->add_by)
                         ]
-                    );
+                    ]);
 
                 } else {
                     // Renvoyer une erreur
 
-                    return response()->json(
-                        [
-                            'message' => 'erreur lors de la creation',
-                            'status' => false,
-                            'data' => null
-                        ]
-                    );
-
+                    return response()->json([
+                        'message' => "Erreur l'ors de la creation de l'agent",
+                        'status' => false,
+                        'data' => null
+                    ]);
                 }
-
-        }else {
+        } else {
             // Renvoyer un message de erreur
-            return response()->json(
-                [
-                    'message' => 'Problème lors de la creation de l utilisateur correspondant',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Erreur l'ors de la creation de l'agent",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
     }
