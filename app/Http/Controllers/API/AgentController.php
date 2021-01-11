@@ -44,7 +44,7 @@ class AgentController extends Controller
 
             //user informations
                 'name' => 'required',
-                'phone' => 'required|numeric|unique:users,phone',
+                'phone' => 'required|numeric',
                 'adresse' => 'nullable',
                 'description' => 'nullable',
                 //'poste' => ['nullable', 'string', 'max:255'],
@@ -73,17 +73,25 @@ class AgentController extends Controller
             ]);
         }
 
+        if (isset($request->phone)) {
+            // on verifie si la zone est définie
+            if (User::where('phone', $request->phone)->first()) {
+                return response()->json([
+                    'message' => "Numéro de téléphone déjà existant",
+                    'status' => false,
+                    'data' => null
+                ]);
+            }
+        }
+
         if (isset($request->id_zone)) {
             // on verifie si la zone est définie
-
-            if (!Zone::Find($request->id_zone)) {
-                return response()->json(
-                    [
-                        'message' => "La zonne n'est pas definie",
-                        'status' => false,
-                        'data' => null
-                    ]
-                );
+            if (!Zone::find($request->id_zone)) {
+                return response()->json([
+                    'message' => "La zonne n'est pas definie",
+                    'status' => false,
+                    'data' => null
+                ]);
             }
         }
 

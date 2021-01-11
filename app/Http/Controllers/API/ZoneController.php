@@ -21,9 +21,11 @@ class ZoneController extends Controller
      */
     function __construct()
     {
+        $agent = Roles::AGENT;
         $recouvreur = Roles::RECOUVREUR;
         $superviseur = Roles::SUPERVISEUR;
-        $this->middleware("permission:$superviseur|$recouvreur");
+        $ges_flotte = Roles::GESTION_FLOTTE;
+        $this->middleware("permission:$recouvreur|$superviseur|$ges_flotte|$agent");
     }
 
     /**
@@ -641,7 +643,7 @@ class ZoneController extends Controller
             'message' => '',
             'status' => true,
             'data' => [
-                'puces' => $zones_response,
+                'zones' => $zones_response,
                 'hasMoreData' => $zones->hasMorePages(),
             ]
         ]);
@@ -658,7 +660,7 @@ class ZoneController extends Controller
             'message' => '',
             'status' => true,
             'data' => [
-                'puces' => $this->zonesResponse($zones)
+                'zones' => $this->zonesResponse($zones)
             ]
         ]);
     }
