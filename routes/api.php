@@ -170,6 +170,9 @@ Route::group(['middleware' => 'auth:api'], function(){
         //liste des flotes
         Route::get('flote_list', 'API\FloteController@list');
 
+        //liste toutes les flotes
+        Route::get('flote_list_all', 'API\FloteController@list_all');
+
         //details d'une flote'
         Route::get('show_flote/{id}', 'API\FloteController@show')
         ->where('id', '[0-9]+');

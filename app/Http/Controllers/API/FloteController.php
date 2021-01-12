@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Flote;
 use App\Puce;
+use App\Flote;
 use App\Enums\Roles;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
@@ -12,18 +12,14 @@ use Illuminate\Support\Facades\Validator;
 class FloteController extends Controller
 {
 	/**
-
      * les conditions de lecture des methodes
-
      */
-
     function __construct()
     {
         $superviseur = Roles::SUPERVISEUR;
         $ges_flotte = Roles::GESTION_FLOTTE;
         $recouvreur = Roles::RECOUVREUR;
         $this->middleware("permission:$superviseur|$ges_flotte|$recouvreur");
-
     }
 
     /**
@@ -290,31 +286,35 @@ class FloteController extends Controller
      */
     public function list()
     {
-        if (Flote::where('deleted_at', null)) {
-            $flotes = Flote::where('deleted_at', null)->get();
+        $flotes = Flote::orderBy('created_at', 'desc')->paginate(6);
 
-			$returenedFlotes = [];
+        $operators_response =  $this->operatorsResponse($flotes->items());
 
-            foreach($flotes as $flote) {
-                $returenedFlotes[] = ['flote' => $flote, 'puces' => $flote->puces];
-            }
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'flotes' => $operators_response,
+                'hasMoreData' => $flotes->hasMorePages(),
+            ]
+        ]);
+    }
 
-            return response()->json(
-                [
-                    'message' => '',
-                    'status' => true,
-                    'data' => ['flotes' => $returenedFlotes]
-                ]
-            );
-         }else{
-            return response()->json(
-                [
-                    'message' => 'pas de flote à lister',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
-         }
+    /**
+     * //lister toutes les flotes
+     */
+    public function list_all()
+    {
+
+        $flotes = Flote::orderBy('created_at', 'desc')->get();
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                '$flotes' => $this->operatorsResponse($flotes)
+            ]
+        ]);
     }
 
     /**
@@ -362,5 +362,17 @@ class FloteController extends Controller
                 ]
             );
          }
+    }
+
+    // Build operators return data
+    private function operatorsResponse($operators)
+    {
+        $returnedOperators = [];
+
+        foreach($operators as $flote) {
+            $returnedOperators[] = ['flote' => $flote];
+        }
+
+        return $returnedOperators;
     }
 }
