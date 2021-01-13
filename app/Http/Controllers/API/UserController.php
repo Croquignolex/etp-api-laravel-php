@@ -288,6 +288,24 @@ class UserController extends Controller
     }
 
     /**
+     * //lister tous les recouveurs
+     */
+    public function recouvreurs_all()
+    {
+        $collectors = User::orderBy('created_at', 'desc')->get()->filter(function(User $user) {
+            return ($user->roles->first()->name === Roles::RECOUVREUR);
+        });
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'recouvreurs' => $this->collectorsResponse($collectors)
+            ]
+        ]);
+    }
+
+    /**
      * supprimer un utilisateur
      *
      * @param $id
@@ -797,6 +815,22 @@ class UserController extends Controller
                 'data' => ['caisses' => $caisses]
             ]
         );
+    }
 
+    // Build collectors return data
+    private function collectorsResponse($collectors)
+    {
+        $returenedCollectors = [];
+
+        foreach($collectors as $collector) {
+            $returenedCollectors[] = [
+                'recouvreur' => $collector->setHidden(['deleted_at', 'add_by', 'id_zone']),
+                'zone' => $collector->zone,
+                'puces' => $collector->puces,
+                'caisse' => Caisse::where('id_user', $collector->id)->first()
+            ];
+        }
+
+        return $returenedCollectors;
     }
 }

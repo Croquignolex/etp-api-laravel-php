@@ -305,14 +305,13 @@ class FloteController extends Controller
      */
     public function list_all()
     {
-
         $flotes = Flote::orderBy('created_at', 'desc')->get();
 
         return response()->json([
             'message' => '',
             'status' => true,
             'data' => [
-                '$flotes' => $this->operatorsResponse($flotes)
+                'flotes' => $this->operatorsResponse($flotes)
             ]
         ]);
     }

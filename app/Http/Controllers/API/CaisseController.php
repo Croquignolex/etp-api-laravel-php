@@ -2,16 +2,16 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Enums\Statut;
-use App\Events\NotificationsEvent;
-use App\Notifications\Recouvrement;
-use App\Operation;
+use App\Agent;
 use App\Role;
 use App\User;
 use App\Caisse;
+use App\Operation;
 use App\Versement;
 use App\Enums\Roles;
+use App\Enums\Statut;
 use Illuminate\Http\Request;
+use App\Notifications\Recouvrement;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
@@ -22,8 +22,8 @@ class CaisseController extends Controller
     /**
      * les conditions de lecture des methodes
      */
-    function __construct(){
-
+    function __construct()
+    {
         $ges_flotte = Roles::GESTION_FLOTTE;
         $this->middleware("permission:$ges_flotte");
     }
@@ -41,24 +41,20 @@ class CaisseController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(
-                [
-                    'message' => "Le formulaire contient des champs mal renseignés",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         //On verifi si le donneur est vraiment utilisateur
         if (!($donneur = User::find($request->id_donneur))) {
-            return response()->json(
-                [
-                    'message' => "l'utilisateur en paramettre n'existe pas en BD",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "l'utilisateur en paramettre n'existe",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         //recuperer la caisse de l'utilisateur qui effecttue le verssement
@@ -108,26 +104,15 @@ class CaisseController extends Controller
             $caisse->solde = $caisse->solde + $montant;
             $caisse->save();
 
-            $versements = Versement::All();
-            $encaissements = [];
-            foreach ($versements as $_versement) {
-                $id_caisse_gestionnaire = Caisse::where('id_user', $_versement->add_by)->first();
-                if ($id_caisse_gestionnaire->id == $_versement->id_caisse) {
-                    $encaissements[] = [
-                        'versement' => $_versement,
-                        'gestionnaire' => User::find($_versement->add_by),
-                        'recouvreur' => User::find($_versement->correspondant),
-                    ];
-                }
-            }
-
             // Renvoyer un message de succès
             return response()->json(
                 [
-                    'message' => '',
+                    'message' => 'Encaissement enrégistré avec succès',
                     'status' => true,
                     'data' => [
-                        'versements' => $encaissements
+                        'versement' => $versement,
+                        'gestionnaire' => User::find($versement->add_by),
+                        'recouvreur' => User::find($versement->correspondant),
                     ]
                 ]
             );
@@ -394,28 +379,34 @@ class CaisseController extends Controller
      */
     public function encaissement_list()
     {
-        $getionnaire_id = Auth::user()->id;
-        $versements = Versement::All();
-        $encaissements = [];
-        foreach ($versements as $versement) {
-            $id_caisse_gestionnaire = Caisse::where('id_user', $getionnaire_id)->first();
-            if ($id_caisse_gestionnaire->id == $versement->id_caisse) {
-                $encaissements[] = [
-                    'versement' => $versement,
-                    'gestionnaire' => User::find($versement->add_by),
-                    'recouvreur' => User::find($versement->correspondant),
-                ];
-            }
-        }
-        return response()->json(
-            [
-                'message' => '',
-                'status' => true,
-                'data' => [
-                    'versements' => $encaissements
-                ]
+        $versements = Versement::orderBy('created_at', 'desc')->paginate(6);
+
+        $versements_response =  $this->paymentsResponse($versements->items());
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'versements' => $versements_response,
+                'hasMoreData' => $versements->hasMorePages(),
             ]
-        );
+        ]);
+    }
+
+    /**
+     * ////lister les Encaissements
+     */
+    public function encaissement_list_all()
+    {
+        $versements = Versement::orderBy('created_at', 'desc')->get();
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'versements' => $versements->paymentsResponse($versements),
+            ]
+        ]);
     }
 
     /**
@@ -772,5 +763,27 @@ class CaisseController extends Controller
                 ]
             ]
         );
+    }
+
+    // Build payments return data
+    private function paymentsResponse($payments)
+    {
+        $returnedPayments = [];
+        $getionnaire_id = Auth::user()->id;
+
+        foreach($payments as $versement)
+        {
+            $id_caisse_gestionnaire = Caisse::where('id_user', $getionnaire_id)->first();
+            if ($id_caisse_gestionnaire->id == $versement->id_caisse)
+            {
+                $returnedPayments[] = [
+                    'versement' => $versement,
+                    'gestionnaire' => User::find($versement->add_by),
+                    'recouvreur' => User::find($versement->correspondant),
+                ];
+            }
+        }
+
+        return $returnedPayments;
     }
 }

@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Role extends spatie_role
 {
     /**
-     * Get the role's users 
+     * Get the role's users
      */
-    
+
 }

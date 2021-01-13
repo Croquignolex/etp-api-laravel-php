@@ -233,26 +233,24 @@ class AgentController extends Controller
     public function show($id)
     {
         //on recherche l'agent en question
-        $agent = Agent::find($id);
+        $user = User::find($id);
+        $agent = $user->agent()->first();
 
         //Envoie des information
-        if(agent::find($id)){
-            $user = User::find($agent->id_user);
+        if($agent != null){
 			$puces = is_null($agent) ? [] : $agent->puces;
-            return response()->json(
-                [
-                    'message' => '',
-                    'status' => true,
-                    'data' => [
-						'zone' => $user->zone,
-						'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
-						'agent' => $agent,
-						'puces' => $puces,
-                        'createur' => User::find($user->add_by),
-                        'caisse' => Caisse::where('id_user', $user->id)->first()
-					]
+            return response()->json([
+                'message' => '',
+                'status' => true,
+                'data' => [
+                    'zone' => $user->zone,
+                    'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
+                    'agent' => $agent,
+                    'puces' => $puces,
+                    'createur' => User::find($user->add_by),
+                    'caisse' => Caisse::where('id_user', $user->id)->first()
                 ]
-            );
+            ]);
         } else {
             return response()->json([
                 'message' => "Cet agent n'existe pas",
@@ -703,28 +701,26 @@ class AgentController extends Controller
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
 			'numero' => ['required', 'string', 'max:255', 'unique:puces,numero'],
-            'reference' => ['nullable', 'string', 'max:255','unique:puces,reference'],
+            'reference' => ['required', 'string', 'max:255','unique:puces,reference'],
             'id_flotte' => ['required', 'numeric'],
             'nom' => ['required', 'string'],
             'description' => ['nullable', 'string'],
-            'type' => ['required', 'numeric'],
         ]);
         if ($validator->fails()) {
-            return response()->json(
-                [
-                    'message' => "Le formulaire contient des champs mal renseignés",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         // Récupérer les données validées
+        $reference = $request->reference;
+
 		$nom = $request->nom;
-        $type = $request->type;
+        $type = Type_puce::where('name', $reference)->first()->id;
         $numero = $request->numero;
 		$id_flotte = $request->id_flotte;
-        $reference = $request->reference;
         $description = $request->description;
 
         // rechercher l'agent'
@@ -744,28 +740,25 @@ class AgentController extends Controller
 			$user = User::find($agent->id_user);
 			$puces = is_null($agent) ? [] : $agent->puces;
             // Renvoyer un message de succès
-            return response()->json(
-                [
-                    'message' => '',
-                    'status' => true,
-                    'data' => [
-						'zone' => $user->zone,
-						'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
-						'agent' => $agent,
-						'puces' => $puces,
-                        'caisse' => Caisse::where('id_user', $user->id)->first()
-					]
+            return response()->json([
+                'message' => 'Puce ajoutée avec succès',
+                'status' => true,
+                'data' => [
+                    'zone' => $user->zone,
+                    'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
+                    'agent' => $agent,
+                    'puces' => $puces,
+                    'createur' => User::find($user->add_by),
+                    'caisse' => Caisse::where('id_user', $user->id)->first()
                 ]
-            );
+            ]);
         } else {
             // Renvoyer une erreur
-            return response()->json(
-                [
-                    'message' => "Erreur l'ors de l'ajout de la nouvelle puce",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Erreur l'ors de l'ajout de la nouvelle puce",
+                'status' => false,
+                'data' => null
+            ]);
         }
     }
 

@@ -44,6 +44,12 @@ Route::group(['middleware' => 'auth:api'], function(){
             //lister les utilisateurs
             Route::get('list', 'API\UserController@list');
 
+            //lister les recouvreurs
+            Route::get('recouvreurs', 'API\UserController@recouvreurs');
+
+            //lister tous les recouvreurs
+            Route::get('recouvreurs_all', 'API\UserController@recouvreurs_all');
+
             //supprimer l'utilisateur
             Route::post('delete/{id}', 'API\UserController@delete')
             ->where('id', '[0-9]+');
@@ -696,12 +702,12 @@ Route::group(['middleware' => 'auth:api'], function(){
         //lister les Encaissements
         Route::get('encaissement_list', 'API\CaisseController@encaissement_list');
 
-
+        //lister toutes les Encaissements
+        Route::get('encaissement_list_all', 'API\CaisseController@encaissement_list_all');
 
         /*
     //////////////////////Décaissement (la gestionnaire de flotte donne de l'argent à un responsable de zonne)/////////////////////
     */
-
         //creer un Decaissement
         Route::post('decaissement', 'API\CaisseController@decaissement');
 
