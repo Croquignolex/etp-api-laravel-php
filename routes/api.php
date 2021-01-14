@@ -50,6 +50,12 @@ Route::group(['middleware' => 'auth:api'], function(){
             //lister tous les recouvreurs
             Route::get('recouvreurs_all', 'API\UserController@recouvreurs_all');
 
+            //lister les gestionnaires
+            Route::get('gestionnaires', 'API\UserController@gestionnaires');
+
+            //lister tous les gestionnaires
+            Route::get('gestionnaires_all', 'API\UserController@gestionnaires_all');
+
             //supprimer l'utilisateur
             Route::post('delete/{id}', 'API\UserController@delete')
             ->where('id', '[0-9]+');
@@ -718,6 +724,9 @@ Route::group(['middleware' => 'auth:api'], function(){
         //lister les Decaissements
         Route::get('decaissement_list', 'API\CaisseController@decaissement_list');
 
+        //lister tous les Decaissements
+        Route::get('decaissement_list_all', 'API\CaisseController@decaissement_list_all');
+
         /*
     //////////////////////passation de service entre les gestionnaires de flotte/////////////////////
     */
@@ -728,7 +737,8 @@ Route::group(['middleware' => 'auth:api'], function(){
         //lister les passation de service
         Route::get('passations_list', 'API\CaisseController@passations_list');
 
-
+        //lister toutes les passation de service
+        Route::get('passations_list_all', 'API\CaisseController@passations_list_all');
 /*
     //////////////////////Attribuer une puce à un responsable de zonne/////////////////////
     */

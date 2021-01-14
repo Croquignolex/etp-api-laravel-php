@@ -306,6 +306,24 @@ class UserController extends Controller
     }
 
     /**
+     * //lister tous les gestionnaires
+     */
+    public function gestionnaires_all()
+    {
+        $managers = User::orderBy('created_at', 'desc')->get()->filter(function(User $user) {
+            return ($user->roles->first()->name === Roles::GESTION_FLOTTE);
+        });
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'gestionnaires' => $this->managersResponse($managers)
+            ]
+        ]);
+    }
+
+    /**
      * supprimer un utilisateur
      *
      * @param $id
@@ -832,5 +850,20 @@ class UserController extends Controller
         }
 
         return $returenedCollectors;
+    }
+
+    // Build managers return data
+    private function managersResponse($managers)
+    {
+        $returenedManagers = [];
+
+        foreach($managers as $manager) {
+            $returenedManagers[] = [
+                'gestionnaire' => $manager->setHidden(['deleted_at', 'add_by', 'id_zone']),
+                'caisse' => Caisse::where('id_user', $manager->id)->first()
+            ];
+        }
+
+        return $returenedManagers;
     }
 }
