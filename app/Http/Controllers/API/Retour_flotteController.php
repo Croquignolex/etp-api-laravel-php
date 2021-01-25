@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Enums\Statut;
 use App\Puce;
 use App\User;
 use App\Role;
 use App\Agent;
 use App\Enums\Roles;
+use App\Enums\Statut;
 use App\Retour_flote;
 use App\Approvisionnement;
 use Illuminate\Http\Request;
@@ -21,14 +21,12 @@ use App\Http\Resources\Retour_flote as Retour_floteResource;
 class Retour_flotteController extends Controller
 {
     /**
-
      * les conditions de lecture des methodes
-
      */
-    function __construct(){
-
-        $recouvreur = Roles::RECOUVREUR;
+    function __construct()
+    {
         $agent = Roles::AGENT;
+        $recouvreur = Roles::RECOUVREUR;
         $superviseur = Roles::SUPERVISEUR;
         $ges_flotte = Roles::GESTION_FLOTTE;
         $this->middleware("permission:$recouvreur|$superviseur|$ges_flotte|$agent");
@@ -300,7 +298,6 @@ class Retour_flotteController extends Controller
      */
     public function show($id)
     {
-
             //si le retour flotte n'existe pas
             if (!($retour_flote = Retour_flote::find($id))) {
                 return response()->json(
@@ -318,47 +315,38 @@ class Retour_flotteController extends Controller
     }
 
     /**
-     * ////lister tous les retour flotte
+     * ////lister les retour flotte
      */
     public function list_all()
     {
-        //On recupere les retour flotte
-        $retour_flotes = Retour_flote::get();
+        $recoveries = Retour_flote::orderBy('created_at', 'desc')->paginate(6);
 
-        $retours_flotes = [];
+        $recoveries_response =  $this->recoveriesResponse($recoveries->items());
 
-        foreach($retour_flotes as $retour_flote) {
-
-            //recuperer le flottage correspondant
-            $flottage = Approvisionnement::find($retour_flote->id_approvisionnement);
-
-            //recuperer celui qui a éffectué le retour flotte
-            $user = User::find($retour_flote->flotage->demande_flote->id_user);
-            $agent = Agent::Where('id_user', $user->id)->first();
-
-            $recouvreur = User::find($retour_flote->id_user);
-
-            $puce_agent = Puce::find($retour_flote->user_source);
-            $puce_flottage = Puce::find($retour_flote->user_destination);
-
-            $retours_flotes[] = [
-                'recouvrement' => $retour_flote,
-                'flottage' => $flottage,
-                'user' => $user,
-                'agent' => $agent,
-                'recouvreur' => $recouvreur,
-                'puce_agent' => $puce_agent,
-                'puce_flottage' => $puce_flottage,
-            ];
-        }
-
-        return response()->json(
-            [
-                'message' => '',
-                'status' => true,
-                'data' => ['recouvrements' => $retours_flotes]
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'recouvrements' => $recoveries_response,
+                'hasMoreData' => $recoveries->hasMorePages(),
             ]
-        );
+        ]);
+    }
+
+    /**
+     * //lister tous les retour flotte
+     */
+    public function list_all_all()
+    {
+        $recoveries = Retour_flote::orderBy('created_at', 'desc')->get();
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'recouvrements' => $this->recoveriesResponse($recoveries)
+            ]
+        ]);
     }
 
     /**
@@ -534,7 +522,7 @@ class Retour_flotteController extends Controller
         if (!($retour_flotte = Retour_flote::find($id))) {
             return response()->json(
                 [
-                    'message' => "le retour flotte n'existe pas",
+                    'message' => "Le retour flotte n'existe pas",
                     'status' => false,
                     'data' => null
                 ]
@@ -545,8 +533,8 @@ class Retour_flotteController extends Controller
         $retour_flotte->statut = Statut::EFFECTUER;
 
         //message de reussite
-        if ($retour_flotte->save()) {
-
+        if ($retour_flotte->save())
+        {
             //Notification du gestionnaire de flotte
             $role = Role::where('name', Roles::RECOUVREUR)->first();
             $event = new NotificationsEvent($role->id, ['message' => 'Un retour de flote approuvé']);
@@ -565,52 +553,47 @@ class Retour_flotteController extends Controller
                 }
             }
 
-            //On recupere les retour flotte
-            $retour_flotes = Retour_flote::get();
-
-            $retours_flotes = [];
-
-            foreach($retour_flotes as $retour_flote) {
-
-                //recuperer le flottage correspondant
-                $flottage = Approvisionnement::find($retour_flote->id_approvisionnement);
-
-                //recuperer celui qui a éffectué le retour flotte
-                $user = User::find($retour_flote->flotage->demande_flote->id_user);
-                $agent = Agent::Where('id_user', $user->id)->first();
-
-                $recouvreur = User::find($retour_flote->id_user);
-
-                $puce_agent = Puce::find($retour_flote->user_source);
-                $puce_flottage = Puce::find($retour_flote->user_destination);
-
-                $retours_flotes[] = [
-                    'recouvrement' => $retour_flote,
-                    'flottage' => $flottage,
-                    'user' => $user,
-                    'agent' => $agent,
-                    'recouvreur' => $recouvreur,
-                    'puce_agent' => $puce_agent,
-                    'puce_flottage' => $puce_flottage,
-                ];
-            }
-
-            return response()->json(
-                [
-                    'message' => '',
-                    'status' => true,
-                    'data' => ['recouvrements' => $retours_flotes]
-                ]
-            );
-        }else {
+            return response()->json([
+                'message' => 'Retour flotte apprové avec succès',
+                'status' => true,
+                'data' => null
+            ]);
+        } else {
             // Renvoyer une erreur
-            return response()->json(
-                [
-                    'message' => 'erreur lors de la confirmation',
-                    'status'=>false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => 'Erreur lors de la confirmation',
+                'status'=>false,
+                'data' => null
+            ]);
         }
+    }
+
+    // Build recoveries return data
+    private function recoveriesResponse($recoveries)
+    {
+        $returnedRecoveries = [];
+
+        foreach($recoveries as $recovery)
+        {
+            $puce_agent = Puce::find($recovery->user_source);
+
+            $agent = $puce_agent->agent;
+            $user = $agent->user;
+
+            $recouvreur = User::find($recovery->id_user);
+
+            $puce_flottage = Puce::find($recovery->user_destination);
+
+            $returnedRecoveries[] = [
+                'recouvrement' => $recovery,
+                'user' => $user,
+                'agent' => $agent,
+                'recouvreur' => $recouvreur,
+                'puce_agent' => $puce_agent,
+                'puce_flottage' => $puce_flottage,
+            ];
+        }
+
+        return $returnedRecoveries;
     }
 }

@@ -21,10 +21,11 @@ class Flottage_interneController extends Controller
     /**
      * les conditions de lecture des methodes
      */
-    function __construct(){
+    function __construct()
+    {
+        $recouvreur = Roles::RECOUVREUR;
         $superviseur = Roles::SUPERVISEUR;
         $ges_flotte = Roles::GESTION_FLOTTE;
-        $recouvreur = Roles::RECOUVREUR;
         $this->middleware("permission:$superviseur|$ges_flotte|$recouvreur");
     }
 
@@ -32,8 +33,8 @@ class Flottage_interneController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    Public function store(Request $request) {
-
+    Public function store(Request $request)
+    {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
             'montant' => ['required', 'numeric'],
@@ -373,55 +374,18 @@ class Flottage_interneController extends Controller
      */
     public function list_all()
     {
-        //On recupere les Flottages
-        $flottage_internes = Flottage_interne::get();
+        $transfers = Flottage_interne::orderBy('created_at', 'desc')->paginate(6);
 
-        $flottages = [];
+        $transfers_response =  $this->transfersResponse($transfers->items());
 
-        $connected_user_role = Auth::user()->roles->first()->name;
-
-        foreach($flottage_internes as $flottage_interne)
-        {
-            //recuperer la puce du superviseur
-            $puce_emetrice = Puce::find($flottage_interne->id_sim_from);
-
-            //recuperer la puce du gestionnaire de flotte
-            $puce_receptrice = Puce::find($flottage_interne->id_sim_to);
-
-            //recuperer celui qui a éffectué le flottage
-            $superviseur = User::find($flottage_interne->id_user);
-
-            if ($connected_user_role === Roles::RECOUVREUR) {
-                if(
-                    ($puce_emetrice->rz !== null && $puce_emetrice->rz->id === Auth::user()->id) ||
-                    ($puce_receptrice->rz !== null && $puce_receptrice->rz->id === Auth::user()->id)
-                ) {
-                    // Take only the current collector receiving sims
-                    $flottages[] = [
-                        'puce_receptrice' => $puce_receptrice,
-                        'puce_emetrice' => $puce_emetrice,
-                        'superviseur' => $superviseur,
-                        'flottage' => $flottage_interne
-                    ];
-                }
-            } else {
-                // Take all if it is not a collector
-                $flottages[] = [
-                    'puce_receptrice' => $puce_receptrice,
-                    'puce_emetrice' => $puce_emetrice,
-                    'superviseur' => $superviseur,
-                    'flottage' => $flottage_interne
-                ];
-            }
-        }
-
-        return response()->json(
-            [
-                'message' => '',
-                'status' => true,
-                'data' => ['flottages' => $flottages]
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'flottages' => $transfers_response,
+                'hasMoreData' => $transfers->hasMorePages(),
             ]
-        );
+        ]);
     }
 
     /**
@@ -851,7 +815,7 @@ class Flottage_interneController extends Controller
                     'data' => ['flottages' => $flottages]
                 ]
             );
-        }else {
+        } else {
 
             // Renvoyer une erreur
             return response()->json(
@@ -864,5 +828,50 @@ class Flottage_interneController extends Controller
 
         }
 
+    }
+
+    // Build transfers return data
+    private function transfersResponse($tranfers)
+    {
+        $returnedTransfers = [];
+
+        $connected_user_role = Auth::user()->roles->first()->name;
+
+        foreach($tranfers as $flottage_interne)
+        {
+            //recuperer la puce du superviseur
+            $puce_emetrice = Puce::find($flottage_interne->id_sim_from);
+
+            //recuperer la puce du gestionnaire de flotte
+            $puce_receptrice = Puce::find($flottage_interne->id_sim_to);
+
+            //recuperer celui qui a éffectué le flottage
+            $superviseur = User::find($flottage_interne->id_user);
+
+            if ($connected_user_role === Roles::RECOUVREUR) {
+                if(
+                    ($puce_emetrice->rz !== null && $puce_emetrice->rz->id === Auth::user()->id) ||
+                    ($puce_receptrice->rz !== null && $puce_receptrice->rz->id === Auth::user()->id)
+                ) {
+                    // Take only the current collector receiving sims
+                    $returnedTransfers[] = [
+                        'puce_receptrice' => $puce_receptrice,
+                        'puce_emetrice' => $puce_emetrice,
+                        'utilisateur' => $superviseur,
+                        'flottage' => $flottage_interne
+                    ];
+                }
+            } else {
+                // Take all if it is not a collector
+                $returnedTransfers[] = [
+                    'puce_receptrice' => $puce_receptrice,
+                    'puce_emetrice' => $puce_emetrice,
+                    'utilisateur' => $superviseur,
+                    'flottage' => $flottage_interne
+                ];
+            }
+        }
+
+        return $returnedTransfers;
     }
 }

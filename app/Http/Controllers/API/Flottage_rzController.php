@@ -22,16 +22,17 @@ class Flottage_rzController extends Controller
     /**
      * les conditions de lecture des methodes
      */
-    function __construct(){
+    function __construct()
+    {
+        $rz = Roles::RECOUVREUR;
         $superviseur = Roles::SUPERVISEUR;
         $ges_flotte = Roles::GESTION_FLOTTE;
-        $rz = Roles::RECOUVREUR;
         $this->middleware("permission:$superviseur|$ges_flotte|$rz");
     }
 
     //creer le flottage
-    Public function store(Request $request) {
-
+    Public function store(Request $request)
+    {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
             'montant' => ['required', 'numeric'],
@@ -76,26 +77,20 @@ class Flottage_rzController extends Controller
             }
 
         }else {
-            return response()->json(
-                [
-                    'message' => "une ou plusieurs puces entrées n'existe pas",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Une ou plusieurs puces entrées n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
         }
-
-
 
         //On se rassure que le solde est suffisant
         if ($puce_from->solde < $request->montant) {
-            return response()->json(
-                [
-                    'message' => "le solde est insuffisant",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le solde de la puce émetrice insuffisant",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         //on debite le solde du gestionnaire de flotte
@@ -139,52 +134,34 @@ class Flottage_rzController extends Controller
                 'message' => "Nouveau flottage Dans votre puce"
             ]));
 
-            //On recupere les Flottages rz
-            $flottage_internes = Flottage_interne::get();
+            //recuperer la puce du superviseur
+            $puce_emetrice = Puce::find($flottage_rz->id_sim_from);
 
-            $flottages = [];
+            //recuperer la puce du gestionnaire de flotte
+            $puce_receptrice = Puce::find($flottage_rz->id_sim_to);
 
-            foreach($flottage_internes as $flottage_interne) {
+            //recuperer celui qui a éffectué le flottage
+            $superviseur = User::find($flottage_rz->id_user);
 
-                //recuperer la puce du superviseur
-                $puce_emetrice = Puce::find($flottage_interne->id_sim_from);
-
-                //recuperer la puce du gestionnaire de flotte
-                $puce_receptrice = Puce::find($flottage_interne->id_sim_to);
-
-                //recuperer celui qui a éffectué le flottage
-                $superviseur = User::find($flottage_interne->id_user);
-
-                    $flottages[] = [
-                        'puce_receptrice' => $puce_receptrice,
-                        'puce_emetrice' => $puce_emetrice,
-                        'superviseur' => $superviseur,
-                        'flottage' => $flottage_interne
-                    ];
-                //}
-            }
-
-                // Renvoyer un message de succès
-                return response()->json(
-                    [
-                        'message' => "Le flottage c'est bien passé",
-                        'status' => true,
-                        'data' => ['flottages' => $flottages]
-                    ]
-                );
-        }else {
-
-            // Renvoyer une erreur
-            return response()->json(
-                [
-                    'message' => 'erreur lors du flottage',
-                    'status' => false,
-                    'data' => null
+            // Renvoyer un message de succès
+            return response()->json([
+                'message' => "Transfert de flotte éffectué avec succès",
+                'status' => true,
+                'data' => [
+                    'puce_receptrice' => $puce_receptrice,
+                    'puce_emetrice' => $puce_emetrice,
+                    'utilisateur' => $superviseur,
+                    'flottage' => $flottage_rz
                 ]
-            );
-
+            ]);
+        } else {
+            // Renvoyer une erreur
+            return response()->json([
+                'message' => 'Erreur lors du flottage',
+                'status' => false,
+                'data' => null
+            ]);
         }
-
     }
 
     /**

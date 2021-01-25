@@ -15,29 +15,25 @@ use Illuminate\Http\Request;
 use App\Events\NotificationsEvent;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
-use App\Notifications\Recouvrement as Notif_recouvrement;
 use Illuminate\Support\Facades\Validator;
+use App\Notifications\Recouvrement as Notif_recouvrement;
 use App\Http\Resources\Recouvrement as RecouvrementResource;
 
 class RecouvrementController extends Controller
 {
     /**
-
      * les conditions de lecture des methodes
-
      */
-
-    function __construct(){
-
+    function __construct()
+    {
+        $agent = Roles::AGENT;
         $recouvreur = Roles::RECOUVREUR;
         $superviseur = Roles::SUPERVISEUR;
-        $agent = Roles::AGENT;
         $ges_flotte = Roles::GESTION_FLOTTE;
         $this->middleware("permission:$recouvreur|$superviseur|$ges_flotte|$agent");
-
     }
 
-    Public function store(Request $request)
+    public function store(Request $request)
     {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
@@ -296,49 +292,38 @@ class RecouvrementController extends Controller
     }
 
     /**
-     * ////lister tous les recouvrement
+     * ////lister les recouvrement
      */
     public function list_all()
     {
-        //On recupere les recouvrement
-        $recouvrements = Recouvrement::get();
+        $recoveries = Recouvrement::orderBy('created_at', 'desc')->paginate(6);
 
-        $approvisionnements = [];
+        $recoveries_response =  $this->recoveriesResponse($recoveries->items());
 
-        foreach($recouvrements as $recouvrement) {
-
-            //recuperer le flottage correspondant
-            $flottage = Approvisionnement::find($recouvrement->id_flottage);
-
-            //recuperer celui qui a éffectué le recouvrement
-                $user = User::find($recouvrement->id_user);
-
-            //recuperer l'agent concerné
-                $user = User::find($recouvrement->user_source);
-                $agent = Agent::Where('id_user', $user->id)->first();
-
-                $recouvreur = User::find($recouvrement->user_destination);
-
-            //recuperer la puce de l'agent
-                $puce_agent = Puce::find($flottage->demande_flote->id_puce);
-
-            $approvisionnements[] = [
-                'recouvrement' => $recouvrement,
-                'flottage' => $flottage,
-                'user' => $user,
-                'agent' => $agent,
-                'recouvreur' => $recouvreur,
-//                'puce_agent' => $puce_agent
-            ];
-        }
-
-        return response()->json(
-            [
-                'message' => '',
-                'status' => true,
-                'data' => ['recouvrements' => $approvisionnements]
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'recouvrements' => $recoveries_response,
+                'hasMoreData' => $recoveries->hasMorePages(),
             ]
-        );
+        ]);
+    }
+
+    /**
+     * //lister tous les recouvrement
+     */
+    public function list_all_all()
+    {
+        $recoveries = Recouvrement::orderBy('created_at', 'desc')->get();
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'recouvrements' => $this->recoveriesResponse($recoveries)
+            ]
+        ]);
     }
 
     /**
@@ -574,5 +559,29 @@ class RecouvrementController extends Controller
                 ]
             );
         }
+    }
+
+    // Build recoveries return data
+    private function recoveriesResponse($recoveries)
+    {
+        $returnedRecoveries = [];
+
+        foreach($recoveries as $recovery)
+        {
+            //recuperer l'agent concerné
+            $user = User::find($recovery->user_destination);
+            $agent = Agent::Where('id_user', $user->id)->first();
+
+            $recouvreur = User::find($recovery->id_user);
+
+            $returnedRecoveries[] = [
+                'user' => $user,
+                'agent' => $agent,
+                'recouvreur' => $recouvreur,
+                'recouvrement' => $recovery,
+            ];
+        }
+
+        return $returnedRecoveries;
     }
 }

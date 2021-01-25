@@ -468,8 +468,6 @@ Route::group(['middleware' => 'auth:api'], function(){
         Route::get('list_flottage_anonyme', 'API\FlotageController@list_flottage_anonyme')
             ->where('id', '[0-9]+');
 
-
-
            /*
     //////////////////////Approvisionnement des Puces de ETP/////////////////////
     */
@@ -517,6 +515,9 @@ Route::group(['middleware' => 'auth:api'], function(){
         //lister les Recouvrement peu importe le statut
         Route::get('list_all_recouvrement', 'API\RecouvrementController@list_all');
 
+        //lister tous les Recouvrement peu importe le statut
+        Route::get('list_all_recouvrement_all', 'API\RecouvrementController@list_all_all');
+
         //lister les Recouvrements relatifs à un flottage precis
         Route::get('list_recouvrement/{id}', 'API\RecouvrementController@list_recouvrement')
         ->where('id', '[0-9]+');
@@ -545,6 +546,9 @@ Route::group(['middleware' => 'auth:api'], function(){
 
         //lister les Retour flotte peu importe le statut
         Route::get('list_all_retour_flotte', 'API\Retour_flotteController@list_all');
+
+        //lister tous les Retour flotte peu importe le statut
+        Route::get('list_all_retour_flotte_all', 'API\Retour_flotteController@list_all_all');
 
         //lister les Retour flotte relatifs à un flottage precis
         Route::get('list_retour_flotte/{id}', 'API\Retour_flotteController@list_retour_flotte')

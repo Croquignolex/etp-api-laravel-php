@@ -2,8 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
-use App\FlotageAnonyme;
-use App\Flottage_interne;
+use App\Recouvrement;
 use App\User;
 use App\Puce;
 use App\Role;
@@ -13,6 +12,7 @@ use App\Type_puce;
 use App\Enums\Roles;
 use App\Enums\Statut;
 use App\Demande_flote;
+use App\FlotageAnonyme;
 use App\Approvisionnement;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -27,8 +27,8 @@ class FlotageController extends Controller
     /**
      * les conditions de lecture des methodes
      */
-    function __construct(){
-
+    function __construct()
+    {
         $agent = Roles::AGENT;
         $recouvreur = Roles::RECOUVREUR;
         $superviseur = Roles::SUPERVISEUR;
@@ -460,49 +460,18 @@ class FlotageController extends Controller
      */
     public function list_all()
     {
-        //On recupere les Flottages
-        $flottages = Approvisionnement::get();
+        $demandes_flote = Approvisionnement::orderBy('created_at', 'desc')->paginate(6);
 
-        $approvisionnements = [];
+        $demandes_flotes =  $this->fleetsResponse($demandes_flote->items());
 
-        foreach($flottages as $flottage) {
-
-            //recuperer la demande correspondante
-            $demande = $flottage->demande_flote;
-
-            //recuperer l'agent concerné
-                $user = $demande->user;
-
-            //recuperer l'agent concerné
-                $agent = Agent::where('id_user', $user->id)->first();
-
-            // recuperer celui qui a éffectué le flottage
-                $gestionnaire = User::find($flottage->id_user);
-
-            //recuperer la puce de l'agent
-                $puce_receptrice = Puce::find($demande->id_puce);
-
-            //recuperer la puce de ETP
-            $puce_emetrice = Puce::find($flottage->from);
-
-            $approvisionnements[] = [
-                'approvisionnement' => $flottage,
-                'demande' => $demande,
-                'user' => $user,
-                'agent' => $agent,
-                'gestionnaire' => $gestionnaire,
-                'puce_emetrice' => $puce_emetrice,
-                'puce_receptrice' => $puce_receptrice,
-            ];
-        }
-
-        return response()->json(
-            [
-                'message' => '',
-                'status' => true,
-                'data' => ['flottages' => $approvisionnements]
+        return response()->json([
+            'message' => "",
+            'status' => true,
+            'data' => [
+                'flottages' => $demandes_flotes,
+                'hasMoreData' => $demandes_flote->hasMorePages(),
             ]
-        );
+        ]);
     }
 
     /**
@@ -691,13 +660,11 @@ class FlotageController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(
-                [
-                    'message' => "Le formulaire contient des champs mal renseignés",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         // On verifi que la puce d'envoie passée en paramettre existe
@@ -710,24 +677,20 @@ class FlotageController extends Controller
             $type_puce_from = Type_puce::find($puce_from->type)->name;
 
         }else {
-            return response()->json(
-                [
-                    'message' => "une ou plusieurs puces entrées n'existe pas",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Une ou plusieurs puces entrées n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         //On se rassure que le solde est suffisant
         if ($puce_from->solde < $request->montant) {
-            return response()->json(
-                [
-                    'message' => "le solde est insuffisant",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le solde de la puce émetrice est insuffisant",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         //on debite le solde de celui qui envoie
@@ -774,48 +737,27 @@ class FlotageController extends Controller
                 }
             }
 
-            //On recupere les Flottages anonymes d'un utilisateur
-            $flottages_anonymes = FlotageAnonyme::all()->filter(function(FlotageAnonyme $flottage) {
-                $connected_user = Auth::user();
-                if($connected_user->roles->first()->name === Roles::SUPERVISEUR) return true;
-                else return $flottage->id_user === $connected_user->id;
-            });
-
-            $flottages = [];
-
-            foreach($flottages_anonymes as $flottage) {
-
-                //puce de l'envoie
-                $puce_envoie = Puce::find($flottage->id_sim_from);
-
-                $flottages[] = [
-                    'puce_emetrice' => $puce_envoie,
-                    'user' => User::find($flottage->id_user),
-                    'flottage' => $flottage
-                ];
-            }
+            $puce_envoie = Puce::find($flottage_anonyme->id_sim_from);
 
             // Renvoyer un message de succès
-            return response()->json(
-                [
-                    'message' => "Le flottage c'est bien passé",
-                    'status' => true,
-                    'data' => ['flottages' => $flottages]
+            return response()->json([
+                'message' => "Flottage anonyme éffectué avec succès",
+                'status' => true,
+                'data' => [
+                    'puce_emetrice' => $puce_envoie,
+                    'user' => User::find($flottage_anonyme->id_user),
+                    'flottage' => $flottage_anonyme
                 ]
-            );
+            ]);
         }else {
 
             // Renvoyer une erreur
-            return response()->json(
-                [
-                    'message' => 'erreur lors du flottage',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
-
+            return response()->json([
+                'message' => 'Erreur perdant le processus de flottage',
+                'status' => false,
+                'data' => null
+            ]);
         }
-
     }
 
     /**
@@ -882,35 +824,82 @@ class FlotageController extends Controller
      */
     public function list_flottage_anonyme()
     {
-        //On recupere les Flottages anonymes d'un utilisateur
-        $flottages_anonymes = FlotageAnonyme::all()->filter(function(FlotageAnonyme $flottage)
-        {
-            $connected_user = Auth::user();
-            if($connected_user->roles->first()->name === Roles::SUPERVISEUR) return true;
-            else return $flottage->id_user === $connected_user->id;
-        });
+        $anonymous = null;
 
-        $flottages = [];
-
-        foreach($flottages_anonymes as $flottage) {
-
-            //puce de l'envoie
-            $puce_envoie = Puce::find($flottage->id_sim_from);
-
-            $flottages[] = [
-                'puce_emetrice' => $puce_envoie,
-                'user' => User::find($flottage->id_user),
-                'flottage' => $flottage
-            ];
-
+        $connected_user = Auth::user();
+        if($connected_user->roles->first()->name === Roles::SUPERVISEUR) {
+            $anonymous = FlotageAnonyme::orderBy('created_at', 'desc')->paginate(6);
+        } else {
+            $anonymous = FlotageAnonyme::where('id_user', $connected_user->id)->orderBy('created_at', 'desc')->paginate(6);
         }
 
-        return response()->json(
-            [
-                'message' => 'list des flottages anonymes',
-                'status' => true,
-                'data' => ['flottages' => $flottages]
+        $anonymous_response =  $this->anonymousResponse($anonymous->items());
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'flottages' => $anonymous_response,
+                'hasMoreData' => $anonymous->hasMorePages(),
             ]
-        );
+        ]);
+    }
+
+    // Build anonymous return data
+    private function anonymousResponse($anonymous)
+    {
+        $returnedAnonymous = [];
+
+        foreach($anonymous as $anonyme)
+        {
+            //puce de l'envoie
+            $puce_envoie = Puce::find($anonyme->id_sim_from);
+
+            $returnedAnonymous[] = [
+                'puce_emetrice' => $puce_envoie,
+                'user' => User::find($anonyme->id_user),
+                'flottage' => $anonyme
+            ];
+        }
+
+        return $returnedAnonymous;
+    }
+
+    // Build fleets return data
+    private function fleetsResponse($fleets)
+    {
+        $approvisionnements = [];
+
+        foreach($fleets as $flottage)
+        {
+            //recuperer la demande correspondante
+            $demande = $flottage->demande_flote;
+
+            //recuperer l'agent concerné
+            $user = $demande->user;
+
+            //recuperer l'agent concerné
+            $agent = Agent::where('id_user', $user->id)->first();
+
+            // recuperer celui qui a éffectué le flottage
+            $gestionnaire = User::find($flottage->id_user);
+
+            //recuperer la puce de l'agent
+            $puce_receptrice = Puce::find($demande->id_puce);
+
+            //recuperer la puce de ETP
+            $puce_emetrice = Puce::find($flottage->from);
+
+            $approvisionnements[] = [
+                'approvisionnement' => $flottage,
+                'user' => $user,
+                'agent' => $agent,
+                'gestionnaire' => $gestionnaire,
+                'puce_emetrice' => $puce_emetrice,
+                'puce_receptrice' => $puce_receptrice,
+            ];
+        }
+
+        return $approvisionnements;
     }
 }
