@@ -46,87 +46,75 @@ class Retour_flotteController extends Controller
         ]);
 
         if ($validator->fails()) {
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        //On verifi si le flottage passée existe réellement
+        if (!Approvisionnement::find($request->id_flottage)) {
             return response()->json(
                 [
-                    'message' => "Le formulaire contient des champs mal renseignés",
+                    'message' => "Le flottage n'existe pas",
                     'status' => false,
                     'data' => null
                 ]
             );
         }
 
-        //On verifi si le flottage passée existe réellement
-            if (!Approvisionnement::find($request->id_flottage)) {
-                return response()->json(
-                    [
-                        'message' => "le flottage n'existe pas",
-                        'status' => false,
-                        'data' => null
-                    ]
-                );
-            }
-
         //On verifi que le montant n'est pas supperieur au montant demandé
-            $flottage = Approvisionnement::find($request->id_flottage);
-            if ($flottage->reste < $request->montant) {
-                return response()->json(
-                    [
-                        'message' => "Vous essayez de recouvrir plus d'argent que prevu",
-                        'status' => false,
-                        'data' => null
-                    ]
-                );
-            }
+        $flottage = Approvisionnement::find($request->id_flottage);
+        if ($flottage->reste < $request->montant) {
+            return response()->json([
+                'message' => "Vous essayez de recouvrir plus d'argent que prevu",
+                'status' => false,
+                'data' => null
+            ]);
+        }
 
         //On verifi si la puce passée appartien à l'agent concerné
-            //L'agent concerné
-            $user = User::Find($flottage->demande_flote->id_user);
-            $agent = Agent::Where('id_user', $user->id)->first();
-            $puce_agent = Puce::Find($request->puce_agent);
-            $puce_flottage = Puce::Find($request->puce_flottage);
+        //L'agent concerné
+        $user = User::Find($flottage->demande_flote->id_user);
+        $agent = Agent::Where('id_user', $user->id)->first();
+        $puce_agent = Puce::Find($request->puce_agent);
+        $puce_flottage = Puce::Find($request->puce_flottage);
 
-            //On verifi que le montant n'est pas supperieur au montant demandé
-            if ($puce_agent == null || $puce_flottage == null) {
-                return response()->json(
-                    [
-                        'message' => "Lune des puce entré n'existe pas",
-                        'status' => false,
-                        'data' => null
-                    ]
-                );
-            }
+        //On verifi que le montant n'est pas supperieur au montant demandé
+        if ($puce_agent == null || $puce_flottage == null) {
+            return response()->json([
+                'message' => "'Lune des puce n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
+        }
 
-            if ($agent->id != $puce_agent->id_agent) {
-                return response()->json(
-                    [
-                        'message' => "Vous devez renvoyer la flotte avec une puce appartenant à l'agent qui a été flotté",
-                        'status' => false,
-                        'data' => null
-                    ]
-                );
-            }
+        if ($agent->id != $puce_agent->id_agent) {
+            return response()->json([
+                'message' => "Vous devez renvoyer la flotte avec une puce appartenant à l'agent qui a été flotté",
+                'status' => false,
+                'data' => null
+            ]);
+        }
 
-            //On verifi si les puce passée appartien à au meme oppérateur de flotte
-            if ($puce_flottage->flote->nom != $puce_agent->flote->nom) {
-                return response()->json(
-                    [
-                        'message' => "Vous devez renvoyer la flotte à une puce du meme opérateur",
-                        'status' => false,
-                        'data' => null
-                    ]
-                );
-            }
+        //On verifi si les puce passée appartien à au meme oppérateur de flotte
+        if ($puce_flottage->flote->nom != $puce_agent->flote->nom) {
+            return response()->json([
+                'message' => "Vous devez renvoyer la flotte à une puce du même opérateur",
+                'status' => false,
+                'data' => null
+            ]);
+        }
 
         //On verifi que le retour flote est fait ver une puce apte à flotter
         $type_puce = $puce_flottage->type_puce->name;
         if ($type_puce != \App\Enums\Statut::FLOTTAGE && $type_puce != \App\Enums\Statut::FLOTTAGE_SECONDAIRE) {
-            return response()->json(
-                [
-                    'message' => "vous ne pouvez renvoyer la flotte qu'à une puce agent",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Vous ne pouvez renvoyer la flotte qu'à une puce agent",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         //On recupère les données validés
@@ -158,8 +146,7 @@ class Retour_flotteController extends Controller
         if ($retour_flotte->save()) {
 
             //Notification du gestionnaire de flotte
-            $role = Role::where('name', Roles::GESTION_FLOTTE)
-            ->orWhere('name', Roles::RECOUVREUR)->first();
+            $role = Role::where('name', Roles::GESTION_FLOTTE)->orWhere('name', Roles::RECOUVREUR)->first();
             $event = new NotificationsEvent($role->id, ['message' => 'Nouveau retour de flote']);
             broadcast($event)->toOthers();
 
@@ -203,81 +190,11 @@ class Retour_flotteController extends Controller
             //Enregistrer les oppérations
             $flottage->save();
 
-            //On recupere les retour flotte
-            $retour_flotes = Retour_flote::where('id_user', $user->id)->get();
-
-            $retours_flotes = [];
-
-            foreach($retour_flotes as $retour_flote) {
-
-                //recuperer le flottage correspondant
-                $flottage = Approvisionnement::find($retour_flote->id_approvisionnement);
-
-                //recuperer celui qui a éffectué le retour flotte
-                $user = User::find($retour_flote->flotage->demande_flote->id_user);
-                $agent = Agent::Where('id_user', $user->id)->first();
-
-                $recouvreur = User::find($retour_flote->id_user);
-
-                $puce_agent = Puce::find($retour_flote->user_source);
-                $puce_flottage = Puce::find($retour_flote->user_destination);
-
-                $retours_flotes[] = [
-                    'recouvrement' => $retour_flote,
-                    'flottage' => $flottage,
-                    'user' => $user,
-                    'agent' => $agent,
-                    'recouvreur' => $recouvreur,
-                    'puce_agent' => $puce_agent,
-                    'puce_flottage' => $puce_flottage,
-                ];
-            }
-
-            // Extraction des approvisionnements
-
-            $flottages = Approvisionnement::get();
-
-            $approvisionnements = [];
-
-            foreach($flottages as $flottage) {
-
-                //recuperer la demande correspondante
-                $demande = $flottage->demande_flote;
-
-                //recuperer l'agent concerné
-                $user = $demande->user;
-
-                //recuperer l'agent concerné
-                $agent = Agent::where('id_user', $user->id)->first();
-
-                // recuperer celui qui a éffectué le flottage
-                $gestionnaire = User::find($flottage->id_user);
-
-                //recuperer la puce de l'agent
-                $puce_receptrice = Puce::find($demande->id_puce);
-
-                //recuperer la puce de ETP
-                $puce_emetrice = Puce::find($flottage->from);
-
-                $approvisionnements[] = [
-                    'approvisionnement' => $flottage,
-                    'demande' => $demande,
-                    'user' => $user,
-                    'agent' => $agent,
-                    'gestionnaire' => $gestionnaire,
-                    'puce_emetrice' => $puce_emetrice,
-                    'puce_receptrice' => $puce_receptrice,
-                ];
-            }
-
             return response()->json(
                 [
-                    'message' => '',
+                    'message' => 'Retour flotte éffectué avec succès',
                     'status' => true,
-                    'data' => [
-                        'recouvrements' => $retours_flotes,
-                        'flottages' => $approvisionnements
-                    ]
+                    'data' => null
                 ]
             );
         }else {

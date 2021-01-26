@@ -143,6 +143,7 @@ class AgentController extends Controller
                 'email' => $email,
                 'password' => $password,
                 'phone' => $phone,
+                'statut' => Statut::APPROUVE,
                 'adresse' => $adresse,
                 'id_zone' => $id_zone,
                 'description' => $description
@@ -291,15 +292,15 @@ class AgentController extends Controller
         $adresse = $request->adresse;
 
         // rechercher l'agent
-        $agent = Agent::find($id);
 
-		$user = User::find($agent->id_user);
+		$user = User::find($id);
+        $agent = $user->agent()->first();
 		$user->name = $name;
 		$user->email = $email;
 		$user->adresse = $adresse;
 		$user->description = $description;
 
-        if ($agent->save() && $user->save()) {
+        if ($user->save()) {
 			$puces = is_null($agent) ? [] : $agent->puces;
             // Renvoyer un message de succès
             return response()->json([
@@ -330,7 +331,7 @@ class AgentController extends Controller
      * @param Agent $agent
      * @return JsonResponse
      */
-    public function edit_folder(Request $request, Agent $agent)
+    public function edit_folder(Request $request, $id)
     {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
@@ -351,6 +352,8 @@ class AgentController extends Controller
             $dossier = $request->document->store('files/dossier/agents');
         }
 
+        $user = User::find($id);
+        $agent = $user->agent()->first();
         // Modifier son dossier
         $agent->dossier = $dossier;
 
@@ -429,8 +432,7 @@ class AgentController extends Controller
      */
     public function edit_agent_status($id)
     {
-		$agent = Agent::find($id);
-        $userDB = User::Find($agent->id_user);
+        $userDB = User::find($id);
         $user_status = $userDB->statut;
 
         if ($userDB == null) {
@@ -477,7 +479,7 @@ class AgentController extends Controller
     public function edit_zone_agent(Request $request, $id)
     {
         //voir si l'utilisateur à modifier existe
-        if(!Agent::find($id)){
+        if(!User::find($id)){
             // Renvoyer un message de notification
             return response()->json([
                 'message' => 'Agent non trouvé',
@@ -508,8 +510,8 @@ class AgentController extends Controller
             ]);
         }
 
-		$agent = Agent::find($id);
-        $user = User::find($agent->id_user);
+        $user = User::find($id);
+		$agent = $user->agent()->first();
 		$user->id_zone = $request->input('id_zone');
 
         if ($user->save()) {
@@ -552,7 +554,7 @@ class AgentController extends Controller
      */
     public function delete($id)
     {
-        if (!Agent::find($id)) {
+        if (!User::find($id)) {
             // Renvoyer une erreur
             return response()->json(
                 [
@@ -563,8 +565,7 @@ class AgentController extends Controller
             );
         }
 
-
-        if (Agent::find($id)->delete()) {
+        if (User::find($id)->delete()) {
 
             $agents = Agent::get();
             $returenedAgents = [];
@@ -629,7 +630,8 @@ class AgentController extends Controller
         }
 
         // Get current user
-        $agent = Agent::find($id);
+        $user = User::find($id);
+        $agent = $user->agent()->first();
 
         $agent_img_cni_path_name =  $agent->img_cni;
         $agent_img_cni_path_name2 =  $agent->img_cni_back;
@@ -701,7 +703,7 @@ class AgentController extends Controller
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
 			'numero' => ['required', 'string', 'max:255', 'unique:puces,numero'],
-            'reference' => ['required', 'string', 'max:255','unique:puces,reference'],
+            'reference' => ['required', 'string', 'max:255'],
             'id_flotte' => ['required', 'numeric'],
             'nom' => ['required', 'string'],
             'description' => ['nullable', 'string'],
@@ -724,7 +726,8 @@ class AgentController extends Controller
         $description = $request->description;
 
         // rechercher l'agent'
-        $agent = Agent::find($id);
+        $user = User::find($id);
+        $agent = $user->agent()->first();
 
         // ajout de mla nouvelle puce
         $puce = $agent->puces()->create([
@@ -793,7 +796,9 @@ class AgentController extends Controller
 		$puce->save();
 
         if ($puce !== null) {
-			$agent = Agent::find($id);
+            $user = User::find($id);
+            $agent = $user->agent()->first();
+
 			$user = User::find($agent->id_user);
 			$puces = is_null($agent) ? [] : $agent->puces;
             // Renvoyer un message de succès

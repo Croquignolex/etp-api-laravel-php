@@ -122,7 +122,7 @@ Route::group(['middleware' => 'auth:api'], function(){
         ->where('id', '[0-9]+');
 
         //modification ddu dossier
-        Route::post('edit_folder/{agent}', 'API\AgentController@edit_folder');
+        Route::post('edit_folder/{id}', 'API\AgentController@edit_folder');
 
         //liste des Agents
         Route::get('list_agents', 'API\AgentController@list');
