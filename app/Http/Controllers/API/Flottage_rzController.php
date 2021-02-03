@@ -136,12 +136,12 @@ class Flottage_rzController extends Controller
             //recuperer la puce du gestionnaire de flotte
             $puce_receptrice = Puce::find($flottage_rz->id_sim_to);
 
-            //recuperer celui qui a éffectué le flottage
+            //recuperer celui qui a effectué le flottage
             $superviseur = User::find($flottage_rz->id_user);
 
             // Renvoyer un message de succès
             return response()->json([
-                'message' => "Transfert de flotte éffectué avec succès",
+                'message' => "Transfert de flotte effectué avec succès",
                 'status' => true,
                 'data' => [
                     'puce_receptrice' => $puce_receptrice,
@@ -381,7 +381,7 @@ class Flottage_rzController extends Controller
                 //recuperer la puce de reception
                 $puce_receptrice = Puce::find($flottage_interne->id_sim_to);
 
-                //recuperer celui qui a éffectué le flottage
+                //recuperer celui qui a effectué le flottage
                 $rz = User::find($flottage_interne->id_user);
 
 
@@ -422,7 +422,7 @@ class Flottage_rzController extends Controller
         //On recupere le Flottage
         $flottage = Flottage_interne::find($id_flottage);
 
-        //recuperer celui qui a éffectué le flottage
+        //recuperer celui qui a effectué le flottage
         $rz = User::find($flottage->id_user);
 
         return response()->json(
@@ -436,7 +436,7 @@ class Flottage_rzController extends Controller
     }
 
     /**
-     * ////lister les flottages éffectués par un responsable de zone precis
+     * ////lister les flottages effectués par un responsable de zone precis
      */
     public function list_flottage_rz_by_rz($id)
     {
@@ -474,7 +474,7 @@ class Flottage_rzController extends Controller
     }
 
     /**
-     * ////lister les flottages éffectués pour un agent precis
+     * ////lister les flottages effectués pour un agent precis
      */
     public function list_flottage_rz_by_agent($id)
     {
@@ -506,7 +506,7 @@ class Flottage_rzController extends Controller
     }
 
     /**
-     * ////lister les flottages éffectués par les responsables de zone (superviseur)
+     * ////lister les flottages effectués par les responsables de zone (superviseur)
      */
     public function list_all_flottage_by_rz()
     {

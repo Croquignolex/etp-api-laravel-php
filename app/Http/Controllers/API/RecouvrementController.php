@@ -170,7 +170,7 @@ class RecouvrementController extends Controller
             $connected_caisse->save();
 
             return response()->json([
-                'message' => "Recouvrement d'espèces éffectué avec succès",
+                'message' => "Recouvrement d'espèces effectué avec succès",
                 'status' => true,
                 'data' => null
             ]);
@@ -326,7 +326,7 @@ class RecouvrementController extends Controller
             //recuperer le flottage correspondant
             $flottage = Approvisionnement::find($recouvrement->id_flottage);
 
-            //recuperer celui qui a éffectué le recouvrement
+            //recuperer celui qui a effectué le recouvrement
             $user = User::find($recouvrement->id_user);
 
             //recuperer l'agent concerné
@@ -407,7 +407,7 @@ class RecouvrementController extends Controller
                 //recuperer le flottage correspondant
                 $flottage = Approvisionnement::find($recouvrement->id_flottage);
 
-                //recuperer celui qui a éffectué le recouvrement
+                //recuperer celui qui a effectué le recouvrement
                 $user = User::find($recouvrement->id_user);
 
                 //recuperer l'agent concerné

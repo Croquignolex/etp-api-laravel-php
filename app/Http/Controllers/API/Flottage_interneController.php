@@ -154,7 +154,7 @@ class Flottage_interneController extends Controller
                     //recuperer la puce du gestionnaire de flotte
                     $puce_receptrice = Puce::find($flottage_interne->id_sim_to);
 
-                    //recuperer celui qui a éffectué le flottage
+                    //recuperer celui qui a effectué le flottage
                     $superviseur = User::find($flottage_interne->id_user);
 
 
@@ -331,7 +331,7 @@ class Flottage_interneController extends Controller
                 //recuperer le responsable de zone
                 $responsable = User::find($puce_receptrice->id_rz);
 
-                //recuperer celui qui a éffectué le flottage
+                //recuperer celui qui a effectué le flottage
                 $superviseur = User::find($flottage_interne->id_user);
 
 
@@ -406,7 +406,7 @@ class Flottage_interneController extends Controller
                 //recuperer la puce du superviseur
                 $puce_emetrice = Puce::find($flottage_interne->id_sim_from);
 
-                //recuperer celui qui a éffectué le flottage
+                //recuperer celui qui a effectué le flottage
                 $superviseur = User::find($flottage_interne->id_user);
 
                 $flottages[] = [
@@ -446,7 +446,7 @@ class Flottage_interneController extends Controller
         //On recupere le Flottage
         $flottage = Flottage_interne::find($id_flottage);
 
-        //recuperer celui qui a éffectué le flottage
+        //recuperer celui qui a effectué le flottage
         $superviseur = User::find($flottage->id_user);
 
         return response()->json(
@@ -587,12 +587,12 @@ class Flottage_interneController extends Controller
             //recuperer la puce du gestionnaire de flotte
             $puce_receptrice = Puce::find($flottage_interne->id_sim_to);
 
-            //recuperer celui qui a éffectué le flottage
+            //recuperer celui qui a effectué le flottage
             $superviseur = User::find($flottage_interne->id_user);
 
             // Renvoyer un message de succès
             return response()->json([
-                'message' => "Transfert de flotte éffectué avec succès",
+                'message' => "Transfert de flotte effectué avec succès",
                 'status' => true,
                 'data' => [
                     'puce_receptrice' => $puce_receptrice,
@@ -754,7 +754,7 @@ class Flottage_interneController extends Controller
                 $puce_receptrice = Puce::find($flottage_interne->id_sim_to);
 
 
-                //recuperer celui qui a éffectué le flottage
+                //recuperer celui qui a effectué le flottage
                 $gf = User::find($flottage_interne->id_user);
 
                 if(
@@ -809,7 +809,7 @@ class Flottage_interneController extends Controller
             //recuperer la puce du gestionnaire de flotte
             $puce_receptrice = Puce::find($flottage_interne->id_sim_to);
 
-            //recuperer celui qui a éffectué le flottage
+            //recuperer celui qui a effectué le flottage
             $superviseur = User::find($flottage_interne->id_user);
 
             if ($connected_user_role === Roles::RECOUVREUR) {

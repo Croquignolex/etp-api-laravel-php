@@ -104,7 +104,7 @@ class CaisseController extends Controller
 
             // Renvoyer un message de succès
             return response()->json([
-                'message' => 'Encaissement éffectué avec succès',
+                'message' => 'Encaissement effectué avec succès',
                 'status' => true,
                 'data' => [
                     'versement' => $versement,
@@ -209,7 +209,7 @@ class CaisseController extends Controller
             // Renvoyer un message de succès
             return response()->json(
                 [
-                    'message' => "Décaissement éffectué avec succès",
+                    'message' => "Décaissement effectué avec succès",
                     'status' => true,
                     'data' => [
                         'versement' => $decaissement,
@@ -321,7 +321,7 @@ class CaisseController extends Controller
 
             // Renvoyer un message de succès
             return response()->json([
-                'message' => 'Passation de service éffectuée avec succès',
+                'message' => 'Passation de service effectuée avec succès',
                 'status' => true,
                 'data' => [
                     'versement' => $decaissement,

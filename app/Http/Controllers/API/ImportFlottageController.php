@@ -146,7 +146,7 @@ class ImportFlottageController extends Controller
 
         return response()->json(
             [
-                'message' => "Comparaison éffectuée",
+                'message' => "Comparaison effectuée",
                 'status' => true,
                 'data' => [
                     'rapport' => $rapport,

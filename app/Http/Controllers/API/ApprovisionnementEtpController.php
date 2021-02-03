@@ -319,7 +319,7 @@ class ApprovisionnementEtpController extends Controller
             $user = $destockage->id_agent === null ? $destockage->id_agent : User::find($destockage->id_agent);
 
             return response()->json([
-                'message' => "Déstockage éffectué avec succès",
+                'message' => "Déstockage effectué avec succès",
                 'status' => true,
                 'data' => [
                     'id' => $destockage->id,

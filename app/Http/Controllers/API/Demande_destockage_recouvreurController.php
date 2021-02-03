@@ -127,7 +127,7 @@ class Demande_destockage_recouvreurController extends Controller
 
             // Renvoyer un message de succès
             return response()->json([
-                'message' => 'Demande de déstockage éffectué avec succès',
+                'message' => 'Demande de déstockage effectué avec succès',
                 'status' => true,
                 'data' => [
                     'demande' => $demande_destockage,
@@ -416,7 +416,7 @@ class Demande_destockage_recouvreurController extends Controller
 
             // Renvoyer un message de succès
             return response()->json([
-                'message' => "Price en charge éffectuée avec succès",
+                'message' => "Price en charge effectuée avec succès",
                 'status' => true,
                 'data' => null
             ]);

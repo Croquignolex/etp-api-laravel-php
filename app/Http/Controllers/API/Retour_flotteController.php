@@ -191,7 +191,7 @@ class Retour_flotteController extends Controller
             $flottage->save();
 
             return response()->json([
-                'message' => 'Retour flotte éffectué avec succès',
+                'message' => 'Retour flotte effectué avec succès',
                 'status' => true,
                 'data' => null
             ]);
@@ -344,7 +344,7 @@ class Retour_flotteController extends Controller
             //recuperer le flottage correspondant
             $flottage = Approvisionnement::find($retour_flote->id_approvisionnement);
 
-            //recuperer celui qui a éffectué le retour flotte
+            //recuperer celui qui a effectué le retour flotte
             $user = User::find($retour_flote->flotage->demande_flote->id_user);
             $agent = Agent::Where('id_user', $user->id)->first();
 

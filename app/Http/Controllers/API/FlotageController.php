@@ -189,7 +189,7 @@ class FlotageController extends Controller
 
             // Renvoyer un message de succès
             return response()->json([
-                'message' => "Flottage éffectué avec succès",
+                'message' => "Flottage effectué avec succès",
                 'status' => true,
                 'data' => null
             ]);
@@ -382,7 +382,7 @@ class FlotageController extends Controller
                 //recuperer l'agent concerné
                 $agent = Agent::where('id_user', $user->id)->first();
 
-                // recuperer celui qui a éffectué le flottage
+                // recuperer celui qui a effectué le flottage
                 $gestionnaire = User::find($flottage->id_user);
 
                 //recuperer la puce de l'agent
@@ -392,7 +392,7 @@ class FlotageController extends Controller
                 $puce_emetrice = Puce::find($flottage->from);
 
                 return response()->json([
-                    'message' => 'Flottage éffectué avec succès',
+                    'message' => 'Flottage effectué avec succès',
                     'status' => true,
                     'data' => [
                         'approvisionnement' => $flottage,
@@ -466,7 +466,7 @@ class FlotageController extends Controller
             //recuperer l'agent concerné
             $agent = Agent::where('id_user', $user->id)->first();
 
-            // recuperer celui qui a éffectué le flottage
+            // recuperer celui qui a effectué le flottage
             $gestionnaire = User::find($flottage->id_user);
 
             //recuperer la puce de l'agent
@@ -519,7 +519,7 @@ class FlotageController extends Controller
             //recuperer l'agent concerné
             $agent = Agent::where('id_user', $user->id)->first();
 
-            // recuperer celui qui a éffectué le flottage
+            // recuperer celui qui a effectué le flottage
             $gestionnaire = User::find($flottage->id_user);
 
             //recuperer la puce de l'agent
@@ -559,7 +559,7 @@ class FlotageController extends Controller
         //recuperer la demande correspondante
         $demande = $flottage->demande_flote()->first();
 
-        //recuperer celui qui a éffectué le flottage
+        //recuperer celui qui a effectué le flottage
             $user = User::Find($flottage->id_user);
 
         //recuperer l'agent concerné
@@ -709,7 +709,7 @@ class FlotageController extends Controller
 
             // Renvoyer un message de succès
             return response()->json([
-                'message' => "Flottage anonyme éffectué avec succès",
+                'message' => "Flottage anonyme effectué avec succès",
                 'status' => true,
                 'data' => [
                     'puce_emetrice' => $puce_envoie,
@@ -849,7 +849,7 @@ class FlotageController extends Controller
             //recuperer l'agent concerné
             $agent = Agent::where('id_user', $user->id)->first();
 
-            // recuperer celui qui a éffectué le flottage
+            // recuperer celui qui a effectué le flottage
             $gestionnaire = User::find($flottage->id_user);
 
             //recuperer la puce de l'agent
