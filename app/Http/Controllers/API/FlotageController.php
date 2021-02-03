@@ -236,7 +236,7 @@ class FlotageController extends Controller
         //On verifi si la puce agent passée existe réellement
         if (!Puce::find($request->id_puce_agent)) {
             return response()->json([
-                'message' => "Cette Puce Agent n'existe pas",
+                'message' => "Cette puce Agent n'existe pas",
                 'status' => false,
                 'data' => null
             ]);
@@ -245,7 +245,7 @@ class FlotageController extends Controller
         //On verifi si la puce de  flottage passée existe réellement
         if (!Puce::find($request->id_puce_flottage)) {
             return response()->json([
-                'message' => "Cette Puce de flottage n'existe pas",
+                'message' => "Cette puce de flottage n'existe pas",
                 'status' => false,
                 'data' => null
             ]);

@@ -190,19 +190,16 @@ class Retour_flotteController extends Controller
             //Enregistrer les oppérations
             $flottage->save();
 
-            return response()->json(
-                [
-                    'message' => 'Retour flotte éffectué avec succès',
-                    'status' => true,
-                    'data' => null
-                ]
-            );
-        }else {
-
+            return response()->json([
+                'message' => 'Retour flotte éffectué avec succès',
+                'status' => true,
+                'data' => null
+            ]);
+        } else {
             // Renvoyer une erreur
             return response()->json(
                 [
-                    'message' => 'erreur lors du destockage',
+                    'message' => 'Erreur lors du destockage',
                     'status'=>false,
                     'data' => null
                 ]
@@ -379,55 +376,30 @@ class Retour_flotteController extends Controller
     /**
      * ////lister les retour flotte d'un Agent precis
      */
-    public function list_retour_flotte_by_rz($id)
+    public function list_retour_flotte_by_rz()
     {
-        if (!$user = User::find($id)){
+        $user = Auth::user();
 
-            return response()->json(
-                [
-                    'message' => "le Responsable de zonne n'existe pas",
-                    'status' => true,
-                    'data' => []
-                ]
-            );
-        }
-
-        $retour_flotes = Retour_flote::where('id_user', $id)->get();
-
-        $retours_flotes = [];
-
-        foreach($retour_flotes as $retour_flote) {
-
-            //recuperer le flottage correspondant
-            $flottage = Approvisionnement::find($retour_flote->id_approvisionnement);
-
-            //recuperer celui qui a éffectué le retour flotte
-            $user = User::find($retour_flote->flotage->demande_flote->id_user);
-            $agent = Agent::Where('id_user', $user->id)->first();
-
-            $recouvreur = User::find($retour_flote->id_user);
-
-            $puce_agent = Puce::find($retour_flote->user_source);
-            $puce_flottage = Puce::find($retour_flote->user_destination);
-
-            $retours_flotes[] = [
-                'recouvrement' => $retour_flote,
-                'flottage' => $flottage,
-                'user' => $user,
-                'agent' => $agent,
-                'recouvreur' => $recouvreur,
-                'puce_agent' => $puce_agent,
-                'puce_flottage' => $puce_flottage,
-            ];
-        }
-
-        return response()->json(
-            [
-                'message' => '',
+        if ($user->roles->first()->name !== Roles::RECOUVREUR){
+            return response()->json([
+                'message' => "Le responsable de zonne n'existe pas",
                 'status' => true,
-                'data' => ['recouvrements' => $retours_flotes]
+                'data' => null
+            ]);
+        }
+
+        $recoveries = Retour_flote::where('id_user', $user->id)->orderBy('created_at', 'desc')->paginate(6);
+
+        $recoveries_response =  $this->recoveriesResponse($recoveries->items());
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'recouvrements' => $recoveries_response,
+                'hasMoreData' => $recoveries->hasMorePages(),
             ]
-        );
+        ]);
     }
 
     /**

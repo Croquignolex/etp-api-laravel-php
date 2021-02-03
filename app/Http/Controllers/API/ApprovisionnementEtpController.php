@@ -249,13 +249,14 @@ class ApprovisionnementEtpController extends Controller
         $id_agent = $request->id_agent;
         $id_puce = $request->id_puce;
         $montant = $request->montant;
-        $user_role = Auth::user()->roles->first()->name;
+        $user = Auth::user();
+        $user_role = $user->roles->first()->name;
 
         $statut = $user_role === Roles::RECOUVREUR ? Statut::EN_COURS : Statut::EFFECTUER;
 
         //initier le destockage encore appelé approvisionnement de ETP
         $destockage = new Destockage([
-            'id_recouvreur' => isset($request->id_recouvreur) ? $request->id_recouvreur : Auth::user()->id,
+            'id_recouvreur' => $user->id,
             'type' => $type,
             'id_puce' => $id_puce,
             'id_agent' => isset($request->id_agent) ? $id_agent : null,
@@ -328,6 +329,7 @@ class ApprovisionnementEtpController extends Controller
                     'created_at' => $destockage->created_at,
                     'recouvreur' => User::find($destockage->id_recouvreur),
                     'puce' => $destockage->puce,
+                    'fournisseur' => $destockage->fournisseur,
                     'agent' => $agent,
                     'user' => $user,
                 ]
@@ -494,18 +496,34 @@ class ApprovisionnementEtpController extends Controller
     /**
      * ////lister les approvisionnements par un responsable de zone
      */
-    public function list_all_collector($id)
+    public function list_all_collector()
     {
-        $destockages = Destockage::where('type', Statut::BY_DIGIT_PARTNER)->orWhere('type', Statut::BY_BANK)->get();
-        return response()->json(
-            [
-                'message' => "liste",
+        $user = Auth::user();
+        $userRole = $user->roles->first()->name;
+
+        if($userRole === Roles::RECOUVREUR) {
+            $destockages = Destockage::where('id_recouvreur', $user->id)
+                ->where(function($query) {
+                    $query->where('type', Statut::BY_DIGIT_PARTNER);
+                    $query->orWhere('type', Statut::BY_BANK);
+                })
+                ->orderBy('created_at', 'desc')->paginate(6);
+
+            return response()->json([
+                'message' => "",
                 'status' => true,
-                'data' => DestockageResource::collection($destockages->filter(function(Destockage $destockage) use ($id) {
-                    return ($destockage->id_recouvreur == $id);
-                }))
-            ]
-        );
+                'data' => [
+                    'destockages' => DestockageResource::collection($destockages->items()),
+                    'hasMoreData' => $destockages->hasMorePages(),
+                ]
+            ]);
+        } else {
+            return response()->json([
+                'message' => "Cet utilisateur n'est pas un responsable de zone",
+                'status' => false,
+                'data' => null
+            ]);
+        }
     }
 
     // BY_AGENT
@@ -529,18 +547,29 @@ class ApprovisionnementEtpController extends Controller
     /**
      * ////lister les destockages par un responsable de zone
      */
-    public function list_all_destockage_collector($id)
+    public function list_all_destockage_collector()
     {
-        $destockages = Destockage::where('type', Statut::BY_AGENT)->get();
-        return response()->json(
-            [
-                'message' => "liste",
+        $user = Auth::user();
+        $userRole = $user->roles->first()->name;
+
+        if($userRole === Roles::RECOUVREUR) {
+            $destockages = Destockage::where('type', Statut::BY_AGENT)->where('id_recouvreur', $user->id)->orderBy('created_at', 'desc')->paginate(6);
+
+            return response()->json([
+                'message' => "",
                 'status' => true,
-                'data' => DestockageResource::collection($destockages->filter(function(Destockage $destockage) use ($id) {
-                    return ($destockage->id_recouvreur == $id);
-                }))
-            ]
-        );
+                'data' => [
+                    'destockages' => DestockageResource::collection($destockages->items()),
+                    'hasMoreData' => $destockages->hasMorePages(),
+                ]
+            ]);
+        } else {
+            return response()->json([
+                'message' => "Cet utilisateur n'est pas un responsable de zone",
+                'status' => false,
+                'data' => null
+            ]);
+        }
     }
 
     /**

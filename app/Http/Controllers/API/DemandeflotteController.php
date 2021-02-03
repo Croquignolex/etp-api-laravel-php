@@ -331,7 +331,7 @@ class DemandeflotteController extends Controller
     {
         $demandes_flote = Demande_flote::orderBy('created_at', 'desc')->paginate(6);
 
-        $demandes_flotes =  $this->fleetsResponse($demandes_flote->items());
+        $demandes_flotes = $this->fleetsResponse($demandes_flote->items());
 
         return response()->json([
             'message' => "",
@@ -341,6 +341,36 @@ class DemandeflotteController extends Controller
                 'hasMoreData' => $demandes_flote->hasMorePages(),
             ]
         ]);
+    }
+
+    /**
+     * //lister mes demandes de flotes responsable de zone
+     */
+    public function list_demandes_flote_collector()
+    {
+        $user = Auth::user();
+        $userRole = $user->roles->first()->name;
+
+        if($userRole === Roles::RECOUVREUR) {
+            $demandes_flote = Demande_flote::where('add_by', $user->id)->orderBy('created_at', 'desc')->paginate(6);
+
+            $demandes_flotes = $this->fleetsResponse($demandes_flote->items());
+
+            return response()->json([
+                'message' => "",
+                'status' => true,
+                'data' => [
+                    'demandes' => $demandes_flotes,
+                    'hasMoreData' => $demandes_flote->hasMorePages(),
+                ]
+            ]);
+        } else {
+            return response()->json([
+                'message' => "Cet utilisateur n'est pas un responsable de zone",
+                'status' => false,
+                'data' => null
+            ]);
+        }
     }
 
     /**
@@ -488,7 +518,7 @@ class DemandeflotteController extends Controller
             $user = $demande_flote->user;
 
             //recuperer l'agent concerné
-            $agent = Agent::where('id_user', $user->id)->first();
+            $agent = $user->agent->first();
 
             //recuperer le demandeur
             $demandeur = User::find($demande_flote->add_by);

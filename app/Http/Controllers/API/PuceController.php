@@ -9,6 +9,7 @@ use App\Enums\Roles;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 class PuceController extends Controller
@@ -58,7 +59,12 @@ class PuceController extends Controller
         $nom = $request->nom;
 		$type = $request->type;
         $numero = $request->numero;
-        $id_agent = $request->id_agent;
+
+        $user = User::find($request->id_agent);
+        $agent = $user->agent()->first();
+
+        $id_agent = $agent->id;
+
         $id_corporate = $request->id_corporate;
         $id_recouvreur = $request->id_recouvreur;
         $reference = $request->reference;
@@ -423,6 +429,37 @@ class PuceController extends Controller
                 'hasMoreData' => $puces->hasMorePages(),
             ]
         ]);
+    }
+
+    /**
+     * //lister les puces d'un agent
+     */
+    public function list_agent()
+    {
+        $user = Auth::user();
+        $userRole = $user->roles->first()->name;
+
+        if($userRole === Roles::RECOUVREUR) {
+            $puces = Puce::where('id_rz', $user->id)->orderBy('created_at', 'desc')->paginate(6);
+
+            $sims_response =  $this->simsResponse($puces->items());
+
+            return response()->json([
+                'message' => '',
+                'status' => true,
+                'data' => [
+                    'puces' => $sims_response,
+                    'hasMoreData' => $puces->hasMorePages(),
+                ]
+            ]);
+        } else {
+            return response()->json([
+                'message' => "Cet utilisateur n'est pas un responsable de zone",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
     }
 
     /**

@@ -64,19 +64,15 @@ class Flottage_rzController extends Controller
             //on recupère les types de la puce qui recoit
             $type_puce_to = Type_puce::find($puce_to->type)->name;
 
-
             //On se rassure que les puces passée en paramettre respectent toutes les conditions
             if ($type_puce_from != Statut::FLOTTAGE || $type_puce_to != Statut::PUCE_RZ) {
-                return response()->json(
-                    [
-                        'message' => "Choisier des puces valide pour la transation",
-                        'status' => false,
-                        'data' => null
-                    ]
-                );
+                return response()->json([
+                    'message' => "Choisir des puces valide pour la transation",
+                    'status' => false,
+                    'data' => null
+                ]);
             }
-
-        }else {
+        } else {
             return response()->json([
                 'message' => "Une ou plusieurs puces entrées n'existe pas",
                 'status' => false,
