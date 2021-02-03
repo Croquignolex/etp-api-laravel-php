@@ -374,6 +374,33 @@ class DemandeflotteController extends Controller
     }
 
     /**
+     * //lister toutes mes demandes de flotes (responsable de zone)
+     */
+    public function list_demandes_flote_collector_all()
+    {
+        $user = Auth::user();
+        $userRole = $user->roles->first()->name;
+
+        if($userRole === Roles::RECOUVREUR) {
+            $demandes_flote = Demande_flote::where('add_by', $user->id)->orderBy('created_at', 'desc')->get();
+
+            return response()->json([
+                'message' => "",
+                'status' => true,
+                'data' => [
+                    'demandes' => $this->fleetsResponse($demandes_flote)
+                ]
+            ]);
+        } else {
+            return response()->json([
+                'message' => "Cet utilisateur n'est pas un responsable de zone",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+    }
+
+    /**
      * //lister toutes mes demandes de flotes (gestionnaire de flotte ou les admin)
      */
     public function list_demandes_flote_general_all()

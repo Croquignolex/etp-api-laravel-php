@@ -42,43 +42,35 @@ class Demande_destockage_recouvreurController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(
-                [
-                    'message' => "Le formulaire contient des champs mal renseignés",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
         }
-
 
         if (!Puce::Find($request->id_puce)) {
-            return response()->json(
-                [
-                    'message' => "Cette puce n'existe pas",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Cette puce n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
-        if (!Agent::Find($request->id_agent)) {
-            return response()->json(
-                [
-                    'message' => "Cet Agent n'existe pas",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+        if (!User::Find($request->id_agent)) {
+            return response()->json([
+                'message' => "Cet Agent n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         //recuperer l'utilisateur connecté (c'est lui le recouvreur)
         $add_by = Auth::user();
 
         //recuperer l'agent concerné
-        $agent = Agent::find($request->id_agent);
-
-		$user = User::find($agent->id_user);
+        $user = User::find($request->id_agent);
+        $agent = $user->agent()->first();
 
         $id_user = $user->id;
         $add_by = $add_by->id;
@@ -102,8 +94,8 @@ class Demande_destockage_recouvreurController extends Controller
         ]);
 
         // creation de La demande
-        if ($demande_destockage->save()) {
-
+        if ($demande_destockage->save())
+        {
             //Broadcast Notification
             $role = Role::where('name', Roles::RECOUVREUR)->first();
             $role2 = Role::where('name', Roles::GESTION_FLOTTE)->first();
@@ -124,23 +116,34 @@ class Demande_destockage_recouvreurController extends Controller
                     }
                 }
 
+            //recuperer l'utilisateur concerné
+            $user = $demande_destockage->user;
+
+            //recuperer l'agent concerné
+            $agent = Agent::where('id_user', $user->id)->first();
+
+            //recuperer le demandeur
+            $demandeur = User::find($demande_destockage->add_by);
+
             // Renvoyer un message de succès
-            return response()->json(
-                [
-                    'message' => 'Demande de destockage créée',
-                    'status' => true,
-                    'data' => ['demande' => $demande_destockage]
+            return response()->json([
+                'message' => 'Demande de déstockage éffectué avec succès',
+                'status' => true,
+                'data' => [
+                    'demande' => $demande_destockage,
+                    'demandeur' => $demandeur,
+                    'agent' => $agent,
+                    'user' => $user,
+                    'puce' => $demande_destockage->puce
                 ]
-            );
+            ]);
         } else {
             // Renvoyer une erreur
-            return response()->json(
-                [
-                    'message' => 'erreur lors de la demande',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => 'Erreur lors de la demande',
+                'status' => false,
+                'data' => null
+            ]);
         }
     }
 
@@ -366,26 +369,22 @@ class Demande_destockage_recouvreurController extends Controller
             'montant' => ['required', 'numeric']
         ]);
         if ($validator->fails()) {
-            return response()->json(
-                [
-                    'message' => "Le formulaire contient des champs mal renseignés",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         $demande_destockage = Demande_destockage::find($id);
         $reste = $demande_destockage->reste;
 
         if($reste < $request->montant) {
-            return response()->json(
-                [
-                    'message' => "Vous ne pouvez pas servir au delas de la demande",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Vous ne pouvez pas prendre en charge au délas de la demande",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         $demande_destockage->reste = $reste - $request->montant;
@@ -414,42 +413,20 @@ class Demande_destockage_recouvreurController extends Controller
                     ]));
                 }
             }
-            //On recupere les 'demande de destockage'
-//            $demandes_destockage = Demande_destockage::where('add_by', Auth::user()->id)->get();
-            // tous lister car le responsable de zone peut voir toutes les démande de déstockage et agir en conséquence
-            $demandes_destockage = Demande_destockage::all();
-            $demandes_destockages = [];
 
-            foreach($demandes_destockage as $demande_destockage) {
-
-                //recuperer l'utilisateur concerné
-                $user = $demande_destockage->user;
-
-                //recuperer l'agent concerné
-                $agent = Agent::where('id_user', $user->id)->first();
-
-                //recuperer le demandeur
-                $demandeur = User::find($demande_destockage->add_by);
-
-                $demandes_destockages[] = ['demande' => $demande_destockage, 'demandeur' => $demandeur, 'agent' => $agent, 'user' => $user, 'puce' => $demande_destockage->puce];
-            }
-
-            return response()->json(
-                [
-                    'message' => '',
-                    'status' => true,
-                    'data' => ['demandes' => $demandes_destockages]
-                ]
-            );
+            // Renvoyer un message de succès
+            return response()->json([
+                'message' => "Price en charge éffectuée avec succès",
+                'status' => true,
+                'data' => null
+            ]);
         } else {
             // Renvoyer une erreur
-            return response()->json(
-                [
-                    'message' => 'erreur lors traitelent de la demande',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => 'Erreur lors traitelent de la demande',
+                'status' => false,
+                'data' => null
+            ]);
         }
     }
 
