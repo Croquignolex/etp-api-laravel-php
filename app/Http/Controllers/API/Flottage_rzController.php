@@ -163,38 +163,35 @@ class Flottage_rzController extends Controller
     /**
      * ////creer un flottages par un responsable de zone
      */
-    Public function flottage_by_rz(Request $request) {
-
+    Public function flottage_by_rz(Request $request)
+    {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
             'montant' => ['required', 'numeric'],
             'id_sim_rz' => ['required', 'numeric'],
             'id_agent' => ['required', 'numeric'],
             'id_sim_agent' => ['required', 'numeric'],
-
         ]);
+
         if ($validator->fails()) {
-            return response()->json(
-                [
-                    'message' => "Le formulaire contient des champs mal renseignés",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         // On verifi que l'agent' en paramettre existe
-        if (is_null(Agent::find($request->id_agent))) {
-
-            return response()->json(
-                [
-                    'message' => "l'agent n'existe pas",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
-
+        if (is_null(User::find($request->id_agent))) {
+            return response()->json([
+                'message' => "Cet agent n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
         }
+
+        $user = User::find($request->id_agent);
+        $agent = $user->agent->first();
 
         // On verifi que la puce passée en paramettre existe
         if (!is_null(Puce::find($request->id_sim_agent))) {
@@ -209,25 +206,20 @@ class Flottage_rzController extends Controller
             $flote_to = $puce_to->flote;
 
             //On se rassure que la puce agent appartient à l'agent passé en paramettre
-            $agent = Agent::find($request->id_agent);
-            if (!($puce_to->id_agent == $agent->id)) {
-                return response()->json(
-                    [
-                        'message' => "la puce n'appartien pas à l'agent",
-                        'status' => false,
-                        'data' => null
-                    ]
-                );
-            }
 
-        }else {
-            return response()->json(
-                [
-                    'message' => "la puce agent entrées n'existe pas",
+            if (!($puce_to->id_agent == $agent->id)) {
+                return response()->json([
+                    'message' => "La puce n'appartient pas à l'agent",
                     'status' => false,
                     'data' => null
-                ]
-            );
+                ]);
+            }
+        } else {
+            return response()->json([
+                'message' => "La puce agent entrées n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         //On se rassure que le la puce du responsable de zonne existe
@@ -240,44 +232,36 @@ class Flottage_rzController extends Controller
 
             //On se rassure que la puce appartient au responsable de zonne
             if (!($puce_from->id_rz == Auth::user()->id)) {
-                return response()->json(
-                    [
-                        'message' => "la puce n'appartien pas au responsable de zone",
-                        'status' => false,
-                        'data' => null
-                    ]
-                );
-            }
-        }else {
-            return response()->json(
-                [
-                    'message' => "la puce du responsable de zone entrées n'existe pas",
+                return response()->json([
+                    'message' => "La puce n'appartient pas au responsable de zone",
                     'status' => false,
                     'data' => null
-                ]
-            );
+                ]);
+            }
+        } else {
+            return response()->json([
+                'message' => "La puce du responsable de zone entrées n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         //On verifie que c'est les puce du meme reseau
         if ($flote_to != $flote_from) {
-            return response()->json(
-                [
-                    'message' => "Vous devez choisir les puces du meme réseau",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Vous devez choisir les puces du meme réseau",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         //On se rassure que le solde est suffisant
         if ($puce_from->solde < $request->montant) {
-            return response()->json(
-                [
-                    'message' => "le solde est insuffisant",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le solde est insuffisant",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         //on debite le solde du responsable de zonne
@@ -293,7 +277,7 @@ class Flottage_rzController extends Controller
         // Nouveau flottage
         $flottage_rz = new Flottage_Rz([
             'id_responsable_zone' => $responsable->id,
-            'id_agent' => $request->id_agent,
+            'id_agent' => $agent->id,
             'id_sim_agent' => $puce_to->id,
             'reference' => null,
             'statut' => Statut::EFFECTUER,
@@ -313,53 +297,27 @@ class Flottage_rzController extends Controller
                 'message' => "Nouveau flottage Dans votre puce"
             ]));
 
+            $puce_agent = Puce::find($flottage_rz->id_sim_agent);
 
-            //On recupere les Flottages rz
-            $flottages_rz = Flottage_Rz::get();
-
-            $flottages = [];
-
-            foreach($flottages_rz as $flottage_rz) {
-
-                //recuperer l'agent concerné
-                $agent = $flottage_rz->agent;
-
-                //recuperer l'utilisateur concerné
-                $user = $agent->user;
-
-                //puce de l'agenr
-                $puce_agent = Puce::find($flottage_rz->id_sim_agent);
-
-                $flottages[] = [
+            // Renvoyer un message de succès
+            return response()->json([
+                'message' => "Flottage éffectué avec succès",
+                'status' => true,
+                'data' => [
+                    'approvisionnement' => $flottage_rz,
                     'user' => $user,
                     'agent' => $agent,
                     'puce_receptrice' => $puce_agent,
-                    'approvisionnement' => $flottage_rz,
-                ];
-
-            }
-
-            // Renvoyer un message de succès
-            return response()->json(
-                [
-                    'message' => "Le flottage c'est bien passé",
-                    'status' => true,
-                    'data' => ['flottages' => $flottages]
                 ]
-            );
-        }else {
-
+            ]);
+        } else {
             // Renvoyer une erreur
-            return response()->json(
-                [
-                    'message' => 'erreur lors du flottage',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
-
+            return response()->json([
+                'message' => 'Erreur lors du flottage',
+                'status' => false,
+                'data' => null
+            ]);
         }
-
     }
 
     /**
@@ -438,39 +396,30 @@ class Flottage_rzController extends Controller
     /**
      * ////lister les flottages effectués par un responsable de zone precis
      */
-    public function list_flottage_rz_by_rz($id)
+    public function list_flottage_rz_by_rz()
     {
-        //On recupere les Flottages rz
-        $flottages_rz = Flottage_Rz::where('id_responsable_zone', $id)->get();
+        $user = Auth::user();
+        $userRole = $user->roles->first()->name;
 
-        $flottages = [];
+        if($userRole === Roles::RECOUVREUR) {
+            $flottages_rz = Flottage_Rz::where('id_responsable_zone', $user->id)->orderBy('created_at', 'desc')->paginate(6);
+            $demandes_flotes =  $this->fleetsResponse($flottages_rz->items());
 
-        foreach($flottages_rz as $flottage_rz) {
-
-            //recuperer l'agent concerné
-            $agent = $flottage_rz->agent;
-
-            //recuperer l'utilisateur concerné
-            $user = $agent->user;
-
-            //puce de l'agenr
-            $puce_agent = Puce::find($flottage_rz->id_sim_agent);
-
-            $flottages[] = [
-                'user' => $user,
-                'agent' => $agent,
-                'puce_receptrice' => $puce_agent,
-                'approvisionnement' => $flottage_rz,
-            ];
-        }
-
-        return response()->json(
-            [
-                'message' => '',
+            return response()->json([
+                'message' => "",
                 'status' => true,
-                'data' => ['flottages' => $flottages ]
-            ]
-        );
+                'data' => [
+                    'flottages' => $demandes_flotes,
+                    'hasMoreData' => $flottages_rz->hasMorePages(),
+                ]
+            ]);
+        } else {
+            return response()->json([
+                'message' => "Cet utilisateur n'est pas un responsable de zone",
+                'status' => false,
+                'data' => null
+            ]);
+        }
     }
 
     /**
@@ -570,5 +519,32 @@ class Flottage_rzController extends Controller
                 'data' => ['flottage' => $flottage_rz, 'puce_agent' => $puce_agent  ]
             ]
         );
+    }
+
+    // Build fleets return data
+    private function fleetsResponse($fleets)
+    {
+        $approvisionnements = [];
+
+        foreach($fleets as $flottage)
+        {
+            //recuperer l'agent concerné
+            $agent = $flottage->agent;
+
+            $user = $agent->user;
+
+            //puce de l'agenr
+            $puce_agent = Puce::find($flottage->id_sim_agent);
+
+
+            $approvisionnements[] = [
+                'approvisionnement' => $flottage,
+                'user' => $user,
+                'agent' => $agent,
+                'puce_receptrice' => $puce_agent,
+            ];
+        }
+
+        return $approvisionnements;
     }
 }

@@ -24,10 +24,4 @@ class Flottage_Rz extends Model
     {
         return $this->belongsTo('App\Agent', 'id_agent');
     }
-
-    public function puce_agent()
-    {
-        return $this->belongsTo('App\User', 'id_sim_agent');
-    }
-
 }

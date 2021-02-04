@@ -447,7 +447,7 @@ Route::group(['middleware' => 'auth:api'], function(){
         Route::post('flottage_by_rz', 'API\Flottage_rzController@flottage_by_rz');
 
             //lister les Flottages d'un responsable de zonne
-        Route::get('list_flottage_rz_by_rz/{id}', 'API\Flottage_rzController@list_flottage_rz_by_rz')
+        Route::get('list_flottage_rz_by_rz', 'API\Flottage_rzController@list_flottage_rz_by_rz')
             ->where('id', '[0-9]+');
 
         //lister les Flottages rz pour un agent precis
