@@ -505,8 +505,8 @@ class Flottage_interneController extends Controller
                 ]);
             }
 
-            //On se rassure que la puce qui recoit est GF ou SUP
-            if ($type_puce_to != Statut::FLOTTAGE && $type_puce_to != Statut::FLOTTAGE_SECONDAIRE) {
+            //On se rassure que la puce qui recoit est GF ou SUP ou RZ
+            if ($type_puce_to != Statut::FLOTTAGE && $type_puce_to != Statut::FLOTTAGE_SECONDAIRE && $type_puce_to != Statut::PUCE_RZ) {
                 return response()->json([
                     'message' => "Choisier une puce valide pour la reception",
                     'status' => false,
@@ -514,13 +514,11 @@ class Flottage_interneController extends Controller
                 ]);
             }
         } else {
-            return response()->json(
-                [
-                    'message' => "une ou plusieurs puces entrées n'existe pas",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Une ou plusieurs puces entrées n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         //On se rassure que le solde est suffisant
@@ -541,6 +539,13 @@ class Flottage_interneController extends Controller
         //On credite la caisse du responsable de zonne, il rembourse sa dette
         $caisse_rz = $puce_from->rz->caisse->first();
         $caisse_rz->solde = $caisse_rz->solde + $request->montant;
+
+        // On débite la caisse de l'utilisateur associé à la puce receptrice si celui-ci est un responsable de zone
+        $receiver = $puce_to->rz;
+        if($receiver !== null) {
+            $caisse_rz2 = $receiver->caisse->first();
+            $caisse_rz2->solde = $caisse_rz2->solde - $request->montant;
+        }
 
         //Le responsable de zonne
         $rz = Auth::user();
