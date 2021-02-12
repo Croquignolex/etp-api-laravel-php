@@ -605,21 +605,17 @@ class PuceController extends Controller
         $types = Type_puce::all();
 
         if ($types != null) {
-            return response()->json(
-                [
-                    'message' => '',
-                    'status' => true,
-                    'data' => ['types' => $types]
-                ]
-            );
-         }else{
-            return response()->json(
-                [
-                    'message' => 'Aucun type de puce trouve',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => '',
+                'status' => true,
+                'data' => ['types' => $types]
+            ]);
+         } else{
+            return response()->json([
+                'message' => 'Aucun type de puce trouve',
+                'status' => false,
+                'data' => null
+            ]);
          }
     }
 

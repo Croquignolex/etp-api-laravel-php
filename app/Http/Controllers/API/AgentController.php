@@ -25,11 +25,11 @@ class AgentController extends Controller
      */
     function __construct()
     {
-        $agent = Roles::AGENT;
+        /*$agent = Roles::AGENT;
         $recouvreur = Roles::RECOUVREUR;
         $superviseur = Roles::SUPERVISEUR;
         $ges_flotte = Roles::GESTION_FLOTTE;
-        $this->middleware("permission:$recouvreur|$superviseur|$ges_flotte|$agent");
+        $this->middleware("permission:$recouvreur|$superviseur|$ges_flotte|$agent");*/
     }
 
     /**

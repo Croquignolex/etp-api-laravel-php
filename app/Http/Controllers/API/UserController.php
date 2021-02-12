@@ -21,8 +21,8 @@ class UserController extends Controller
 	/**
      * les conditions de lecture des methodes
      */
-    function __construct(){
-
+    function __construct()
+    {
         $superviseur = Roles::SUPERVISEUR;
         $gestionnaire_flotte = Roles::GESTION_FLOTTE;
         $this->middleware("permission:$superviseur|$gestionnaire_flotte");

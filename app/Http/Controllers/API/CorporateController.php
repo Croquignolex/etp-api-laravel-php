@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Puce;
+use App\Type_puce;
 use App\Corporate;
 use App\Enums\Roles;
 use App\Enums\Statut;
-use App\Puce;
-use App\Type_puce;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
@@ -16,12 +16,10 @@ use App\Http\Resources\Corporate as CorporateResource;
 class CorporateController extends Controller
 {
     /**
-
      * les conditions de lecture des methodes
-
      */
-    function __construct(){
-
+    function __construct()
+    {
         $superviseur = Roles::SUPERVISEUR;
         $this->middleware("permission:$superviseur");
     }
@@ -101,9 +99,7 @@ class CorporateController extends Controller
     }
 
      /**
-
      * details d'une corporate
-
      */
     public function show($id)
     {
@@ -198,14 +194,34 @@ class CorporateController extends Controller
      */
     public function list()
     {
-        return response()->json(
-            [
-                'message' => '',
-                'status' => true,
-                'data' => CorporateResource::collection(Corporate::all())
+        $corporates = Corporate::orderBy('created_at', 'desc')->paginate(12);
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'entreprises' => CorporateResource::collection($corporates->items()),
+                'hasMoreData' => $corporates->hasMorePages(),
             ]
-        );
+        ]);
     }
+
+    /**
+     * ////lister toutes les corporates
+     */
+    public function list_all()
+    {
+        $corporates = Corporate::orderBy('created_at', 'desc')->get();
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'entreprises' => CorporateResource::collection($corporates)
+            ]
+        ]);
+    }
+
 
     /**
      * ////supprimer une corporate
@@ -414,5 +430,4 @@ class CorporateController extends Controller
             );
         }
     }
-
 }

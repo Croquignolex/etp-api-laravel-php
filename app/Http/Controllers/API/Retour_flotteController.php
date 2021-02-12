@@ -383,7 +383,7 @@ class Retour_flotteController extends Controller
         if ($user->roles->first()->name !== Roles::RECOUVREUR){
             return response()->json([
                 'message' => "Le responsable de zonne n'existe pas",
-                'status' => true,
+                'status' => false,
                 'data' => null
             ]);
         }

@@ -251,8 +251,9 @@ class ApprovisionnementEtpController extends Controller
         $montant = $request->montant;
         $user = Auth::user();
         $user_role = $user->roles->first()->name;
+        $type_puce = Puce::find($id_puce)->type_puce->name;
 
-        $statut = $user_role === Roles::RECOUVREUR ? Statut::EN_COURS : Statut::EFFECTUER;
+        $statut = (($user_role === Roles::RECOUVREUR) && ($type_puce !== Statut::PUCE_RZ)) ? Statut::EN_COURS : Statut::EFFECTUER;
 
         //initier le destockage encore appelé approvisionnement de ETP
         $destockage = new Destockage([

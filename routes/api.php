@@ -585,6 +585,9 @@ Route::group(['middleware' => 'auth:api'], function(){
         //liste des corporates
         Route::get('corporate_list', 'API\CorporateController@list');
 
+        //liste des corporates
+        Route::get('corporate_list_all', 'API\CorporateController@list_all');
+
         //Creer un corporate
         Route::post('store_corporate', 'API\CorporateController@store');
 
