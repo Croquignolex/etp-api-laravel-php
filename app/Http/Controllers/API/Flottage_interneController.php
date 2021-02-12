@@ -545,6 +545,7 @@ class Flottage_interneController extends Controller
         if($receiver !== null) {
             $caisse_rz2 = $receiver->caisse->first();
             $caisse_rz2->solde = $caisse_rz2->solde - $request->montant;
+            $caisse_rz2->save();
         }
 
         //Le responsable de zonne
