@@ -372,7 +372,13 @@ class Flottage_interneController extends Controller
      */
     public function list_all()
     {
-        $transfers = Flottage_interne::orderBy('created_at', 'desc')->paginate(6);
+        $connected_user_role = Auth::user()->roles->first()->name;
+
+        if ($connected_user_role === Roles::RECOUVREUR) {
+            $transfers = Flottage_interne::orderBy('created_at', 'desc')->paginate(12);
+        } else {
+            $transfers = Flottage_interne::orderBy('created_at', 'desc')->paginate(6);
+        }
 
         $transfers_response =  $this->transfersResponse($transfers->items());
 
