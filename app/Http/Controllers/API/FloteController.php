@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Puce;
 use App\Flote;
 use App\Enums\Roles;
+use App\User;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
@@ -137,7 +138,10 @@ class FloteController extends Controller
             return response()->json([
                 'message' => 'Opérateur mis à jour avec succès',
                 'status' => true,
-                'data' => ['flote' => $flote]
+                'data' => [
+                    'flote' => $flote,
+                    'puces' => $flote->puces
+                ]
             ]);
         } else {
             // Renvoyer une erreur
@@ -157,31 +161,35 @@ class FloteController extends Controller
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
 			'numero' => ['required', 'string', 'max:255', 'unique:puces,numero'],
-            'reference' => ['nullable', 'string', 'max:255','unique:puces,reference'],
-            //'id_agent' => ['required', 'numeric'],
-            //'id_corporate' => ['required', 'numeric'],
+            'reference' => ['nullable', 'string', 'max:255'],
+            'id_agent' => ['nullable', 'numeric'],
+            'id_corporate' => ['nullable', 'numeric'],
+            'id_rz' => ['nullable', 'numeric'],
+            'id_ressource' => ['nullable', 'numeric'],
             'nom' => ['required', 'string'],
             'description' => ['nullable', 'string'],
             'type' => ['required', 'numeric'],
         ]);
         if ($validator->fails()) {
-            return response()->json(
-                [
-                    'message' => "Le formulaire contient des champs mal renseignés",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         // Récupérer les données validées
 		$nom = $request->nom;
         $type = $request->type;
+        $id_rz = $request->id_rz;
         $numero = $request->numero;
-		$id_agent = $request->id_agent;
         $reference = $request->reference;
         $corporate = $request->id_corporate;
         $description = $request->description;
+
+        $id_agent = $reference === Roles::AGENT ? $request->id_agent : $request->id_ressource;
+        $user = User::find($id_agent);
+        $agent = $user === null ? null : $user->agent()->first()->id;
 
         // rechercher la flote
         $flote = Flote::find($id);
@@ -190,31 +198,28 @@ class FloteController extends Controller
         $puce = $flote->puces()->create([
             'nom' => $nom,
 			'type' => $type,
-			'numero' => $numero,
-			'id_agent' => $id_agent,
+            'id_rz' => $id_rz,
+            'numero' => $numero,
+            'id_agent' => $agent,
             'reference' => $reference,
             'corporate' => $corporate,
-            'description' => $description
-		]);
+            'description' => $description,
+        ]);
 
         if ($puce !== null) {
             // Renvoyer un message de succès
-            return response()->json(
-                [
-                    'message' => '',
-                    'status' => true,
-                    'data' => ['flote' => $flote, 'puces' => $flote->puces]
-                ]
-            );
+            return response()->json([
+                'message' => 'Puce ajoutée avec succès',
+                'status' => true,
+                'data' => ['flote' => $flote, 'puces' => $flote->puces]
+            ]);
         } else {
             // Renvoyer une erreur
-            return response()->json(
-                [
-                    'message' => "Erreur l'ors de l'ajout de la nouvelle puce",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Erreur l'ors de l'ajout de la nouvelle puce",
+                'status' => false,
+                'data' => null
+            ]);
         }
     }
 

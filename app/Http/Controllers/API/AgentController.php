@@ -304,7 +304,7 @@ class AgentController extends Controller
 			$puces = is_null($agent) ? [] : $agent->puces;
             // Renvoyer un message de succès
             return response()->json([
-                'message' => "Information de l'agent mis à jour avec succès",
+                'message' => "Informations de l'agent mises à jour avec succès",
                 'status' => true,
                 'data' => [
                     'zone' => $user->zone,

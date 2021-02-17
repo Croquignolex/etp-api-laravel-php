@@ -375,19 +375,21 @@ class Flottage_interneController extends Controller
         $connected_user_role = Auth::user()->roles->first()->name;
 
         if ($connected_user_role === Roles::RECOUVREUR) {
-            $transfers = Flottage_interne::orderBy('created_at', 'desc')->paginate(12);
+            $transfers = Flottage_interne::orderBy('created_at', 'desc')->get();
+            $transfers_response =  $this->transfersResponse($transfers);
+            $hasMoreData = false;
         } else {
             $transfers = Flottage_interne::orderBy('created_at', 'desc')->paginate(6);
+            $transfers_response =  $this->transfersResponse($transfers->items());
+            $hasMoreData = $transfers->hasMorePages();
         }
-
-        $transfers_response =  $this->transfersResponse($transfers->items());
 
         return response()->json([
             'message' => '',
             'status' => true,
             'data' => [
                 'flottages' => $transfers_response,
-                'hasMoreData' => $transfers->hasMorePages(),
+                'hasMoreData' => $hasMoreData,
             ]
         ]);
     }

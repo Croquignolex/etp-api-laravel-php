@@ -635,6 +635,7 @@ class PuceController extends Controller
                 'user' => $user,
                 'agent' => $agent,
                 'flote' => $puce->flote,
+                'corporate' => $puce->company,
                 'recouvreur' => $puce->rz,
                 'type' => $puce->type_puce,
             ];
