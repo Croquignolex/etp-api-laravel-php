@@ -749,6 +749,24 @@ Route::group(['middleware' => 'auth:api'], function(){
         ->where('id', '[0-9]+');
 
 
+    /* //todo: new code 19/02/2021, échange de liquidité entre les RZ
+    //////////////////////Décaissement (la gestionnaire de flotte donne de l'argent à un responsable de zonne)/////////////////////
+    */
+
+    //creer une passation d'argent d'un RZ vers un autre RZ
+    Route::post('give_to_rz', 'API\CaisseController@give_to_rz');
+
+    //creer une passation d'argent d'un RZ vers un autre RZ
+    Route::post('give_to_rz_approuve', 'API\CaisseController@give_to_rz_approuve');
+
+    //Détails d'un Decaissement precis
+    Route::get('give_to_rz_details/{id}', 'API\CaisseController@give_to_rz_details')
+        ->where('id', '[0-9]+');
+
+    //lister les Decaissements
+    Route::get('give_to_rz_list', 'API\CaisseController@give_to_rz_list');
+
+
 
 
 });
