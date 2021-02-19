@@ -21,10 +21,11 @@ class Flottage_interneController extends Controller
     /**
      * les conditions de lecture des methodes
      */
-    function __construct(){
+    function __construct()
+    {
+        $recouvreur = Roles::RECOUVREUR;
         $superviseur = Roles::SUPERVISEUR;
         $ges_flotte = Roles::GESTION_FLOTTE;
-        $recouvreur = Roles::RECOUVREUR;
         $this->middleware("permission:$superviseur|$ges_flotte|$recouvreur");
     }
 
@@ -32,8 +33,8 @@ class Flottage_interneController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    Public function store(Request $request) {
-
+    Public function store(Request $request)
+    {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
             'montant' => ['required', 'numeric'],
@@ -41,13 +42,11 @@ class Flottage_interneController extends Controller
             'id_puce_to' => ['required', 'numeric'],
         ]);
         if ($validator->fails()) {
-            return response()->json(
-                [
-                    'message' => "Le formulaire contient des champs mal renseignés",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         // On verifi que la puce passée en paramettre existe
@@ -155,7 +154,7 @@ class Flottage_interneController extends Controller
                     //recuperer la puce du gestionnaire de flotte
                     $puce_receptrice = Puce::find($flottage_interne->id_sim_to);
 
-                    //recuperer celui qui a éffectué le flottage
+                    //recuperer celui qui a effectué le flottage
                     $superviseur = User::find($flottage_interne->id_user);
 
 
@@ -332,7 +331,7 @@ class Flottage_interneController extends Controller
                 //recuperer le responsable de zone
                 $responsable = User::find($puce_receptrice->id_rz);
 
-                //recuperer celui qui a éffectué le flottage
+                //recuperer celui qui a effectué le flottage
                 $superviseur = User::find($flottage_interne->id_user);
 
 
@@ -373,55 +372,26 @@ class Flottage_interneController extends Controller
      */
     public function list_all()
     {
-        //On recupere les Flottages
-        $flottage_internes = Flottage_interne::get();
-
-        $flottages = [];
-
         $connected_user_role = Auth::user()->roles->first()->name;
 
-        foreach($flottage_internes as $flottage_interne)
-        {
-            //recuperer la puce du superviseur
-            $puce_emetrice = Puce::find($flottage_interne->id_sim_from);
-
-            //recuperer la puce du gestionnaire de flotte
-            $puce_receptrice = Puce::find($flottage_interne->id_sim_to);
-
-            //recuperer celui qui a éffectué le flottage
-            $superviseur = User::find($flottage_interne->id_user);
-
-            if ($connected_user_role === Roles::RECOUVREUR) {
-                if(
-                    ($puce_emetrice->rz !== null && $puce_emetrice->rz->id === Auth::user()->id) ||
-                    ($puce_receptrice->rz !== null && $puce_receptrice->rz->id === Auth::user()->id)
-                ) {
-                    // Take only the current collector receiving sims
-                    $flottages[] = [
-                        'puce_receptrice' => $puce_receptrice,
-                        'puce_emetrice' => $puce_emetrice,
-                        'superviseur' => $superviseur,
-                        'flottage' => $flottage_interne
-                    ];
-                }
-            } else {
-                // Take all if it is not a collector
-                $flottages[] = [
-                    'puce_receptrice' => $puce_receptrice,
-                    'puce_emetrice' => $puce_emetrice,
-                    'superviseur' => $superviseur,
-                    'flottage' => $flottage_interne
-                ];
-            }
+        if ($connected_user_role === Roles::RECOUVREUR) {
+            $transfers = Flottage_interne::orderBy('created_at', 'desc')->get();
+            $transfers_response =  $this->transfersResponse($transfers);
+            $hasMoreData = false;
+        } else {
+            $transfers = Flottage_interne::orderBy('created_at', 'desc')->paginate(6);
+            $transfers_response =  $this->transfersResponse($transfers->items());
+            $hasMoreData = $transfers->hasMorePages();
         }
 
-        return response()->json(
-            [
-                'message' => '',
-                'status' => true,
-                'data' => ['flottages' => $flottages]
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'flottages' => $transfers_response,
+                'hasMoreData' => $hasMoreData,
             ]
-        );
+        ]);
     }
 
     /**
@@ -444,7 +414,7 @@ class Flottage_interneController extends Controller
                 //recuperer la puce du superviseur
                 $puce_emetrice = Puce::find($flottage_interne->id_sim_from);
 
-                //recuperer celui qui a éffectué le flottage
+                //recuperer celui qui a effectué le flottage
                 $superviseur = User::find($flottage_interne->id_user);
 
                 $flottages[] = [
@@ -484,7 +454,7 @@ class Flottage_interneController extends Controller
         //On recupere le Flottage
         $flottage = Flottage_interne::find($id_flottage);
 
-        //recuperer celui qui a éffectué le flottage
+        //recuperer celui qui a effectué le flottage
         $superviseur = User::find($flottage->id_user);
 
         return response()->json(
@@ -512,13 +482,11 @@ class Flottage_interneController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(
-                [
-                    'message' => "Le formulaire contient des champs mal renseignés",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         // On verifi que la puce passée en paramettre existe
@@ -538,45 +506,36 @@ class Flottage_interneController extends Controller
 
             //On se rassure que la puce qui envoie est RZ
             if ($type_puce_from != Statut::PUCE_RZ) {
-                return response()->json(
-                    [
-                        'message' => "Choisisser une puce valide pour la transation",
-                        'status' => false,
-                        'data' => null
-                    ]
-                );
-            }
-
-            //On se rassure que la puce qui recoit est GF ou SUP
-            if ($type_puce_to != Statut::FLOTTAGE && $type_puce_to != Statut::FLOTTAGE_SECONDAIRE) {
-                return response()->json(
-                    [
-                        'message' => "Choisier une puce valide pour la reception",
-                        'status' => false,
-                        'data' => null
-                    ]
-                );
-            }
-
-        }else {
-            return response()->json(
-                [
-                    'message' => "une ou plusieurs puces entrées n'existe pas",
+                return response()->json([
+                    'message' => "Choisir une puce valide pour la transation",
                     'status' => false,
                     'data' => null
-                ]
-            );
+                ]);
+            }
+
+            //On se rassure que la puce qui recoit est GF ou SUP ou RZ
+            if ($type_puce_to != Statut::FLOTTAGE && $type_puce_to != Statut::FLOTTAGE_SECONDAIRE && $type_puce_to != Statut::PUCE_RZ) {
+                return response()->json([
+                    'message' => "Choisier une puce valide pour la reception",
+                    'status' => false,
+                    'data' => null
+                ]);
+            }
+        } else {
+            return response()->json([
+                'message' => "Une ou plusieurs puces entrées n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         //On se rassure que le solde est suffisant
         if ($puce_from->solde < $request->montant) {
-            return response()->json(
-                [
-                    'message' => "le solde est insuffisant",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le solde est insuffisant",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         //on debite le solde du RZ
@@ -588,6 +547,14 @@ class Flottage_interneController extends Controller
         //On credite la caisse du responsable de zonne, il rembourse sa dette
         $caisse_rz = $puce_from->rz->caisse->first();
         $caisse_rz->solde = $caisse_rz->solde + $request->montant;
+
+        // On débite la caisse de l'utilisateur associé à la puce receptrice si celui-ci est un responsable de zone
+        $receiver = $puce_to->rz;
+        if($receiver !== null) {
+            $caisse_rz2 = $receiver->caisse->first();
+            $caisse_rz2->solde = $caisse_rz2->solde - $request->montant;
+            $caisse_rz2->save();
+        }
 
         //Le responsable de zonne
         $rz = Auth::user();
@@ -628,58 +595,33 @@ class Flottage_interneController extends Controller
                 }
             }
 
-            //On recupere les Flottages
-            $flottage_internes = Flottage_interne::get();
+            //recuperer la puce du superviseur
+            $puce_emetrice = Puce::find($flottage_interne->id_sim_from);
 
-            $flottages = [];
+            //recuperer la puce du gestionnaire de flotte
+            $puce_receptrice = Puce::find($flottage_interne->id_sim_to);
 
-            foreach($flottage_internes as $flottage_interne) {
-
-                //recuperer la puce du rz
-                $puce_emetrice = Puce::find($flottage_interne->id_sim_from);
-
-                //recuperer la puce qui recoit
-                $puce_receptrice = Puce::find($flottage_interne->id_sim_to);
-
-                //recuperer celui qui a éffectué le flottage
-                $rz = User::find($flottage_interne->id_user);
-
-                //recuperer celui qui a éffectué le flottage
-                $superviseur = User::find($flottage_interne->id_user);
-
-                if(
-                    ($puce_emetrice->rz !== null && $puce_emetrice->rz->id === Auth::user()->id) ||
-                    ($puce_receptrice->rz !== null && $puce_receptrice->rz->id === Auth::user()->id)
-                ) {
-                    // Take only the current collector receiving sims
-                    $flottages[] = [
-                        'puce_receptrice' => $puce_receptrice,
-                        'puce_emetrice' => $puce_emetrice,
-                        'superviseur' => $superviseur,
-                        'flottage' => $flottage_interne
-                    ];
-                }
-            }
+            //recuperer celui qui a effectué le flottage
+            $superviseur = User::find($flottage_interne->id_user);
 
             // Renvoyer un message de succès
-            return response()->json(
-                [
-                    'message' => "Le flottage c'est bien passé",
-                    'status' => true,
-                    'data' => ['flottages' => $flottages]
+            return response()->json([
+                'message' => "Transfert de flotte effectué avec succès",
+                'status' => true,
+                'data' => [
+                    'puce_receptrice' => $puce_receptrice,
+                    'puce_emetrice' => $puce_emetrice,
+                    'utilisateur' => $superviseur,
+                    'flottage' => $flottage_interne
                 ]
-            );
-        }else {
-
+            ]);
+        } else {
             // Renvoyer une erreur
-            return response()->json(
-                [
-                    'message' => 'erreur lors du flottage',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
-
+            return response()->json([
+                'message' => 'Erreur lors du flottage',
+                'status' => false,
+                'data' => null
+            ]);
         }
 
     }
@@ -724,7 +666,7 @@ class Flottage_interneController extends Controller
             $type_puce_to = Type_puce::find($puce_to->type)->name;
 
             //On se rassure que la puce qui envoie est bien AGENT ETP
-            if ($type_puce_from != Statut::ETP) {
+            if ($type_puce_from != Statut::RESOURCE) {
                 return response()->json(
                     [
                         'message' => "Choisisser une puce valide pour la transation",
@@ -826,7 +768,7 @@ class Flottage_interneController extends Controller
                 $puce_receptrice = Puce::find($flottage_interne->id_sim_to);
 
 
-                //recuperer celui qui a éffectué le flottage
+                //recuperer celui qui a effectué le flottage
                 $gf = User::find($flottage_interne->id_user);
 
                 if(
@@ -851,7 +793,7 @@ class Flottage_interneController extends Controller
                     'data' => ['flottages' => $flottages]
                 ]
             );
-        }else {
+        } else {
 
             // Renvoyer une erreur
             return response()->json(
@@ -864,5 +806,50 @@ class Flottage_interneController extends Controller
 
         }
 
+    }
+
+    // Build transfers return data
+    private function transfersResponse($tranfers)
+    {
+        $returnedTransfers = [];
+
+        $connected_user_role = Auth::user()->roles->first()->name;
+
+        foreach($tranfers as $flottage_interne)
+        {
+            //recuperer la puce du superviseur
+            $puce_emetrice = Puce::find($flottage_interne->id_sim_from);
+
+            //recuperer la puce du gestionnaire de flotte
+            $puce_receptrice = Puce::find($flottage_interne->id_sim_to);
+
+            //recuperer celui qui a effectué le flottage
+            $superviseur = User::find($flottage_interne->id_user);
+
+            if ($connected_user_role === Roles::RECOUVREUR) {
+                if(
+                    ($puce_emetrice->rz !== null && $puce_emetrice->rz->id === Auth::user()->id) ||
+                    ($puce_receptrice->rz !== null && $puce_receptrice->rz->id === Auth::user()->id)
+                ) {
+                    // Take only the current collector receiving sims
+                    $returnedTransfers[] = [
+                        'puce_receptrice' => $puce_receptrice,
+                        'puce_emetrice' => $puce_emetrice,
+                        'utilisateur' => $superviseur,
+                        'flottage' => $flottage_interne
+                    ];
+                }
+            } else {
+                // Take all if it is not a collector
+                $returnedTransfers[] = [
+                    'puce_receptrice' => $puce_receptrice,
+                    'puce_emetrice' => $puce_emetrice,
+                    'utilisateur' => $superviseur,
+                    'flottage' => $flottage_interne
+                ];
+            }
+        }
+
+        return $returnedTransfers;
     }
 }

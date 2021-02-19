@@ -24,7 +24,7 @@ class Statut
 
     //types de puce
     const AGENT = 'AGENT';
-    const ETP = 'AGENT ETP';
+    const RESOURCE = 'RESSOURCE';
     const FLOTTAGE = 'FLOTTAGE';
     const CORPORATE = 'CORPORATE';
     const FLOTTAGE_SECONDAIRE = 'MASTER SIM';

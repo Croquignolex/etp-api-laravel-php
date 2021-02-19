@@ -21,9 +21,11 @@ class ZoneController extends Controller
      */
     function __construct()
     {
+        $agent = Roles::AGENT;
         $recouvreur = Roles::RECOUVREUR;
         $superviseur = Roles::SUPERVISEUR;
-        $this->middleware("permission:$superviseur|$recouvreur");
+        $ges_flotte = Roles::GESTION_FLOTTE;
+        $this->middleware("permission:$recouvreur|$superviseur|$ges_flotte|$agent");
     }
 
     /**
@@ -633,54 +635,34 @@ class ZoneController extends Controller
      */
     public function list()
     {
-        if (Zone::where('deleted_at', null)) {
-            $zones = Zone::where('deleted_at', null)->get();
+        $zones = Zone::orderBy('created_at', 'desc')->paginate(6);
 
-			$returenedZone = [];
-            foreach($zones as $zone)
-			{
-				$agents = [];
-//				$recouvreurs = [];
+        $zones_response =  $this->zonesResponse($zones->items());
 
-                $users = $zone->users;
-				 foreach($users as $user)
-				 {
-					 $userRole = $user->roles->first()->name;
-					 $user_agent = Agent::where('id_user', $user->id)->first();
-					 if($userRole === Roles::AGENT)
-					 {
-						 $agents[] = ['user' => $user, 'agent' => $user_agent];
-						  //$user_zones = json_decode($user->id_zone);
-						  //if(array_search($zone->id, $user_zones)) $agents[] = $user;
-					 }
-//					 else if($userRole === Roles::RECOUVREUR)
-//					 {
-//						 $recouvreurs[] = $user;
-//						 //$user_zones = json_decode($user->id_zone);
-//						 //if(array_search($zone->id, $user_zones)) $recouvreurs[] = $user;
-//					 }
-				 }
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'zones' => $zones_response,
+                'hasMoreData' => $zones->hasMorePages(),
+            ]
+        ]);
+    }
 
-                $returenedZone[] = ['zone' => $zone, 'agents' => $agents, 'recouvreur' => $zone->responsable];
-            }
+    /**
+     * //lister toutes les zone
+     */
+    public function list_all()
+    {
+        $zones = Zone::orderBy('created_at', 'desc')->get();
 
-
-            return response()->json(
-                [
-                    'message' => '',
-                    'status' => true,
-                    'data' => ['zones' => $returenedZone]
-                ]
-            );
-         }else{
-            return response()->json(
-                [
-                    'message' => 'pas de zone à lister',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
-         }
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'zones' => $this->zonesResponse($zones)
+            ]
+        ]);
     }
 
     /**
@@ -822,5 +804,18 @@ class ZoneController extends Controller
                 ]
             );
         }
+    }
+
+    // Build zones return data
+    private function zonesResponse($zones)
+    {
+        $returnedZones = [];
+
+        foreach($zones as $zone)
+        {
+            $returnedZones[] = ['zone' => $zone, 'recouvreur' => $zone->responsable];
+        }
+
+        return $returnedZones;
     }
 }

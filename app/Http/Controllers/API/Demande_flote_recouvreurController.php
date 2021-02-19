@@ -2,35 +2,30 @@
 
 namespace App\Http\Controllers\API;
 
+use App\User;
+use App\Role;
+use App\Puce;
 use App\Agent;
+use App\Enums\Roles;
 use App\Demande_flote;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
 use App\Events\NotificationsEvent;
-use App\Enums\Roles;
-use App\User;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use App\Notifications\Demande_flotte as Notif_demande_flotte;
-use App\Flote;
-use App\Puce;
-use App\Role;
-use Illuminate\Support\Facades\Auth;
 
 class Demande_flote_recouvreurController extends Controller
 {
     /**
-
      * les conditions de lecture des methodes
-
      */
-
-    function __construct(){
-
+    function __construct()
+    {
         $superviseur = Roles::SUPERVISEUR;
         $recouvreur = Roles::RECOUVREUR;
         $ges_flotte = Roles::GESTION_FLOTTE;
         $this->middleware("permission:$recouvreur|$superviseur|$ges_flotte");
-
     }
 
     /**
@@ -45,42 +40,35 @@ class Demande_flote_recouvreurController extends Controller
             'id_puce' => ['required', 'Numeric']
         ]);
         if ($validator->fails()) {
-            return response()->json(
-                [
-                    'message' => "Le formulaire contient des champs mal renseignés",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
-        if (!Agent::find($request->id_agent)) {
-            return response()->json(
-                [
-                    'message' => "Cet Agent n'existe pas",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+        if (!User::find($request->id_agent)) {
+            return response()->json([
+                'message' => "Cet Agent n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         if (!Puce::find($request->id_puce)) {
-            return response()->json(
-                [
-                    'message' => "Cette Puce n'existe pas",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Cette Puce n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         //recuperer l'utilisateur connecté (c'est lui l'agent)
         $add_by = Auth::user();
 
         //recuperer l'agent concerné
-        $agent = Agent::find($request->id_agent);
-
-        $user = User::find($agent->id_user);
+        $user = User::find($request->id_agent);
+        $agent = $user->agent->first();
 
         // Récupérer les données validées
 
@@ -126,14 +114,27 @@ class Demande_flote_recouvreurController extends Controller
                 }
             }
 
+            //recuperer l'utilisateur concerné
+            $user = $demande_flote->user;
+
+            //recuperer l'agent concerné
+            $agent = $user->agent->first();
+
+            //recuperer le demandeur
+            $demandeur = User::find($demande_flote->add_by);
+
             // Renvoyer un message de succès
-            return response()->json(
-                [
-                    'message' => 'Demande de Flote créée',
-                    'status' => true,
-                    'data' => ['demande' => $demande_flote]
+            return response()->json([
+                'message' => 'Demande de Flote créée',
+                'status' => true,
+                'data' => [
+                    'demande' => $demande_flote,
+                    'demandeur' => $demandeur,
+                    'agent' => $agent,
+                    'user' => $user,
+                    'puce' => $demande_flote->puce
                 ]
-            );
+            ]);
         } else {
             // Renvoyer une erreur
             return response()->json(
@@ -360,5 +361,26 @@ class Demande_flote_recouvreurController extends Controller
                 ]
             );
         }
+    }
+
+    // Build fleets return data
+    private function fleetsResponse($fleets)
+    {
+        $demandes_flotes = [];
+
+        foreach($fleets as $demande_flote) {
+            //recuperer l'utilisateur concerné
+            $user = $demande_flote->user;
+
+            //recuperer l'agent concerné
+            $agent = Agent::where('id_user', $user->id)->first();
+
+            //recuperer le demandeur
+            $demandeur = User::find($demande_flote->add_by);
+
+            $demandes_flotes[] = ['demande' => $demande_flote, 'demandeur' => $demandeur, 'agent' => $agent, 'user' => $user, 'puce' => $demande_flote->puce];
+        }
+
+        return $demandes_flotes;
     }
 }

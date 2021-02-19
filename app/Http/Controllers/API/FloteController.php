@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Flote;
 use App\Puce;
+use App\Flote;
 use App\Enums\Roles;
+use App\User;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
@@ -12,18 +13,14 @@ use Illuminate\Support\Facades\Validator;
 class FloteController extends Controller
 {
 	/**
-
      * les conditions de lecture des methodes
-
      */
-
     function __construct()
     {
+        $recouvreur = Roles::RECOUVREUR;
         $superviseur = Roles::SUPERVISEUR;
         $ges_flotte = Roles::GESTION_FLOTTE;
-        $recouvreur = Roles::RECOUVREUR;
         $this->middleware("permission:$superviseur|$ges_flotte|$recouvreur");
-
     }
 
     /**
@@ -36,16 +33,14 @@ class FloteController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string']
         ]);
-        if ($validator->fails()) {
-            return response()->json(
-                [
-                    'message' => "Le formulaire contient des champs mal renseignés",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
-        }
 
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
+        }
 
         // Récupérer les données validées
 
@@ -60,25 +55,23 @@ class FloteController extends Controller
         ]);
 
         // creation de La flote
-        if ($flote->save()) {
-
+        if ($flote->save())
+        {
             // Renvoyer un message de succès
-            return response()->json(
-                [
-                    'message' => 'Flote créée',
-                    'status' => true,
-                    'data' => ['flote' => $flote]
+            return response()->json([
+                'message' => 'Opérateur crée avec succès',
+                'status' => true,
+                'data' => [
+                    'flote' => $flote
                 ]
-            );
+            ]);
         } else {
             // Renvoyer une erreur
-            return response()->json(
-                [
-                    'message' => 'erreur lors de la Creation',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => 'Erreur lors de la Creation',
+                'status' => false,
+                'data' => null
+            ]);
         }
     }
 
@@ -91,25 +84,22 @@ class FloteController extends Controller
         $flote = Flote::find($id);
 
         //Envoie des information
-        if(Flote::find($id)){
-
-            return response()->json(
-                [
-                    'message' => '',
-                    'status' => true,
-                    'data' => ['flote' => $flote, 'puces' => $flote->puces]
+        if(Flote::find($id))
+        {
+            return response()->json([
+                'message' => '',
+                'status' => true,
+                'data' => [
+                    'flote' => $flote,
+                    'puces' => $flote->puces
                 ]
-            );
-
-        }else{
-
-            return response()->json(
-                [
-                    'message' => 'ecette flote n existe pas',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            ]);
+        } else {
+            return response()->json([
+                'message' => "Cet opérateur n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
         }
     }
 
@@ -123,18 +113,16 @@ class FloteController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string']
         ]);
+
         if ($validator->fails()) {
-            return response()->json(
-                [
-                    'message' => "Le formulaire contient des champs mal renseignés",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         // Récupérer les données validées
-
         $name = $request->name;
         $description = $request->description;
 
@@ -145,25 +133,23 @@ class FloteController extends Controller
         $flote->nom = $name;
         $flote->description = $description;
 
-
         if ($flote->save()) {
             // Renvoyer un message de succès
-            return response()->json(
-                [
-                    'message' => '',
-                    'status' => true,
-                    'data' => ['flote' => $flote, 'puces' => $flote->puces]
+            return response()->json([
+                'message' => 'Opérateur mis à jour avec succès',
+                'status' => true,
+                'data' => [
+                    'flote' => $flote,
+                    'puces' => $flote->puces
                 ]
-            );
+            ]);
         } else {
             // Renvoyer une erreur
-            return response()->json(
-                [
-                    'message' => 'erreur lors de la modification',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => 'Erreur lors de la modification',
+                'status' => false,
+                'data' => null
+            ]);
         }
     }
 
@@ -175,31 +161,35 @@ class FloteController extends Controller
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
 			'numero' => ['required', 'string', 'max:255', 'unique:puces,numero'],
-            'reference' => ['nullable', 'string', 'max:255','unique:puces,reference'],
-            //'id_agent' => ['required', 'numeric'],
-            //'id_corporate' => ['required', 'numeric'],
+            'reference' => ['nullable', 'string', 'max:255'],
+            'id_agent' => ['nullable', 'numeric'],
+            'id_corporate' => ['nullable', 'numeric'],
+            'id_rz' => ['nullable', 'numeric'],
+            'id_ressource' => ['nullable', 'numeric'],
             'nom' => ['required', 'string'],
             'description' => ['nullable', 'string'],
             'type' => ['required', 'numeric'],
         ]);
         if ($validator->fails()) {
-            return response()->json(
-                [
-                    'message' => "Le formulaire contient des champs mal renseignés",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         // Récupérer les données validées
 		$nom = $request->nom;
         $type = $request->type;
+        $id_rz = $request->id_rz;
         $numero = $request->numero;
-		$id_agent = $request->id_agent;
         $reference = $request->reference;
         $corporate = $request->id_corporate;
         $description = $request->description;
+
+        $id_agent = $reference === Roles::AGENT ? $request->id_agent : $request->id_ressource;
+        $user = User::find($id_agent);
+        $agent = $user === null ? null : $user->agent->first()->id;
 
         // rechercher la flote
         $flote = Flote::find($id);
@@ -208,31 +198,28 @@ class FloteController extends Controller
         $puce = $flote->puces()->create([
             'nom' => $nom,
 			'type' => $type,
-			'numero' => $numero,
-			'id_agent' => $id_agent,
+            'id_rz' => $id_rz,
+            'numero' => $numero,
+            'id_agent' => $agent,
             'reference' => $reference,
             'corporate' => $corporate,
-            'description' => $description
-		]);
+            'description' => $description,
+        ]);
 
         if ($puce !== null) {
             // Renvoyer un message de succès
-            return response()->json(
-                [
-                    'message' => '',
-                    'status' => true,
-                    'data' => ['flote' => $flote, 'puces' => $flote->puces]
-                ]
-            );
+            return response()->json([
+                'message' => 'Puce ajoutée avec succès',
+                'status' => true,
+                'data' => ['flote' => $flote, 'puces' => $flote->puces]
+            ]);
         } else {
             // Renvoyer une erreur
-            return response()->json(
-                [
-                    'message' => "Erreur l'ors de l'ajout de la nouvelle puce",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Erreur l'ors de l'ajout de la nouvelle puce",
+                'status' => false,
+                'data' => null
+            ]);
         }
     }
 
@@ -290,31 +277,34 @@ class FloteController extends Controller
      */
     public function list()
     {
-        if (Flote::where('deleted_at', null)) {
-            $flotes = Flote::where('deleted_at', null)->get();
+        $flotes = Flote::orderBy('created_at', 'desc')->paginate(12);
 
-			$returenedFlotes = [];
+        $operators_response =  $this->operatorsResponse($flotes->items());
 
-            foreach($flotes as $flote) {
-                $returenedFlotes[] = ['flote' => $flote, 'puces' => $flote->puces];
-            }
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'flotes' => $operators_response,
+                'hasMoreData' => $flotes->hasMorePages(),
+            ]
+        ]);
+    }
 
-            return response()->json(
-                [
-                    'message' => '',
-                    'status' => true,
-                    'data' => ['flotes' => $returenedFlotes]
-                ]
-            );
-         }else{
-            return response()->json(
-                [
-                    'message' => 'pas de flote à lister',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
-         }
+    /**
+     * //lister toutes les flotes
+     */
+    public function list_all()
+    {
+        $flotes = Flote::orderBy('created_at', 'desc')->get();
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'flotes' => $this->operatorsResponse($flotes)
+            ]
+        ]);
     }
 
     /**
@@ -362,5 +352,17 @@ class FloteController extends Controller
                 ]
             );
          }
+    }
+
+    // Build operators return data
+    private function operatorsResponse($operators)
+    {
+        $returnedOperators = [];
+
+        foreach($operators as $flote) {
+            $returnedOperators[] = ['flote' => $flote];
+        }
+
+        return $returnedOperators;
     }
 }

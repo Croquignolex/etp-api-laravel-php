@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Http\Request;
-use App\User;
 
 /*
 |--------------------------------------------------------------------------
@@ -24,7 +23,14 @@ Route::get('not_login', 'API\LoginController@not_login')->name('not_login');
 //l'utilisateur se connecte
 Route::post('login', 'API\LoginController@login');
 
+// User identification
+Route::post('identification', 'API\LoginController@identification');
+
 Route::group(['middleware' => 'auth:api'], function(){
+
+    // User authentication
+    Route::post('authentication', 'API\LoginController@authentication');
+
     /*
      ///////////////////////GESTION DES UTILISATEURS/////////////////////////
     */
@@ -37,6 +43,18 @@ Route::group(['middleware' => 'auth:api'], function(){
 
             //lister les utilisateurs
             Route::get('list', 'API\UserController@list');
+
+            //lister les recouvreurs
+            Route::get('recouvreurs', 'API\UserController@recouvreurs');
+
+            //lister tous les recouvreurs
+            Route::get('recouvreurs_all', 'API\UserController@recouvreurs_all');
+
+            //lister les gestionnaires
+            Route::get('gestionnaires', 'API\UserController@gestionnaires');
+
+            //lister tous les gestionnaires
+            Route::get('gestionnaires_all', 'API\UserController@gestionnaires_all');
 
             //supprimer l'utilisateur
             Route::post('delete/{id}', 'API\UserController@delete')
@@ -104,10 +122,13 @@ Route::group(['middleware' => 'auth:api'], function(){
         ->where('id', '[0-9]+');
 
         //modification ddu dossier
-        Route::post('edit_folder/{agent}', 'API\AgentController@edit_folder');
+        Route::post('edit_folder/{id}', 'API\AgentController@edit_folder');
 
         //liste des Agents
         Route::get('list_agents', 'API\AgentController@list');
+
+        //liste de tous les Agents
+        Route::get('list_agents_all', 'API\AgentController@list_all');
 
         //supprimer un Agents
         Route::post('delete_agent/{id}', 'API\AgentController@delete')
@@ -161,6 +182,9 @@ Route::group(['middleware' => 'auth:api'], function(){
         //liste des flotes
         Route::get('flote_list', 'API\FloteController@list');
 
+        //liste toutes les flotes
+        Route::get('flote_list_all', 'API\FloteController@list_all');
+
         //details d'une flote'
         Route::get('show_flote/{id}', 'API\FloteController@show')
         ->where('id', '[0-9]+');
@@ -190,8 +214,17 @@ Route::group(['middleware' => 'auth:api'], function(){
         //Creer une puce
         Route::post('store_puce', 'API\PuceController@store');
 
-        //liste des puce
+        //liste des puces
         Route::get('puce_list', 'API\PuceController@list');
+
+        //liste des puces d'un responsable de zone
+        Route::get('puce_list_agent', 'API\PuceController@list_responsable');
+
+        //liste des puces d'un ressource
+        Route::get('puce_list_resource', 'API\PuceController@list_agent');
+
+        //liste de toiutes les puces
+        Route::get('puce_list_all', 'API\PuceController@list_all');
 
         //details d'une puce'
         Route::get('show_puce/{id}', 'API\PuceController@show')
@@ -241,7 +274,7 @@ Route::group(['middleware' => 'auth:api'], function(){
             ->where('id', '[0-9]+');
 
             //Creer une demande de flote
-            Route::post('demande_flote', 'API\DemandeflotteController@store');
+            Route::post('demande_flote/{id}', 'API\DemandeflotteController@store');
 
             //lister mes demandes de flotes peu importe le statut
             Route::get('list_all_demandes_flote', 'API\DemandeflotteController@list_all_status');
@@ -264,11 +297,24 @@ Route::group(['middleware' => 'auth:api'], function(){
             //lister mes demandes de flotes peu importe le statut
             Route::get('list_demandes_flote', 'API\Demande_flote_recouvreurController@list_all_status');
 
-		//----
-			//lister mes demandes de flotes (gestionnaire de flotte ou les admin)
+            //----
+            //lister mes demandes de flotes responsable de zene
+            Route::get('list_demandes_flote_general_collector', 'API\DemandeflotteController@list_demandes_flote_collector');
+
+
+            //lister mes demandes de flotes (gestionnaire de flotte ou les admin)
             Route::get('list_demandes_flote_general', 'API\DemandeflotteController@list_demandes_flote_general');
 
-			//modifier d'une demande de flote (gestionnaire de flotte ou les admin)
+            //lister toutes mes demandes de flotes (gestionnaire de flotte ou les admin)
+            Route::get('list_demandes_flote_general_all', 'API\DemandeflotteController@list_demandes_flote_general_all');
+
+            //lister toutes mes demandes de flotes (responsable de zone)
+            Route::get('list_demandes_flote_collector_all', 'API\DemandeflotteController@list_demandes_flote_collector_all');
+
+            //lister toutes mes demandes de flotes (agent)
+            Route::get('list_demandes_flote_agent_all', 'API\DemandeflotteController@list_demandes_flote_agent_all');
+
+            //modifier d'une demande de flote (gestionnaire de flotte ou les admin)
             Route::post('modifier_demandes_flote_general/{id}', 'API\DemandeflotteController@modifier_general')
             ->where('id', '[0-9]+');
         /*
@@ -288,10 +334,13 @@ Route::group(['middleware' => 'auth:api'], function(){
             ->where('id', '[0-9]+');
 
             //Creer une demande de destockage
-            Route::post('demande_destockage', 'API\DemandedestockageController@store');
+            Route::post('demande_destockage/{id}', 'API\DemandedestockageController@store');
 
             //lister mes demandes de destockages peu importe le statut
             Route::get('list_all_demandes_destockage', 'API\DemandedestockageController@list_all_status');
+
+            //lister mes demandes de destockages peu importe le statut
+            Route::get('list_all_demandes_destockage_all', 'API\DemandedestockageController@list_all_status_all');
 
         //pour un Agent
 			Route::post('annuler_demandes_destockage_agent/{id}', 'API\Demande_destockage_recouvreurController@annuler')
@@ -311,6 +360,9 @@ Route::group(['middleware' => 'auth:api'], function(){
             //lister mes demandes de destockage peu importe le statut
             Route::get('list_demandes_destockage', 'API\Demande_destockage_recouvreurController@list_all_status');
 
+            //lister toutes mes demandes de destockage peu importe le statut responsable de zone
+            Route::get('list_demandes_destockage_all', 'API\Demande_destockage_recouvreurController@list_all_status_all');
+
             //reponse d'un responsable a une demande
             Route::post('reponse_demandes_destockage/{id}', 'API\Demande_destockage_recouvreurController@reponse');
         /*
@@ -323,6 +375,9 @@ Route::group(['middleware' => 'auth:api'], function(){
 
         //liste des zone
         Route::get('zone_list', 'API\ZoneController@list');
+
+        //liste de toutes les zone
+        Route::get('zone_list_all', 'API\ZoneController@list_all');
 
         //details d'une zone'
         Route::get('show_zone/{id}', 'API\ZoneController@show')
@@ -377,7 +432,7 @@ Route::group(['middleware' => 'auth:api'], function(){
         Route::get('list_all_flottage', 'API\FlotageController@list_all');
 
         //lister les Flottages peu importe le statut pour un agent
-        Route::get('list_all_flottage_agent/{id}', 'API\FlotageController@list_all_agent')
+        Route::get('list_all_flottage_agent', 'API\FlotageController@list_all_agent')
             ->where('id', '[0-9]+');
 
         //lister les Flottages peu importe le statut pour un responsable de zone
@@ -400,7 +455,7 @@ Route::group(['middleware' => 'auth:api'], function(){
         Route::post('flottage_by_rz', 'API\Flottage_rzController@flottage_by_rz');
 
             //lister les Flottages d'un responsable de zonne
-        Route::get('list_flottage_rz_by_rz/{id}', 'API\Flottage_rzController@list_flottage_rz_by_rz')
+        Route::get('list_flottage_rz_by_rz', 'API\Flottage_rzController@list_flottage_rz_by_rz')
             ->where('id', '[0-9]+');
 
         //lister les Flottages rz pour un agent precis
@@ -432,8 +487,6 @@ Route::group(['middleware' => 'auth:api'], function(){
         Route::get('list_flottage_anonyme', 'API\FlotageController@list_flottage_anonyme')
             ->where('id', '[0-9]+');
 
-
-
            /*
     //////////////////////Approvisionnement des Puces de ETP/////////////////////
     */
@@ -459,14 +512,13 @@ Route::group(['middleware' => 'auth:api'], function(){
 
         //lister les approvisionnement
         Route::get('list_approvisionnement', 'API\ApprovisionnementEtpController@list_all');
-        Route::get('list_approvisionnement_collector/{id}', 'API\ApprovisionnementEtpController@list_all_collector')
-            ->where('id', '[0-9]+');
+        Route::get('list_approvisionnement_collector', 'API\ApprovisionnementEtpController@list_all_collector');
 
         // lister les destockage
         Route::get('list_destockage', 'API\ApprovisionnementEtpController@list_all_destockage');
-        Route::get('list_destockage_collector/{id}', 'API\ApprovisionnementEtpController@list_all_destockage_collector')
+        Route::get('list_destockage_collector', 'API\ApprovisionnementEtpController@list_all_destockage_collector')
             ->where('id', '[0-9]+');
-        Route::get('list_destockage_agent/{id}', 'API\ApprovisionnementEtpController@list_all_destockage_agent')
+        Route::get('list_destockage_agent', 'API\ApprovisionnementEtpController@list_all_destockage_agent')
             ->where('id', '[0-9]+');
         /*
     //////////////////////Recouvrement/////////////////////
@@ -481,16 +533,19 @@ Route::group(['middleware' => 'auth:api'], function(){
         //lister les Recouvrement peu importe le statut
         Route::get('list_all_recouvrement', 'API\RecouvrementController@list_all');
 
+        //lister tous les Recouvrement peu importe le statut
+        Route::get('list_all_recouvrement_all', 'API\RecouvrementController@list_all_all');
+
         //lister les Recouvrements relatifs à un flottage precis
         Route::get('list_recouvrement/{id}', 'API\RecouvrementController@list_recouvrement')
         ->where('id', '[0-9]+');
 
         //lister les Recouvrements d'un responsable de zone precis
-        Route::get('list_recouvrement_by_rz/{id}', 'API\RecouvrementController@list_recouvrement_by_rz')
+        Route::get('list_recouvrement_by_rz', 'API\RecouvrementController@list_recouvrement_by_rz')
         ->where('id', '[0-9]+');
 
         //lister les Recouvrements d'un agent precis
-        Route::get('list_recouvrement_by_agent/{id}', 'API\RecouvrementController@list_recouvrement_by_agent')
+        Route::get('list_recouvrement_by_agent', 'API\RecouvrementController@list_recouvrement_by_agent')
         ->where('id', '[0-9]+');
 
         //Confirmation par le gestionnaire de flotte, elle atteste avoir recu les espèces
@@ -510,6 +565,9 @@ Route::group(['middleware' => 'auth:api'], function(){
         //lister les Retour flotte peu importe le statut
         Route::get('list_all_retour_flotte', 'API\Retour_flotteController@list_all');
 
+        //lister tous les Retour flotte peu importe le statut
+        Route::get('list_all_retour_flotte_all', 'API\Retour_flotteController@list_all_all');
+
         //lister les Retour flotte relatifs à un flottage precis
         Route::get('list_retour_flotte/{id}', 'API\Retour_flotteController@list_retour_flotte')
         ->where('id', '[0-9]+');
@@ -519,11 +577,11 @@ Route::group(['middleware' => 'auth:api'], function(){
         ->where('id', '[0-9]+');
 
         //lister les Recouvrements d'un responsable de zone precis
-        Route::get('list_retour_flotte_by_rz/{id}', 'API\Retour_flotteController@list_retour_flotte_by_rz')
+        Route::get('list_retour_flotte_by_rz', 'API\Retour_flotteController@list_retour_flotte_by_rz')
             ->where('id', '[0-9]+');
 
         //lister les Retour flotte d'un agent precis
-        Route::get('list_retour_flotte_by_agent/{id}', 'API\Retour_flotteController@list_retour_flotte_by_agent')
+        Route::get('list_retour_flotte_by_agent', 'API\Retour_flotteController@list_retour_flotte_by_agent')
         ->where('id', '[0-9]+');
 
         //Confirmation par le gestionnaire de flotte, elle atteste avoir recu la flotte
@@ -534,6 +592,9 @@ Route::group(['middleware' => 'auth:api'], function(){
 
         //liste des corporates
         Route::get('corporate_list', 'API\CorporateController@list');
+
+        //liste des corporates
+        Route::get('corporate_list_all', 'API\CorporateController@list_all');
 
         //Creer un corporate
         Route::post('store_corporate', 'API\CorporateController@store');
@@ -592,7 +653,7 @@ Route::group(['middleware' => 'auth:api'], function(){
 
 
             //Supprimer notification
-            Route::post('delette_notifications/{id}', 'API\NotificationsController@delette_notifications');
+            Route::post('delete_notifications/{id}', 'API\NotificationsController@delete_notifications');
 
 
             /*
@@ -608,8 +669,6 @@ Route::group(['middleware' => 'auth:api'], function(){
 
         //lister les Flottages Interne
         Route::get('list_all_flottage_interne', 'API\Flottage_interneController@list_all');
-
-
 
         //Creer un Flottage de la gestionnaire de flotte vers Responsable de zonne
         Route::post('flottage_rz', 'API\Flottage_rzController@store');
@@ -637,8 +696,6 @@ Route::group(['middleware' => 'auth:api'], function(){
 //todo: new code
         //Creer un Flottage d'un Agent ETP vers un gestionnaire de flotte
         Route::post('flottage_interne_ae_gf', 'API\Flottage_interneController@flottage_interne_ae_gf');
-
-
 
     /*
 ////////////////////// Gestion des soldes/////////////////////
@@ -672,12 +729,12 @@ Route::group(['middleware' => 'auth:api'], function(){
         //lister les Encaissements
         Route::get('encaissement_list', 'API\CaisseController@encaissement_list');
 
-
+        //lister toutes les Encaissements
+        Route::get('encaissement_list_all', 'API\CaisseController@encaissement_list_all');
 
         /*
     //////////////////////Décaissement (la gestionnaire de flotte donne de l'argent à un responsable de zonne)/////////////////////
     */
-
         //creer un Decaissement
         Route::post('decaissement', 'API\CaisseController@decaissement');
 
@@ -687,6 +744,9 @@ Route::group(['middleware' => 'auth:api'], function(){
 
         //lister les Decaissements
         Route::get('decaissement_list', 'API\CaisseController@decaissement_list');
+
+        //lister tous les Decaissements
+        Route::get('decaissement_list_all', 'API\CaisseController@decaissement_list_all');
 
         /*
     //////////////////////passation de service entre les gestionnaires de flotte/////////////////////
@@ -698,7 +758,8 @@ Route::group(['middleware' => 'auth:api'], function(){
         //lister les passation de service
         Route::get('passations_list', 'API\CaisseController@passations_list');
 
-
+        //lister toutes les passation de service
+        Route::get('passations_list_all', 'API\CaisseController@passations_list_all');
 /*
     //////////////////////Attribuer une puce à un responsable de zonne/////////////////////
     */

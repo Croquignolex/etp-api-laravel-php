@@ -9,6 +9,7 @@ class Roles
 
     const ADMIN = 'ADMIN';
     const AGENT = 'AGENT';
+    const RESSOURCE = 'RESSOURCE';
     const GESTION_FLOTTE = 'GESTIONNAIRE DE FLOTTE';
     const RECOUVREUR = 'RESPONSABLE DE ZONNE';
     const SUPERVISEUR = 'SUPERVISEUR';

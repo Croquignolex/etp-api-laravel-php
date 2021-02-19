@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Puce;
+use App\Type_puce;
 use App\Corporate;
 use App\Enums\Roles;
 use App\Enums\Statut;
-use App\Puce;
-use App\Type_puce;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
@@ -16,12 +16,10 @@ use App\Http\Resources\Corporate as CorporateResource;
 class CorporateController extends Controller
 {
     /**
-
      * les conditions de lecture des methodes
-
      */
-    function __construct(){
-
+    function __construct()
+    {
         $superviseur = Roles::SUPERVISEUR;
         $this->middleware("permission:$superviseur");
     }
@@ -43,13 +41,11 @@ class CorporateController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(
-                [
-                    'message' => "Le formulaire contient des champs mal renseignés",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         // Récupérer les données validées
@@ -75,56 +71,49 @@ class CorporateController extends Controller
             'adresse' => $adresse,
             'numeros_agents' => $numeros_agents,
             'description' => $description,
-
         ]);
 
         // creation de La corporate
         if ($corporate->save()) {
             // Renvoyer un message de succès
-            return response()->json(
-                [
-                    'message' => '',
-                    'status' => true,
-                    'data' => null
+            return response()->json([
+                'message' => 'Entreprise crée avec succès',
+                'status' => true,
+                'data' => [
+                    'entreprise' => $corporate
                 ]
-            );
+            ]);
         } else {
             // Renvoyer une erreur
-            return response()->json(
-                [
-                    'message' => 'erreur lors de la Creation',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => 'Erreur lors de la Creation',
+                'status' => false,
+                'data' => null
+            ]);
         }
     }
 
      /**
-
      * details d'une corporate
-
      */
     public function show($id)
     {
         $corporate = Corporate::find($id);
 
         if (isset($corporate)) {
-            return response()->json(
-                [
-                    'message' => '',
-                    'status' => true,
-                    'data' => new CorporateResource($corporate)
+        return response()->json([
+                'message' => '',
+                'status' => true,
+                'data' => [
+                    'entreprise' => new CorporateResource($corporate)
                 ]
-            );
+            ]);
         } else {
-            return response()->json(
-                [
-                    'message' => "une erreur c'est produite",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Une erreur c'est produite",
+                'status' => false,
+                'data' => null
+            ]);
         }
     }
 
@@ -143,13 +132,11 @@ class CorporateController extends Controller
             'description' => ['nullable', 'string']
         ]);
         if ($validator->fails()) {
-            return response()->json(
-                [
-                    'message' => "Le formulaire contient des champs mal renseignés",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
 		}
 
         // Récupérer les données validées
@@ -172,23 +159,20 @@ class CorporateController extends Controller
         $corporate->description = $description;
 
         if ($corporate->save()) {
-            return response()->json(
-                [
-                    'message' => '',
-                    'status' => true,
-                    'data' => new CorporateResource($corporate)
+            return response()->json([
+                'message' => "Informations de l'entreprise mises à jour avec succès",
+                'status' => true,
+                'data' => [
+                    'entreprise' => new CorporateResource($corporate)
                 ]
-            );
+            ]);
         } else {
-
             // Renvoyer une erreur
-            return response()->json(
-                [
-                    'message' => 'erreur lors de la modification',
-                    'status'=>false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => 'Erreur lors de la modification',
+                'status'=>false,
+                'data' => null
+            ]);
         }
 
     }
@@ -198,13 +182,32 @@ class CorporateController extends Controller
      */
     public function list()
     {
-        return response()->json(
-            [
-                'message' => '',
-                'status' => true,
-                'data' => CorporateResource::collection(Corporate::all())
+        $corporates = Corporate::orderBy('created_at', 'desc')->paginate(12);
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'entreprises' => CorporateResource::collection($corporates->items()),
+                'hasMoreData' => $corporates->hasMorePages(),
             ]
-        );
+        ]);
+    }
+
+    /**
+     * ////lister toutes les corporates
+     */
+    public function list_all()
+    {
+        $corporates = Corporate::orderBy('created_at', 'desc')->get();
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'entreprises' => CorporateResource::collection($corporates)
+            ]
+        ]);
     }
 
     /**
@@ -242,13 +245,11 @@ class CorporateController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(
-                [
-                    'message' => "Le formulaire contient des champs mal renseignés",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         if ($corporate = Corporate::find($id)) {
@@ -261,22 +262,20 @@ class CorporateController extends Controller
             $corporate->dossier = $dossier;
 
             if ($corporate->save()) {
-                return response()->json(
-                    [
-                        'message' => '',
-                        'status' => true,
-                        'data' => new CorporateResource($corporate)
+                return response()->json([
+                    'message' => 'Document entreprise mis à jour avec succès',
+                    'status' => true,
+                    'data' => [
+                        'entreprise' => new CorporateResource($corporate)
                     ]
-                );
+                ]);
             }
         }
-        return response()->json(
-            [
-                'message' => "erreur lors de la modification",
-                'status' => true,
-                'data' => null
-            ]
-        );
+        return response()->json([
+            'message' => "Erreur lors de la modification",
+            'status' => true,
+            'data' => null
+        ]);
     }
 
     /**
@@ -309,24 +308,24 @@ class CorporateController extends Controller
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
             'numero' => ['required', 'string', 'max:255', 'unique:puces,numero'],
-            'reference' => ['nullable', 'string', 'max:255','unique:puces,reference'],
+            'reference' => ['nullable', 'string', 'max:255'],
             'id_flotte' => ['required', 'numeric'],
             'nom' => ['required', 'string'],
             'description' => ['nullable', 'string']
         ]);
         if ($validator->fails()) {
-            return response()->json(
-                [
-                    'message' => "Le formulaire contient des champs mal renseignés",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         // Récupérer les données validées
+        $reference = $request->reference;
+
         $nom = $request->nom;
-        $type = $request->type;
+        $type = Type_puce::where('name', $reference)->first()->id;
         $numero = $request->numero;
         $id_flotte = $request->id_flotte;
         $reference = $request->reference;
@@ -342,27 +341,25 @@ class CorporateController extends Controller
             'reference' => $reference,
             'id_flotte' => $id_flotte,
             'description' => $description,
-            'type' => Type_puce::where('name', Statut::CORPORATE)->first()->id,
+            'type' => $type,
         ]);
 
         if ($puce !== null) {
             // Renvoyer un message de succès
-            return response()->json(
-                [
-                    'message' => '',
-                    'status' => true,
-                    'data' => new CorporateResource($corporate)
+            return response()->json([
+                'message' => 'Puce ajoutée avec succès',
+                'status' => true,
+                'data' =>  [
+                    'entreprise' => new CorporateResource($corporate)
                 ]
-            );
+            ]);
         } else {
             // Renvoyer une erreur
-            return response()->json(
-                [
-                    'message' => "Erreur l'ors de l'ajout de la nouvelle puce",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Erreur l'ors de l'ajout de la nouvelle puce",
+                'status' => false,
+                'data' => null
+            ]);
         }
     }
 
@@ -414,5 +411,4 @@ class CorporateController extends Controller
             );
         }
     }
-
 }

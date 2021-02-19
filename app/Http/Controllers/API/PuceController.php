@@ -9,6 +9,7 @@ use App\Enums\Roles;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 class PuceController extends Controller
@@ -58,7 +59,12 @@ class PuceController extends Controller
         $nom = $request->nom;
 		$type = $request->type;
         $numero = $request->numero;
-        $id_agent = $request->id_agent;
+
+        $user = User::find($request->id_agent);
+        $agent = $user->agent->first();
+
+        $id_agent = $agent->id;
+
         $id_corporate = $request->id_corporate;
         $id_recouvreur = $request->id_recouvreur;
         $reference = $request->reference;
@@ -111,33 +117,29 @@ class PuceController extends Controller
         $puce = Puce::find($id);
 
         //Envoie des information
-        if(puce::find($id)){
+        if(Puce::find($id)) {
 			$id_agent = $puce->id_agent;
 			$agent = is_null($id_agent) ? $id_agent : $puce->agent;
 			$user = is_null($id_agent) ? $id_agent : User::find($puce->agent->id_user);
-            return response()->json(
-                [
-                    'message' => '',
-                    'status' => true,
-                    'data' => [
-                        'puce' => $puce,
-                        'flote' => $puce->flote,
-                        'type' => $puce->type_puce,
-                        'agent' => $agent,
-                        'user' => $user,
-                        'corporate' => $puce->company,
-                        'recouvreur' => $puce->rz,
-                    ]
+            return response()->json([
+                'message' => '',
+                'status' => true,
+                'data' => [
+                    'puce' => $puce,
+                    'flote' => $puce->flote,
+                    'type' => $puce->type_puce,
+                    'agent' => $agent,
+                    'user' => $user,
+                    'corporate' => $puce->company,
+                    'recouvreur' => $puce->rz,
                 ]
-            );
-        }else{
-            return response()->json(
-                [
-                    'message' => "Cette puce n'existe pas",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            ]);
+        } else {
+            return response()->json([
+                'message' => "Cette puce n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
         }
     }
 
@@ -410,48 +412,102 @@ class PuceController extends Controller
         }
     }
 
-	/**
+    /**
      * //lister les puces
      */
     public function list()
     {
-        if (Puce::where('deleted_at', null)) {
-            $puces = Puce::where('deleted_at', null)->get();
+        $puces = Puce::orderBy('created_at', 'desc')->paginate(6);
 
-			$returenedPuces = [];
+        $sims_response =  $this->simsResponse($puces->items());
 
-            foreach($puces as $puce) {
-				$id_agent = $puce->id_agent;
-				$agent = is_null($id_agent) ? $id_agent : $puce->agent;
-				$user = is_null($id_agent) ? $id_agent : User::find($puce->agent->id_user);
-				//$flote = Flote::find($puce->id_flotte);
-				//$nom = $flote->nom;
-                $returenedPuces[] = [
-                    'puce' => $puce,
-                    'flote' => $puce->flote,
-                    'type' => $puce->type_puce,
-                    'agent' => $agent,
-                    'user' => $user,
-                    'recouvreur' => $puce->rz
-                ];
-            }
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'puces' => $sims_response,
+                'hasMoreData' => $puces->hasMorePages(),
+            ]
+        ]);
+    }
 
-            return response()->json(
-                [
-                    'message' => '',
-                    'status' => true,
-                    'data' => ['puces' => $returenedPuces]
+    /**
+     * //lister les puces d'un reesponsable de zone
+     */
+    public function list_responsable()
+    {
+        $user = Auth::user();
+        $userRole = $user->roles->first()->name;
+
+        if($userRole === Roles::RECOUVREUR) {
+            $puces = Puce::where('id_rz', $user->id)->orderBy('created_at', 'desc')->paginate(6);
+
+            $sims_response =  $this->simsResponse($puces->items());
+
+            return response()->json([
+                'message' => '',
+                'status' => true,
+                'data' => [
+                    'puces' => $sims_response,
+                    'hasMoreData' => $puces->hasMorePages(),
                 ]
-            );
-         }else{
-            return response()->json(
-                [
-                    'message' => 'Pas de puce à lister',
-                    'status' => false,
-                    'data' => null
+            ]);
+        } else {
+            return response()->json([
+                'message' => "Cet utilisateur n'est pas un responsable de zone",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+    }
+
+    /**
+     * //lister les puces d'un agent
+     */
+    public function list_agent()
+    {
+        $user = Auth::user();
+        $agent = $user->agent->first();
+        $userRole = $user->roles->first()->name;
+
+        if($userRole === Roles::AGENT || $userRole === Roles::RESSOURCE) {
+            $puces = Puce::where('id_agent', $agent->id)->orderBy('created_at', 'desc')->paginate(6);
+
+            $sims_response =  $this->simsResponse($puces->items());
+
+            return response()->json([
+                'message' => '',
+                'status' => true,
+                'data' => [
+                    'puces' => $sims_response,
+                    'hasMoreData' => $puces->hasMorePages(),
                 ]
-            );
-         }
+            ]);
+        } else {
+            return response()->json([
+                'message' => "Cet utilisateur n'est pas un agent/ressource",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+    }
+
+    /**
+     * //lister toutes les $sims_response
+     */
+    public function list_all()
+    {
+        $puces = Puce::orderBy('created_at', 'desc')->get();
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'puces' => $this->simsResponse($puces)
+            ]
+        ]);
     }
 
     /**
@@ -581,22 +637,42 @@ class PuceController extends Controller
         $types = Type_puce::all();
 
         if ($types != null) {
-            return response()->json(
-                [
-                    'message' => '',
-                    'status' => true,
-                    'data' => ['types' => $types]
-                ]
-            );
-         }else{
-            return response()->json(
-                [
-                    'message' => 'Aucun type de puce trouve',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => '',
+                'status' => true,
+                'data' => ['types' => $types]
+            ]);
+         } else{
+            return response()->json([
+                'message' => 'Aucun type de puce trouve',
+                'status' => false,
+                'data' => null
+            ]);
          }
     }
 
+    // Build sims return data
+    private function simsResponse($sims)
+    {
+        $returenedPuces = [];
+
+        foreach($sims as $puce) {
+
+            $id_agent = $puce->id_agent;
+            $agent = is_null($id_agent) ? $id_agent : $puce->agent;
+            $user = is_null($id_agent) ? $id_agent : User::find($puce->agent->id_user);
+
+            $returenedPuces[] = [
+                'puce' => $puce,
+                'user' => $user,
+                'agent' => $agent,
+                'flote' => $puce->flote,
+                'corporate' => $puce->company,
+                'recouvreur' => $puce->rz,
+                'type' => $puce->type_puce,
+            ];
+        }
+
+        return $returenedPuces;
+    }
 }

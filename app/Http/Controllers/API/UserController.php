@@ -21,8 +21,8 @@ class UserController extends Controller
 	/**
      * les conditions de lecture des methodes
      */
-    function __construct(){
-
+    function __construct()
+    {
         $superviseur = Roles::SUPERVISEUR;
         $gestionnaire_flotte = Roles::GESTION_FLOTTE;
         $this->middleware("permission:$superviseur|$gestionnaire_flotte");
@@ -285,6 +285,42 @@ class UserController extends Controller
                 ]
             );
          }
+    }
+
+    /**
+     * //lister tous les recouveurs
+     */
+    public function recouvreurs_all()
+    {
+        $collectors = User::orderBy('created_at', 'desc')->get()->filter(function(User $user) {
+            return ($user->roles->first()->name === Roles::RECOUVREUR);
+        });
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'recouvreurs' => $this->collectorsResponse($collectors)
+            ]
+        ]);
+    }
+
+    /**
+     * //lister tous les gestionnaires
+     */
+    public function gestionnaires_all()
+    {
+        $managers = User::orderBy('created_at', 'desc')->get()->filter(function(User $user) {
+            return ($user->roles->first()->name === Roles::GESTION_FLOTTE);
+        });
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'gestionnaires' => $this->managersResponse($managers)
+            ]
+        ]);
     }
 
     /**
@@ -797,6 +833,37 @@ class UserController extends Controller
                 'data' => ['caisses' => $caisses]
             ]
         );
+    }
 
+    // Build collectors return data
+    private function collectorsResponse($collectors)
+    {
+        $returenedCollectors = [];
+
+        foreach($collectors as $collector) {
+            $returenedCollectors[] = [
+                'recouvreur' => $collector->setHidden(['deleted_at', 'add_by', 'id_zone']),
+                'zone' => $collector->zone,
+                'puces' => $collector->puces,
+                'caisse' => Caisse::where('id_user', $collector->id)->first()
+            ];
+        }
+
+        return $returenedCollectors;
+    }
+
+    // Build managers return data
+    private function managersResponse($managers)
+    {
+        $returenedManagers = [];
+
+        foreach($managers as $manager) {
+            $returenedManagers[] = [
+                'gestionnaire' => $manager->setHidden(['deleted_at', 'add_by', 'id_zone']),
+                'caisse' => Caisse::where('id_user', $manager->id)->first()
+            ];
+        }
+
+        return $returenedManagers;
     }
 }

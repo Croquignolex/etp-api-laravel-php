@@ -1,22 +1,21 @@
 <?php
 
-use Illuminate\Database\Seeder;
-use App\Agent;
 use App\Puce;
+use App\Agent;
+use App\Enums\Roles;
+use Illuminate\Database\Seeder;
 
 class AgentTableSeeder extends Seeder {
 
 	public function run()
 	{
-
-
 		// 'agent_2'
 		$agent_par_defaut = Agent::create(array(
 			'id_creator' => '1',
 			'id_user' => '2',
 			'img_cni' => null,
 			'img_cni_back' => null,
-			'reference' => 'd6020',
+			'reference' => Roles::RESSOURCE,
 			'taux_commission' => 30,
 			'ville' => 'Douala',
 			'point_de_vente' => 'Bonabery',
@@ -28,7 +27,7 @@ class AgentTableSeeder extends Seeder {
 			'id_user' => '3',
 			'img_cni' => null,
 			'img_cni_back' => null,
-			'reference' => 'd6021',
+			'reference' => Roles::AGENT,
 			'taux_commission' => 20,
 			'ville' => 'Douala',
 			'point_de_vente' => 'Round point',

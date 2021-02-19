@@ -15,29 +15,25 @@ use Illuminate\Http\Request;
 use App\Events\NotificationsEvent;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
-use App\Notifications\Recouvrement as Notif_recouvrement;
 use Illuminate\Support\Facades\Validator;
+use App\Notifications\Recouvrement as Notif_recouvrement;
 use App\Http\Resources\Recouvrement as RecouvrementResource;
 
 class RecouvrementController extends Controller
 {
     /**
-
      * les conditions de lecture des methodes
-
      */
-
-    function __construct(){
-
+    function __construct()
+    {
+        $agent = Roles::AGENT;
         $recouvreur = Roles::RECOUVREUR;
         $superviseur = Roles::SUPERVISEUR;
-        $agent = Roles::AGENT;
         $ges_flotte = Roles::GESTION_FLOTTE;
         $this->middleware("permission:$recouvreur|$superviseur|$ges_flotte|$agent");
-
     }
 
-    Public function store(Request $request)
+    public function store(Request $request)
     {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
@@ -47,36 +43,29 @@ class RecouvrementController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(
-                [
-                    'message' => "Le formulaire contient des champs mal renseignés",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
         }
-
 
         //On verifi si le flottage passée existe réellement
         if (!Approvisionnement::find($request->id_flottage)) {
-            return response()->json(
-                [
-                    'message' => "le flottage n'existe pas",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le flottage n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         //On verifi que le montant n'est pas supperieur au montant demandé
         if (Approvisionnement::find($request->id_flottage)->reste < $request->montant) {
-            return response()->json(
-                [
-                    'message' => "Vous essayez de recouvrir plus d'argent que prevu",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Vous essayez de recouvrir plus d'argent que prevu",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         //enregistrer le recu
@@ -144,132 +133,54 @@ class RecouvrementController extends Controller
 
             ////ce que le recouvrement implique
 
-                //On credite la caisse de l'Agent pour le remboursement de la flotte recu, ce qui implique qu'il rembource ses detes à ETP
-                $caisse->solde = $caisse->solde + $montant;
-                $caisse->save();
+            //On credite la caisse de l'Agent pour le remboursement de la flotte recu, ce qui implique qu'il rembource ses detes à ETP
+            $caisse->solde = $caisse->solde + $montant;
+            $caisse->save();
 
-                //On recupère la puce de l'agent concerné et on debite
-                $puce_agent->solde = $puce_agent->solde - $montant;
-                $puce_agent->save();
+            //On recupère la puce de l'agent concerné et on debite
+            $puce_agent->solde = $puce_agent->solde - $montant;
+            $puce_agent->save();
 
-                //On calcule le reste à recouvrir
-                $flottage->reste = $flottage->reste - $montant;
+            //On calcule le reste à recouvrir
+            $flottage->reste = $flottage->reste - $montant;
 
-                //On change le statut du flottage
-                if ($flottage->reste == 0) {
-                    $flottage->statut = \App\Enums\Statut::EFFECTUER ;
-                }else {
-                    $flottage->statut = \App\Enums\Statut::EN_COURS ;
-                }
+            //On change le statut du flottage
+            if ($flottage->reste == 0) {
+                $flottage->statut = \App\Enums\Statut::EFFECTUER ;
+            }else {
+                $flottage->statut = \App\Enums\Statut::EN_COURS ;
+            }
 
-                //Enregistrer les oppérations
-                $flottage->save();
-
-
-                //gestion de la caisse de l'agent qui recouvre
-                    $connected_user = Auth::user();
-
-                    //la caisse de l'utilisateur connecté
-                    $connected_caisse = Caisse::where('id_user', $connected_user->id)->first();
-
-                    //mise à jour de la caisse de l'utilisateur qui effectue l'oppération
-                    if ($connected_user->hasRole([Roles::GESTION_FLOTTE])) {
-                        $connected_caisse->solde = $connected_caisse->solde + $montant;
-                    }else {
-                        $connected_caisse->solde = $connected_caisse->solde - $montant;
-                    }
-                    $connected_caisse->save();
+            //Enregistrer les oppérations
+            $flottage->save();
 
 
+            //gestion de la caisse de l'agent qui recouvre
+            $connected_user = Auth::user();
 
-                //On recupere les recouvrement
-                $recouvrements = Recouvrement::where('user_destination', $recouvreur->id)->get();
+            //la caisse de l'utilisateur connecté
+            $connected_caisse = Caisse::where('id_user', $connected_user->id)->first();
 
-                $recouvrementsArray = [];
+            //mise à jour de la caisse de l'utilisateur qui effectue l'oppération
+            if ($connected_user->hasRole([Roles::GESTION_FLOTTE])) {
+                $connected_caisse->solde = $connected_caisse->solde + $montant;
+            }else {
+                $connected_caisse->solde = $connected_caisse->solde - $montant;
+            }
+            $connected_caisse->save();
 
-                foreach($recouvrements as $recouvrement) {
-
-                    //recuperer le flottage correspondant
-                    $flottage = Approvisionnement::find($recouvrement->id_flottage);
-
-                    //recuperer celui qui a éffectué le recouvrement
-                    $user = User::find($recouvrement->id_user);
-
-                    //recuperer l'agent concerné
-                    $user = User::find($recouvrement->user_source);
-                    $agent = Agent::Where('id_user', $user->id)->first();
-
-                    $recouvreur = User::find($recouvrement->user_destination);
-
-                    //recuperer la puce de l'agent
-                    $puce_agent = Puce::find($flottage->demande_flote->id_puce);
-
-                    $recouvrementsArray[] = [
-                        'recouvrement' => $recouvrement,
-                        'flottage' => $flottage,
-                        'user' => $user,
-                        'agent' => $agent,
-                        'recouvreur' => $recouvreur,
-    //                'puce_agent' => $puce_agent
-                    ];
-                }
-
-                // Extraction des approvisionnements
-
-                $flottages = Approvisionnement::get();
-
-                $approvisionnements = [];
-
-                foreach($flottages as $flottage) {
-
-                    //recuperer la demande correspondante
-                    $demande = $flottage->demande_flote;
-
-                    //recuperer l'agent concerné
-                    $user = $demande->user;
-
-                    //recuperer l'agent concerné
-                    $agent = Agent::where('id_user', $user->id)->first();
-
-                    // recuperer celui qui a éffectué le flottage
-                    $gestionnaire = User::find($flottage->id_user);
-
-                    //recuperer la puce de l'agent
-                    $puce_receptrice = Puce::find($demande->id_puce);
-
-                    //recuperer la puce de ETP
-                    $puce_emetrice = Puce::find($flottage->from);
-
-                    $approvisionnements[] = [
-                        'approvisionnement' => $flottage,
-                        'demande' => $demande,
-                        'user' => $user,
-                        'agent' => $agent,
-                        'gestionnaire' => $gestionnaire,
-                        'puce_emetrice' => $puce_emetrice,
-                        'puce_receptrice' => $puce_receptrice,
-                    ];
-                }
-
-                return response()->json(
-                    [
-                        'message' => '',
-                        'status' => true,
-                        'data' => [
-                            'recouvrements' => $recouvrementsArray,
-                            'flottages' => $approvisionnements
-                        ]
-                    ]
-                );
-        }else {
+            return response()->json([
+                'message' => "Recouvrement d'espèces effectué avec succès",
+                'status' => true,
+                'data' => null
+            ]);
+        } else {
             // Renvoyer une erreur
-            return response()->json(
-                [
-                    'message' => 'erreur lors du recouvrement',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => 'Erreur lors du recouvrement',
+                'status' => false,
+                'data' => null
+            ]);
         }
     }
 
@@ -296,49 +207,38 @@ class RecouvrementController extends Controller
     }
 
     /**
-     * ////lister tous les recouvrement
+     * ////lister les recouvrement
      */
     public function list_all()
     {
-        //On recupere les recouvrement
-        $recouvrements = Recouvrement::get();
+        $recoveries = Recouvrement::orderBy('created_at', 'desc')->paginate(9);
 
-        $approvisionnements = [];
+        $recoveries_response =  $this->recoveriesResponse($recoveries->items());
 
-        foreach($recouvrements as $recouvrement) {
-
-            //recuperer le flottage correspondant
-            $flottage = Approvisionnement::find($recouvrement->id_flottage);
-
-            //recuperer celui qui a éffectué le recouvrement
-                $user = User::find($recouvrement->id_user);
-
-            //recuperer l'agent concerné
-                $user = User::find($recouvrement->user_source);
-                $agent = Agent::Where('id_user', $user->id)->first();
-
-                $recouvreur = User::find($recouvrement->user_destination);
-
-            //recuperer la puce de l'agent
-                $puce_agent = Puce::find($flottage->demande_flote->id_puce);
-
-            $approvisionnements[] = [
-                'recouvrement' => $recouvrement,
-                'flottage' => $flottage,
-                'user' => $user,
-                'agent' => $agent,
-                'recouvreur' => $recouvreur,
-//                'puce_agent' => $puce_agent
-            ];
-        }
-
-        return response()->json(
-            [
-                'message' => '',
-                'status' => true,
-                'data' => ['recouvrements' => $approvisionnements]
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'recouvrements' => $recoveries_response,
+                'hasMoreData' => $recoveries->hasMorePages(),
             ]
-        );
+        ]);
+    }
+
+    /**
+     * //lister tous les recouvrement
+     */
+    public function list_all_all()
+    {
+        $recoveries = Recouvrement::orderBy('created_at', 'desc')->get();
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'recouvrements' => $this->recoveriesResponse($recoveries)
+            ]
+        ]);
     }
 
     /**
@@ -374,115 +274,59 @@ class RecouvrementController extends Controller
     /**
      * ////lister les recouvrements d'un RZ
      */
-    public function list_recouvrement_by_rz($id)
+    public function list_recouvrement_by_rz()
     {
-        if (!User::find($id)){
+        $user = Auth::user();
 
-            return response()->json(
-                [
-                    'message' => "le Responsable de zonne n'existe pas",
-                    'status' => true,
-                    'data' => []
-                ]
-            );
+        if ($user->roles->first()->name !== Roles::RECOUVREUR){
+            return response()->json([
+                'message' => "Le responsable de zonne n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
-        //On recupere les recouvrements
-        $recouvrements = Recouvrement::where('user_destination', $id)->get();
+        $recoveries = Recouvrement::where('id_user', $user->id)->orderBy('created_at', 'desc')->paginate(9);
 
-        $approvisionnements = [];
+        $recoveries_response =  $this->recoveriesResponse($recoveries->items());
 
-        foreach($recouvrements as $recouvrement) {
-
-            //recuperer le flottage correspondant
-            $flottage = Approvisionnement::find($recouvrement->id_flottage);
-
-            //recuperer celui qui a éffectué le recouvrement
-            $user = User::find($recouvrement->id_user);
-
-            //recuperer l'agent concerné
-            $user = User::find($recouvrement->user_source);
-            $agent = Agent::Where('id_user', $user->id)->first();
-
-            $recouvreur = User::find($recouvrement->user_destination);
-
-            //recuperer la puce de l'agent
-            $puce_agent = Puce::find($flottage->demande_flote->id_puce);
-
-            $approvisionnements[] = [
-                'recouvrement' => $recouvrement,
-                'flottage' => $flottage,
-                'user' => $user,
-                'agent' => $agent,
-                'recouvreur' => $recouvreur,
-//                'puce_agent' => $puce_agent
-            ];
-        }
-
-        return response()->json(
-            [
-                'message' => '',
-                'status' => true,
-                'data' => ['recouvrements' => $approvisionnements]
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'recouvrements' => $recoveries_response,
+                'hasMoreData' => $recoveries->hasMorePages(),
             ]
-        );
+        ]);
     }
 
     /**
      * ////lister les recouvrements d'un Agent precis
      */
-    public function list_recouvrement_by_agent($id)
+    public function list_recouvrement_by_agent()
     {
-        if (!User::find($id)){
+        $user = Auth::user();
 
-            return response()->json(
-                [
-                    'message' => "l'agent' n'existe pas",
-                    'status' => true,
-                    'data' => []
-                ]
-            );
+        if ($user->roles->first()->name !== Roles::AGENT && $user->roles->first()->name !== Roles::RESSOURCE){
+            return response()->json([
+                'message' => "Cet utilisateur n'est pas un agent/ressource",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
-        //On recupere les recouvrements
-        $recouvrements = Recouvrement::where('user_source', $id)->get();
+        $recoveries = Recouvrement::where('user_source', $user->id)->orderBy('created_at', 'desc')->paginate(12);
 
-        $approvisionnements = [];
+        $recoveries_response =  $this->recoveriesResponse($recoveries->items());
 
-        foreach($recouvrements as $recouvrement) {
-
-            //recuperer le flottage correspondant
-            $flottage = Approvisionnement::find($recouvrement->id_flottage);
-
-            //recuperer celui qui a éffectué le recouvrement
-            $user = User::find($recouvrement->id_user);
-
-            //recuperer l'agent concerné
-            $user = User::find($recouvrement->user_source);
-            $agent = Agent::Where('id_user', $user->id)->first();
-
-            $recouvreur = User::find($recouvrement->user_destination);
-
-            //recuperer la puce de l'agent
-            $puce_agent = Puce::find($flottage->demande_flote->id_puce);
-
-            $approvisionnements[] = [
-                'recouvrement' => $recouvrement,
-                'flottage' => $flottage,
-                'user' => $user,
-                'agent' => $agent,
-                'recouvreur' => $recouvreur,
-//                'puce_agent' => $puce_agent
-            ];
-        }
-
-        return response()->json(
-            [
-                'message' => '',
-                'status' => true,
-                'data' => ['recouvrements' => $approvisionnements]
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'recouvrements' => $recoveries_response,
+                'hasMoreData' => $recoveries->hasMorePages(),
             ]
-        );
+        ]);
     }
 
     /**
@@ -535,7 +379,7 @@ class RecouvrementController extends Controller
                 //recuperer le flottage correspondant
                 $flottage = Approvisionnement::find($recouvrement->id_flottage);
 
-                //recuperer celui qui a éffectué le recouvrement
+                //recuperer celui qui a effectué le recouvrement
                 $user = User::find($recouvrement->id_user);
 
                 //recuperer l'agent concerné
@@ -574,5 +418,29 @@ class RecouvrementController extends Controller
                 ]
             );
         }
+    }
+
+    // Build recoveries return data
+    private function recoveriesResponse($recoveries)
+    {
+        $returnedRecoveries = [];
+
+        foreach($recoveries as $recovery)
+        {
+            //recuperer l'agent concerné
+            $user = User::find($recovery->user_source);
+            $agent = $user->agent->first();
+
+            $recouvreur = User::find($recovery->id_user);
+
+            $returnedRecoveries[] = [
+                'user' => $user,
+                'agent' => $agent,
+                'recouvreur' => $recouvreur,
+                'recouvrement' => $recovery,
+            ];
+        }
+
+        return $returnedRecoveries;
     }
 }

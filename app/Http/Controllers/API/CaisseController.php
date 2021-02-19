@@ -2,16 +2,14 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Enums\Statut;
-use App\Events\NotificationsEvent;
-use App\Notifications\Recouvrement;
-use App\Operation;
 use App\Role;
 use App\User;
-use App\Caisse;
+use App\Operation;
 use App\Versement;
 use App\Enums\Roles;
+use App\Enums\Statut;
 use Illuminate\Http\Request;
+use App\Notifications\Recouvrement;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
@@ -22,8 +20,8 @@ class CaisseController extends Controller
     /**
      * les conditions de lecture des methodes
      */
-    function __construct(){
-
+    function __construct()
+    {
         $ges_flotte = Roles::GESTION_FLOTTE;
         $this->middleware("permission:$ges_flotte");
     }
@@ -41,24 +39,20 @@ class CaisseController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(
-                [
-                    'message' => "Le formulaire contient des champs mal renseignés",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         //On verifi si le donneur est vraiment utilisateur
         if (!($donneur = User::find($request->id_donneur))) {
-            return response()->json(
-                [
-                    'message' => "l'utilisateur en paramettre n'existe pas en BD",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "l'utilisateur en paramettre n'existe",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         //recuperer la caisse de l'utilisateur qui effecttue le verssement
@@ -91,8 +85,8 @@ class CaisseController extends Controller
         ]);
 
         // creation du versement
-        if ($versement->save()) {
-
+        if ($versement->save())
+        {
             //notification du donneur
             $donneur = User::find($request->id_donneur);
             $donneur->notify(new Notif_recouvrement([
@@ -108,38 +102,23 @@ class CaisseController extends Controller
             $caisse->solde = $caisse->solde + $montant;
             $caisse->save();
 
-            $versements = Versement::All();
-            $encaissements = [];
-            foreach ($versements as $_versement) {
-                $id_caisse_gestionnaire = Caisse::where('id_user', $_versement->add_by)->first();
-                if ($id_caisse_gestionnaire->id == $_versement->id_caisse) {
-                    $encaissements[] = [
-                        'versement' => $_versement,
-                        'gestionnaire' => User::find($_versement->add_by),
-                        'recouvreur' => User::find($_versement->correspondant),
-                    ];
-                }
-            }
-
             // Renvoyer un message de succès
-            return response()->json(
-                [
-                    'message' => '',
-                    'status' => true,
-                    'data' => [
-                        'versements' => $encaissements
-                    ]
+            return response()->json([
+                'message' => 'Encaissement effectué avec succès',
+                'status' => true,
+                'data' => [
+                    'versement' => $versement,
+                    'gestionnaire' => User::find($versement->add_by),
+                    'recouvreur' => User::find($versement->correspondant),
                 ]
-            );
+            ]);
         } else {
             // Renvoyer une erreur
-            return response()->json(
-                [
-                    'message' => 'erreur lors de la Creation',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => 'Erreur lors de la Creation',
+                'status' => false,
+                'data' => null
+            ]);
         }
     }
 
@@ -156,24 +135,20 @@ class CaisseController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(
-                [
-                    'message' => "Le formulaire contient des champs mal renseignés",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         //On verifi si le receveur est vraiment utilisateur
         if (!($receveur = User::find($request->id_receveur))) {
-            return response()->json(
-                [
-                    'message' => "l'utilisateur en paramettre n'existe pas en BD",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "L'utilisateur en paramettre n'existe pas en BD",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         //recuperer la caisse de l'utilisateur qui recoit le verssement
@@ -185,13 +160,11 @@ class CaisseController extends Controller
 
         //On verifi si le compte du payeur est suffisant
         if ($caisse->solde < $request->montant) {
-            return response()->json(
-                [
-                    'message' => "le solde du payeur est insuffisant",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le solde du payeur est insuffisant",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         // Récupérer les données validées
@@ -216,8 +189,8 @@ class CaisseController extends Controller
         ]);
 
         // creation du decaissement
-        if ($decaissement->save()) {
-
+        if ($decaissement->save())
+        {
             //notification du receveur
             $receveur = User::find($receveur);
             $receveur->notify(new Notif_recouvrement([
@@ -232,27 +205,16 @@ class CaisseController extends Controller
             //on debite le compte de la gestionnaire de flotte
             $caisse->solde = $caisse->solde - $montant;
             $caisse->save();
-            $getionnaire_id = Auth::user()->id;
-            $versements = Versement::All();
-            $decaissements = [];
-            foreach ($versements as $versement) {
-                $id_caisse_gestionnaire = Caisse::where('id_user', $getionnaire_id)->first();
-                if ($id_caisse_gestionnaire->id != $versement->id_caisse) {
-                    $decaissements[] = [
-                        'versement' => $versement,
-                        'gestionnaire' => User::find($versement->add_by),
-                        'receveur' => User::find($versement->correspondant),
-                    ];
-                }
-            }
 
             // Renvoyer un message de succès
             return response()->json(
                 [
-                    'message' => '',
+                    'message' => "Décaissement effectué avec succès",
                     'status' => true,
                     'data' => [
-                        'versements' => $decaissements
+                        'versement' => $decaissement,
+                        'gestionnaire' => User::find($decaissement->add_by),
+                        'recouvreur' => User::find($decaissement->correspondant),
                     ]
                 ]
             );
@@ -260,14 +222,13 @@ class CaisseController extends Controller
             // Renvoyer une erreur
             return response()->json(
                 [
-                    'message' => 'erreur lors de la Creation',
+                    'message' => 'Erreur lors de la Creation',
                     'status' => false,
                     'data' => null
                 ]
             );
         }
     }
-
 
     /**
      * //Creer une passation de service
@@ -281,42 +242,46 @@ class CaisseController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(
-                [
-                    'message' => "Le formulaire contient des champs mal renseignés",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         //On verifi si le receveur est vraiment utilisateur
         if (!($receveur = User::find($request->id_receveur))) {
-            return response()->json(
-                [
-                    'message' => "l'utilisateur en paramettre n'existe pas en BD",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "L'utilisateur en paramettre n'existe pas en BD",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+        $user = Auth::user();
+
+        //On verifi si le receveur est different de l'emetteur
+        if ($receveur->id === $user->id) {
+            return response()->json([
+                'message' => "Impossible d'éffectuer une passation de service à soi même",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         //recuperer la caisse de l'utilisateur qui recoit le verssement
         $caisse_receveur = $receveur->caisse->first();
 
         //recuperer la caisse de l'utilisateur connecté
-        $user = Auth::user();
+
         $caisse = $user->caisse->first();
 
         //On verifi si le compte du payeur est suffisant
         if ($caisse->solde < $request->montant) {
-            return response()->json(
-                [
-                    'message' => "le solde du payeur est insuffisant",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le solde du payeur est insuffisant",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         // Récupérer les données validées
@@ -337,8 +302,8 @@ class CaisseController extends Controller
         ]);
 
         // creation du decaissement
-        if ($decaissement->save()) {
-
+        if ($decaissement->save())
+        {
             //notification du receveur
             $receveur = User::find($receveur);
             $receveur->notify(new Notif_recouvrement([
@@ -353,39 +318,24 @@ class CaisseController extends Controller
             //on debite le compte de la gestionnaire de flotte
             $caisse->solde = $caisse->solde - $montant;
             $caisse->save();
-            $getionnaire_id = Auth::user()->id;
-
-            $versements = Versement::where('recu', null)->get()->filter(function (Versement $versement) {
-                return $versement->add_by == Auth::user()->id || $versement->correspondant == Auth::user()->id;
-            });;
-            $decaissements = [];
-            foreach ($versements as $versement) {
-                    $decaissements[] = [
-                        'versement' => $versement,
-                        'emetteur' => User::find($versement->add_by),
-                        'recepteur' => User::find($versement->correspondant),
-                    ];
-            }
 
             // Renvoyer un message de succès
-            return response()->json(
-                [
-                    'message' => '',
-                    'status' => true,
-                    'data' => [
-                        'versements' => $decaissements
-                    ]
+            return response()->json([
+                'message' => 'Passation de service effectuée avec succès',
+                'status' => true,
+                'data' => [
+                    'versement' => $decaissement,
+                    'emetteur' => User::find($decaissement->add_by),
+                    'recepteur' => User::find($decaissement->correspondant),
                 ]
-            );
+            ]);
         } else {
             // Renvoyer une erreur
-            return response()->json(
-                [
-                    'message' => 'erreur lors de la Creation',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => 'Erreur lors de la Creation',
+                'status' => false,
+                'data' => null
+            ]);
         }
     }
 
@@ -395,27 +345,37 @@ class CaisseController extends Controller
     public function encaissement_list()
     {
         $getionnaire_id = Auth::user()->id;
-        $versements = Versement::All();
-        $encaissements = [];
-        foreach ($versements as $versement) {
-            $id_caisse_gestionnaire = Caisse::where('id_user', $getionnaire_id)->first();
-            if ($id_caisse_gestionnaire->id == $versement->id_caisse) {
-                $encaissements[] = [
-                    'versement' => $versement,
-                    'gestionnaire' => User::find($versement->add_by),
-                    'recouvreur' => User::find($versement->correspondant),
-                ];
-            }
-        }
-        return response()->json(
-            [
-                'message' => '',
-                'status' => true,
-                'data' => [
-                    'versements' => $encaissements
-                ]
+
+        $versements = Versement::where('add_by', $getionnaire_id)->where('note', "pour un versement")->orderBy('created_at', 'desc')->paginate(6);
+
+        $versements_response =  $this->paymentsResponse($versements->items());
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'versements' => $versements_response,
+                'hasMoreData' => $versements->hasMorePages(),
             ]
-        );
+        ]);
+    }
+
+    /**
+     * ////lister les Encaissements
+     */
+    public function encaissement_list_all()
+    {
+        $getionnaire_id = Auth::user()->id;
+
+        $versements = Versement::where('add_by', $getionnaire_id)->where('note', "pour un versement")->orderBy('created_at', 'desc')->get();
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'versements' => $this->paymentsResponse($versements),
+            ]
+        ]);
     }
 
     /**
@@ -424,27 +384,37 @@ class CaisseController extends Controller
     public function decaissement_list()
     {
         $getionnaire_id = Auth::user()->id;
-        $versements = Versement::All();
-        $decaissements = [];
-        foreach ($versements as $versement) {
-            $id_caisse_gestionnaire = Caisse::where('id_user', $getionnaire_id)->first();
-            if ($id_caisse_gestionnaire->id != $versement->id_caisse) {
-                $decaissements[] = [
-                    'versement' => $versement,
-                    'gestionnaire' => User::find($versement->add_by),
-                    'recouvreur' => User::find($versement->correspondant),
-                ];
-            }
-        }
-        return response()->json(
-            [
-                'message' => '',
-                'status' => true,
-                'data' => [
-                    'versements' => $decaissements
-                ]
+
+        $versements = Versement::where('add_by', $getionnaire_id)->where('note', 'pour un Decaissement')->orderBy('created_at', 'desc')->paginate(6);
+
+        $versements_response =  $this->paymentsResponse($versements->items());
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'versements' => $versements_response,
+                'hasMoreData' => $versements->hasMorePages(),
             ]
-        );
+        ]);
+    }
+
+    /**
+     * ////lister touts les Decaissements
+     */
+    public function decaissement_list_all()
+    {
+        $getionnaire_id = Auth::user()->id;
+
+        $versements = Versement::where('add_by', $getionnaire_id)->where('note', 'pour un Decaissement')->orderBy('created_at', 'desc')->get();
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'versements' => $this->paymentsResponse($versements),
+            ]
+        ]);
     }
 
     /**
@@ -452,27 +422,49 @@ class CaisseController extends Controller
      */
     public function passations_list()
     {
-        $versements = Versement::where('recu', null)->get()->filter(function (Versement $versement) {
-            return $versement->add_by == Auth::user()->id || $versement->correspondant == Auth::user()->id;
-        });
-        $passations = [];
-        foreach ($versements as $versement) {
-            $passations[] = [
-                'versement' => $versement,
-                'emetteur' => User::find($versement->add_by),
-                'recepteur' => User::find($versement->correspondant),
-            ];
-        }
+        $getionnaire_id = Auth::user()->id;
 
-        return response()->json(
-            [
-                'message' => '',
-                'status' => true,
-                'data' => [
-                    'versements' => $passations
-                ]
+        $versements = Versement::where('note', 'pour une passation de service')
+            ->where(function($query) use ($getionnaire_id) {
+                $query->where('add_by', $getionnaire_id);
+                $query->orWhere('correspondant', $getionnaire_id);
+            })
+            ->orderBy('created_at', 'desc')->paginate(6);
+
+        $versements_response =  $this->handoverResponse($versements->items());
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'versements' => $versements_response,
+                'hasMoreData' => $versements->hasMorePages(),
             ]
-        );
+        ]);
+    }
+
+    /**
+     * ////lister touts les passations
+     */
+    public function passations_list_all()
+    {
+        $getionnaire_id = Auth::user()->id;
+
+        $versements = Versement::where('note', 'pour une passation de service')
+            ->where(function($query) use ($getionnaire_id) {
+                $query->where('add_by', $getionnaire_id);
+                $query->orWhere('correspondant', $getionnaire_id);
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'versements' => $this->handoverResponse($versements),
+            ]
+        ]);
     }
 
     /**
@@ -772,5 +764,39 @@ class CaisseController extends Controller
                 ]
             ]
         );
+    }
+
+    // Build payments return data
+    private function paymentsResponse($payments)
+    {
+        $returnedPayments = [];
+
+        foreach($payments as $versement)
+        {
+            $returnedPayments[] = [
+                'versement' => $versement,
+                'gestionnaire' => User::find($versement->add_by),
+                'recouvreur' => User::find($versement->correspondant),
+            ];
+        }
+
+        return $returnedPayments;
+    }
+
+    // Build handovers return data
+    private function handoverResponse($handovers)
+    {
+        $returnedHandovers = [];
+
+        foreach($handovers as $versement)
+        {
+            $returnedHandovers[] = [
+                'versement' => $versement,
+                'emetteur' => User::find($versement->add_by),
+                'recepteur' => User::find($versement->correspondant),
+            ];
+        }
+
+        return $returnedHandovers;
     }
 }
