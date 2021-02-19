@@ -189,7 +189,7 @@ class FloteController extends Controller
 
         $id_agent = $reference === Roles::AGENT ? $request->id_agent : $request->id_ressource;
         $user = User::find($id_agent);
-        $agent = $user === null ? null : $user->agent()->first()->id;
+        $agent = $user === null ? null : $user->agent->first()->id;
 
         // rechercher la flote
         $flote = Flote::find($id);

@@ -2,19 +2,18 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Agent;
-use App\Demande_destockage;
-use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
 use App\User;
-use Illuminate\Support\Facades\Validator;
-use App\Events\NotificationsEvent;
-use App\Notifications\Demande_destockage as Notif_demande_destockage;
-use App\Flote;
 use App\Role;
 use App\Puce;
+use App\Agent;
 use App\Enums\Roles;
+use App\Demande_destockage;
+use Illuminate\Http\Request;
+use App\Events\NotificationsEvent;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
+use App\Notifications\Demande_destockage as Notif_demande_destockage;
 
 class DemandedestockageController extends Controller
 {
@@ -35,39 +34,34 @@ class DemandedestockageController extends Controller
     /**
      * //Initier une demande de destockage
      */
-    public function store(Request $request)
+    public function store(Request $request, $id)
     {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
             'montant' => ['required', 'numeric'],
             'id_puce' => ['required', 'numeric']
         ]);
+
         if ($validator->fails()) {
-            return response()->json(
-                [
-                    'message' => "Le formulaire contient des champs mal renseignés",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         if (!Puce::find($request->id_puce)) {
-            return response()->json(
-                [
-                    'message' => "Cette puce n'existe pas",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Cette puce n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
-        //recuperer l'utilisateur connecté (c'est lui l'agent)
-        $user = Auth::user();
 
         // Récupérer les données validées
-        $id_user = $user->id;
-        $add_by = $user->id;
+        $id_user = $id;
+        $add_by = $id;
         $reference = null;
         $montant = $request->montant;
         $statut = \App\Enums\Statut::EN_ATTENTE;
@@ -96,7 +90,6 @@ class DemandedestockageController extends Controller
             $event = new NotificationsEvent($role->id, ['message' => 'Nouvelle demande de Destockage']);
             broadcast($event)->toOthers();
 
-
             //Database Notification
                 $users = User::all();
                 //notifier les GF et les GF
@@ -111,14 +104,27 @@ class DemandedestockageController extends Controller
                     }
                 }
 
+            //recuperer l'utilisateur concerné
+            $user = $demande_destockage->user;
+
+            //recuperer l'agent concerné
+            $agent = Agent::where('id_user', $user->id)->first();
+
+            //recuperer le demandeur
+            $demandeur = User::find($demande_destockage->add_by);
+
             // Renvoyer un message de succès
-            return response()->json(
-                [
-                    'message' => 'Demande de destockage créée',
-                    'status' => true,
-                    'data' => ['demande' => $demande_destockage]
+            return response()->json([
+                'message' => 'Demande de déstockage effectué avec succès',
+                'status' => true,
+                'data' => [
+                    'demande' => $demande_destockage,
+                    'demandeur' => $demandeur,
+                    'agent' => $agent,
+                    'user' => $user,
+                    'puce' => $demande_destockage->puce
                 ]
-            );
+            ]);
         } else {
             // Renvoyer une erreur
             return response()->json(
@@ -216,31 +222,36 @@ class DemandedestockageController extends Controller
      */
     public function list_all_status()
     {
-        //On recupere les 'demande de destockage'
-        $demandes_destockage = Demande_destockage::where('id_user', Auth::user()->id)->get();
+        $demandes_destockage = Demande_destockage::where('id_user', Auth::user()->id)->orderBy('created_at', 'desc')->paginate(6);
 
-		$demandes_destockages = [];
+        $clearance_response =  $this->clearancesResponse($demandes_destockage->items());
 
-        foreach($demandes_destockage as $demande_destockage) {
-			//recuperer l'utilisateur concerné
-            $user = $demande_destockage->user;
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'demandes' => $clearance_response,
+                'hasMoreData' => $demandes_destockage->hasMorePages()
+            ]
+        ]);
+    }
 
-            //recuperer l'agent concerné
-            $agent = Agent::where('id_user', $user->id)->first();
+    /**
+     * //lister mes demandes de destockage peu importe le statut
+     */
+    public function list_all_status_all()
+    {
+        $demandes_destockage = Demande_destockage::where('id_user', Auth::user()->id)->orderBy('created_at', 'desc')->get();
 
-            //recuperer le demandeur
-			$demandeur = User::find($demande_destockage->add_by);
+        $clearance_response =  $this->clearancesResponse($demandes_destockage);
 
-            $demandes_destockages[] = ['demande' => $demande_destockage, 'demandeur' => $demandeur, 'agent' => $agent, 'user' => $user, 'puce' => $demande_destockage->puce];
-        }
-
-        return response()->json(
-			[
-				'message' => '',
-				'status' => true,
-				'data' => ['demandes' => $demandes_destockages]
-			]
-		);
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'demandes' => $clearance_response,
+            ]
+        ]);
     }
 
 	/**
@@ -355,5 +366,27 @@ class DemandedestockageController extends Controller
                 ]
             );
         }
+    }
+
+    // Build clearances return data
+    private function clearancesResponse($clearances)
+    {
+        $demandes_destockages = [];
+
+        foreach($clearances as $demande_destockage)
+        {
+            //recuperer l'utilisateur concerné
+            $user = $demande_destockage->user;
+
+            //recuperer l'agent concerné
+            $agent = Agent::where('id_user', $user->id)->first();
+
+            //recuperer le demandeur
+            $demandeur = User::find($demande_destockage->add_by);
+
+            $demandes_destockages[] = ['demande' => $demande_destockage, 'demandeur' => $demandeur, 'agent' => $agent, 'user' => $user, 'puce' => $demande_destockage->puce];
+        }
+
+        return $demandes_destockages;
     }
 }

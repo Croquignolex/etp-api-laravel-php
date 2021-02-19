@@ -229,7 +229,7 @@ class ApprovisionnementEtpController extends Controller
         //au cas ou le type est BY_AGENT, on est sencé recevoir l'id de l'agent. on verifi que l'id recu est bien un Agent
         if (isset($request->id_agent)) {
             //on verifi si l'agent existe
-            if (!($agent = User::find($request->id_agent)->agent()->first())) {
+            if (!($agent = User::find($request->id_agent)->agent->first())) {
                 return response()->json([
                     'message' => "Agent invalide",
                     'status' => false,
@@ -316,7 +316,7 @@ class ApprovisionnementEtpController extends Controller
             }
             $connected_caisse->save();
 
-            $agent = $destockage->id_agent === null ? $destockage->id_agent : User::find($destockage->id_agent)->agent()->first();
+            $agent = $destockage->id_agent === null ? $destockage->id_agent : User::find($destockage->id_agent)->agent->first();
             $user = $destockage->id_agent === null ? $destockage->id_agent : User::find($destockage->id_agent);
 
             return response()->json([
@@ -576,19 +576,31 @@ class ApprovisionnementEtpController extends Controller
     /**
      * ////lister les destockages par un agent
      */
-    public function list_all_destockage_agent($id)
+    public function list_all_destockage_agent()
     {
-        $destockages = Destockage::where('type', Statut::BY_AGENT)->get();
-        $agent = Agent::where(['id_user' => $id])->first();
-        return response()->json(
-            [
-                'message' => "liste",
+        $user = Auth::user();
+        $userRole = $user->roles->first()->name;
+
+        if($userRole === Roles::AGENT || $userRole === Roles::RESSOURCE) {
+            $destockages = Destockage::where('type', Statut::BY_AGENT)
+                ->where('id_agent', $user->id)
+                ->orderBy('created_at', 'desc')->paginate(6);
+
+            return response()->json([
+                'message' => "",
                 'status' => true,
-                'data' => DestockageResource::collection($destockages->filter(function(Destockage $destockage) use ($agent) {
-                    return ($destockage->id_agent == $agent->id);
-                }))
-            ]
-        );
+                'data' => [
+                    'destockages' => DestockageResource::collection($destockages->items()),
+                    'hasMoreData' => $destockages->hasMorePages(),
+                ]
+            ]);
+        } else {
+            return response()->json([
+                'message' => "Cet utilisateur n'est pas un agent/ressource",
+                'status' => false,
+                'data' => null
+            ]);
+        }
     }
 
 }

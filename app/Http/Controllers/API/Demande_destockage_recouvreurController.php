@@ -70,7 +70,7 @@ class Demande_destockage_recouvreurController extends Controller
 
         //recuperer l'agent concerné
         $user = User::find($request->id_agent);
-        $agent = $user->agent()->first();
+        $agent = $user->agent->first();
 
         $id_user = $user->id;
         $add_by = $add_by->id;

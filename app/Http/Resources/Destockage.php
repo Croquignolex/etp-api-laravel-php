@@ -18,7 +18,7 @@ class Destockage extends JsonResource
     public function toArray($request)
     {
         //return parent::toArray($request);
-        $agent =  $this->id_agent === null ? $this->id_agent : User::find($this->id_agent)->agent()->first();
+        $agent =  $this->id_agent === null ? $this->id_agent : User::find($this->id_agent)->agent->first();
         $user =  $this->id_agent === null ? $this->id_agent : User::find($this->id_agent);
 
         return [

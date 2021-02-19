@@ -328,49 +328,33 @@ class Retour_flotteController extends Controller
     /**
      * ////lister les retour flotte d'un Agent precis
      */
-    public function list_retour_flotte_by_agent($id)
+    public function list_retour_flotte_by_agent()
     {
-        // $id est le id du user directement
-        $retour_flotes = Retour_flote::get()->filter(function(Retour_flote $retour_flote) use ($id){
-            $demande_flote =$retour_flote->flotage->demande_flote;
-            $id_user = $demande_flote->id_user;
-            return $id_user == $id;
-        });
+        $user = Auth::user();
 
-        $retours_flotes = [];
-
-        foreach($retour_flotes as $retour_flote) {
-
-            //recuperer le flottage correspondant
-            $flottage = Approvisionnement::find($retour_flote->id_approvisionnement);
-
-            //recuperer celui qui a effectué le retour flotte
-            $user = User::find($retour_flote->flotage->demande_flote->id_user);
-            $agent = Agent::Where('id_user', $user->id)->first();
-
-            $recouvreur = User::find($retour_flote->id_user);
-
-            $puce_agent = Puce::find($retour_flote->user_source);
-            $puce_flottage = Puce::find($retour_flote->user_destination);
-
-            $retours_flotes[] = [
-                'recouvrement' => $retour_flote,
-                'flottage' => $flottage,
-                'user' => $user,
-                'agent' => $agent,
-                'recouvreur' => $recouvreur,
-                'puce_agent' => $puce_agent,
-                'puce_flottage' => $puce_flottage,
-            ];
+        if ($user->roles->first()->name !== Roles::AGENT && $user->roles->first()->name !== Roles::RESSOURCE){
+            return response()->json([
+                'message' => "Cet utilisateur n'est pas un agent/ressource",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
-        return response()->json(
-            [
-                'message' => '',
-                'status' => true,
-                'data' => ['recouvrements' => $retours_flotes]
+        // $id est le id du user directement
+        $retour_flotes = Retour_flote::get()->filter(function(Retour_flote $retour_flote) use ($user){
+            $demande_flote = $retour_flote->flotage->demande_flote;
+            $id_user = $demande_flote->id_user;
+            return $id_user == $user->id;
+        });
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'recouvrements' => $this->recoveriesResponse($retour_flotes),
+                'hasMoreData' => false,
             ]
-        );
+        ]);
     }
 
     /**

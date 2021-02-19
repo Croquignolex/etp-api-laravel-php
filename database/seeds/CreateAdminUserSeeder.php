@@ -52,8 +52,9 @@ class CreateAdminUserSeeder extends Seeder
 
         	'password' => bcrypt('123456'),
 
-			'id_zone' => 1
+			'id_zone' => 1,
 
+            'add_by' => 1
         ]);
 
 		$user22 = User::create([
@@ -68,8 +69,9 @@ class CreateAdminUserSeeder extends Seeder
 
         	'password' => bcrypt('123456'),
 
-			'id_zone' => 1
+			'id_zone' => 1,
 
+            'add_by' => 1
         ]);
 
         $user3 = User::create([
@@ -82,8 +84,9 @@ class CreateAdminUserSeeder extends Seeder
 
             'adresse' => 'Douala, Ndokotti',
 
-        	'password' => bcrypt('123456')
+        	'password' => bcrypt('123456'),
 
+            'add_by' => 1
         ]);
 
         $user4 = User::create([
@@ -98,8 +101,9 @@ class CreateAdminUserSeeder extends Seeder
 
         	'password' => bcrypt('123456'),
 
-			'id_zone' => 1
+			'id_zone' => 1,
 
+            'add_by' => 1
         ]);
 
         $user5 = User::create([
@@ -112,8 +116,9 @@ class CreateAdminUserSeeder extends Seeder
 
             'adresse' => 'Douala, Ndokotti',
 
-        	'password' => bcrypt('123456')
+        	'password' => bcrypt('123456'),
 
+            'add_by' => 1
         ]);
 
 

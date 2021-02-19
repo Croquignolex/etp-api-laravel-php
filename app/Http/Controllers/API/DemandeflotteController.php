@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Agent;
 use App\User;
 use App\Role;
 use App\Puce;
+use App\Agent;
 use \App\Enums\Roles;
 use App\Demande_flote;
 use Illuminate\Http\Request;
@@ -18,9 +18,7 @@ use App\Notifications\Demande_flotte as Notif_demande_flotte;
 class DemandeflotteController extends Controller
 {
     /**
-
      * les conditions de lecture des methodes
-
      */
     function __construct(){
         $recouvreur = Roles::RECOUVREUR;
@@ -33,53 +31,41 @@ class DemandeflotteController extends Controller
     /**
      * //Initier une demande de Flotte
      */
-    public function store(Request $request)
+    public function store(Request $request, $id)
     {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
             'montant' => ['required', 'numeric'],
-            'fdf' => ['required', 'numeric'],
-            'dfddd' => ['required', 'numeric'],
             'id_puce' => ['required', 'numeric']
         ]);
 
-
         if ($validator->fails()) {
-            return response()->json(
-                [
-                    'message' => "Le formulaire contient des champs mal renseignés",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         if (!($puce = Puce::Find($request->id_puce))) {
-            return response()->json(
-                [
-                    'message' => "Cette puce n'existe pas",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Cette puce n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
-        //recuperer l'utilisateur connecté (c'est lui l'agent)
-        $user = Auth::user();
-
-        if (!($puce->agent->user->id ==  $user->id)) {
-            return response()->json(
-                [
-                    'message' => "La puce selectionnée doit vous appartenir",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+        if (!($puce->agent->user->id ==  $id)) {
+            return response()->json([
+                'message' => "La puce selectionnée doit vous appartenir",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         // Récupérer les données validées
-        $id_user = $user->id;
-        $add_by = $user->id;
+        $id_user = $id;
+        $add_by = $id;
         $reference = null;
         $montant = $request->montant;
         $statut = \App\Enums\Statut::EN_ATTENTE;
@@ -117,25 +103,36 @@ class DemandeflotteController extends Controller
                     ]));
                 }
             }
+            $user = Auth::user();
+
+            //recuperer l'utilisateur concerné
+            $user = $demande_flote->user;
+
+            //recuperer l'agent concerné
+            $agent = $user->agent->first();
+
+            //recuperer le demandeur
+            $demandeur = User::find($demande_flote->add_by);
 
             // Renvoyer un message de succès
-            return response()->json(
-                [
-                    'message' => 'Demande de Flote créée',
-                    'status' => true,
-                    'data' => ['demande' => $demande_flote]
+            return response()->json([
+                'message' => 'Demande de Flote créée',
+                'status' => true,
+                'data' => [
+                    'demande' => $demande_flote,
+                    'demandeur' => $demandeur,
+                    'agent' => $agent,
+                    'user' => $user,
+                    'puce' => $demande_flote->puce
                 ]
-            );
+            ]);
         } else {
-
             // Renvoyer une erreur
-            return response()->json(
-                [
-                    'message' => 'erreur lors de la demande',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => 'Erreur lors de la demande',
+                'status' => false,
+                'data' => null
+            ]);
         }
     }
 
@@ -296,32 +293,29 @@ class DemandeflotteController extends Controller
      */
     public function list_all_status()
     {
-        //On recupere les 'demande de flotte'
-        $demandes_flote = Demande_flote::where('id_user', Auth::user()->id)->get();
+        $user = Auth::user();
+        $userRole = $user->roles->first()->name;
 
-		$demandes_flotes = [];
+        if($userRole === Roles::AGENT || $userRole === Roles::RESSOURCE) {
+            $demandes_flote = Demande_flote::where('id_user', $user->id)->orderBy('created_at', 'desc')->paginate(6);
 
-        foreach($demandes_flote as $demande_flote) {
-			//recuperer l'utilisateur concerné
-            $user = $demande_flote->user;
+            $demandes_flotes = $this->fleetsResponse($demandes_flote->items());
 
-            //recuperer l'agent concerné
-            $agent = Agent::where('id_user', $user->id)->first();
-
-            //recuperer le demandeur
-			$demandeur = User::Find($demande_flote->add_by);
-
-            $demandes_flotes[] = ['demande' => $demande_flote, 'demandeur' => $demandeur, 'agent' => $agent, 'user' => $user, 'puce' => $demande_flote->puce];
+            return response()->json([
+                'message' => "",
+                'status' => true,
+                'data' => [
+                    'demandes' => $demandes_flotes,
+                    'hasMoreData' => $demandes_flote->hasMorePages(),
+                ]
+            ]);
+        } else {
+            return response()->json([
+                'message' => "Cet utilisateur n'est pas un responsable de zone",
+                'status' => false,
+                'data' => null
+            ]);
         }
-
-		return response()->json(
-			[
-				'message' => '',
-				'status' => true,
-				'data' => ['demandes' => $demandes_flotes]
-			]
-		);
-
     }
 
     /**
@@ -394,6 +388,33 @@ class DemandeflotteController extends Controller
         } else {
             return response()->json([
                 'message' => "Cet utilisateur n'est pas un responsable de zone",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+    }
+
+    /**
+     * //lister toutes mes demandes de flotes (agent)
+     */
+    public function list_demandes_flote_agent_all()
+    {
+        $user = Auth::user();
+        $userRole = $user->roles->first()->name;
+
+        if($userRole === Roles::AGENT || $userRole === Roles::RESSOURCE) {
+            $demandes_flote = Demande_flote::where('id_user', $user->id)->orderBy('created_at', 'desc')->get();
+
+            return response()->json([
+                'message' => "",
+                'status' => true,
+                'data' => [
+                    'demandes' => $this->fleetsResponse($demandes_flote)
+                ]
+            ]);
+        } else {
+            return response()->json([
+                'message' => "Cet utilisateur n'est pas un agent/ressource",
                 'status' => false,
                 'data' => null
             ]);

@@ -61,7 +61,7 @@ class PuceController extends Controller
         $numero = $request->numero;
 
         $user = User::find($request->id_agent);
-        $agent = $user->agent()->first();
+        $agent = $user->agent->first();
 
         $id_agent = $agent->id;
 
@@ -432,9 +432,9 @@ class PuceController extends Controller
     }
 
     /**
-     * //lister les puces d'un agent
+     * //lister les puces d'un reesponsable de zone
      */
-    public function list_agent()
+    public function list_responsable()
     {
         $user = Auth::user();
         $userRole = $user->roles->first()->name;
@@ -455,6 +455,38 @@ class PuceController extends Controller
         } else {
             return response()->json([
                 'message' => "Cet utilisateur n'est pas un responsable de zone",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+    }
+
+    /**
+     * //lister les puces d'un agent
+     */
+    public function list_agent()
+    {
+        $user = Auth::user();
+        $agent = $user->agent->first();
+        $userRole = $user->roles->first()->name;
+
+        if($userRole === Roles::AGENT || $userRole === Roles::RESSOURCE) {
+            $puces = Puce::where('id_agent', $agent->id)->orderBy('created_at', 'desc')->paginate(6);
+
+            $sims_response =  $this->simsResponse($puces->items());
+
+            return response()->json([
+                'message' => '',
+                'status' => true,
+                'data' => [
+                    'puces' => $sims_response,
+                    'hasMoreData' => $puces->hasMorePages(),
+                ]
+            ]);
+        } else {
+            return response()->json([
+                'message' => "Cet utilisateur n'est pas un agent/ressource",
                 'status' => false,
                 'data' => null
             ]);

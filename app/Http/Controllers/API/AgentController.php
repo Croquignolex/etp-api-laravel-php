@@ -235,7 +235,7 @@ class AgentController extends Controller
     {
         //on recherche l'agent en question
         $user = User::find($id);
-        $agent = $user->agent()->first();
+        $agent = $user->agent->first();
 
         //Envoie des information
         if($agent != null){
@@ -294,7 +294,7 @@ class AgentController extends Controller
         // rechercher l'agent
 
 		$user = User::find($id);
-        $agent = $user->agent()->first();
+        $agent = $user->agent->first();
 		$user->name = $name;
 		$user->email = $email;
 		$user->adresse = $adresse;
@@ -353,7 +353,7 @@ class AgentController extends Controller
         }
 
         $user = User::find($id);
-        $agent = $user->agent()->first();
+        $agent = $user->agent->first();
         // Modifier son dossier
         $agent->dossier = $dossier;
 
@@ -511,7 +511,7 @@ class AgentController extends Controller
         }
 
         $user = User::find($id);
-		$agent = $user->agent()->first();
+		$agent = $user->agent->first();
 		$user->id_zone = $request->input('id_zone');
 
         if ($user->save()) {
@@ -631,7 +631,7 @@ class AgentController extends Controller
 
         // Get current user
         $user = User::find($id);
-        $agent = $user->agent()->first();
+        $agent = $user->agent->first();
 
         $agent_img_cni_path_name =  $agent->img_cni;
         $agent_img_cni_path_name2 =  $agent->img_cni_back;
@@ -727,7 +727,7 @@ class AgentController extends Controller
 
         // rechercher l'agent'
         $user = User::find($id);
-        $agent = $user->agent()->first();
+        $agent = $user->agent->first();
 
         // ajout de mla nouvelle puce
         $puce = $agent->puces()->create([
@@ -797,7 +797,7 @@ class AgentController extends Controller
 
         if ($puce !== null) {
             $user = User::find($id);
-            $agent = $user->agent()->first();
+            $agent = $user->agent->first();
 
 			$user = User::find($agent->id_user);
 			$puces = is_null($agent) ? [] : $agent->puces;
