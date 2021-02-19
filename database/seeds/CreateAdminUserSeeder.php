@@ -1,13 +1,12 @@
 <?php
 
-use App\Agent;
 use App\Puce;
 use App\Zone;
+use App\User;
 use App\Setting;
 use App\Type_puce;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
-use App\User;
 use Spatie\Permission\Models\Permission;
 
 class CreateAdminUserSeeder extends Seeder
@@ -59,7 +58,7 @@ class CreateAdminUserSeeder extends Seeder
 
 		$user22 = User::create([
 
-        	'name' => 'AGENT EMI WHITE',
+        	'name' => 'RESSOURCE EMI WHITE',
 
             'email' => 'agent2@etp.com',
 
@@ -238,11 +237,11 @@ class CreateAdminUserSeeder extends Seeder
                 $role2->givePermissionTo(App\Enums\Roles::AGENT);
             //au gestionnaire de flotte
                 $role3->givePermissionTo(App\Enums\Roles::GESTION_FLOTTE);
-                $role3->givePermissionTo(App\Enums\Roles::AGENT);
+//                $role3->givePermissionTo(App\Enums\Roles::AGENT);
             //au supperviseur
                 $role5->givePermissionTo(App\Enums\Roles::SUPERVISEUR);
-                $role5->givePermissionTo(App\Enums\Roles::GESTION_FLOTTE);
-                $role5->givePermissionTo(App\Enums\Roles::AGENT);
+//                $role5->givePermissionTo(App\Enums\Roles::GESTION_FLOTTE);
+//                $role5->givePermissionTo(App\Enums\Roles::AGENT);
 
 
 

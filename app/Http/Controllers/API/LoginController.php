@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Enums\Roles;
 use App\User;
 use App\Zone;
 use App\Caisse;
@@ -118,12 +119,19 @@ class LoginController extends Controller
 
 			$user = auth()->user();
 
+			$role = $user->roles->first()->name;
+
+			if($role === Roles::AGENT) {
+			    if($user->agent->first()->reference === Roles::RESSOURCE)
+			        $role = Roles::RESSOURCE;
+            }
+
             return response()->json([
                 'message' => null,
                 'status' => true,
                 'data' => [
                     'token' => $token->accessToken,
-                    'role' => $user->roles->first()->name,
+                    'role' => $role,
                 ]
             ]);
         } else {
