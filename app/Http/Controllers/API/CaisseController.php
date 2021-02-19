@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Liquidite;
+use App\Notifications\Approvisionnement;
+use App\Notifications\Recouvrement as Notif_recouvrement;
 use App\Role;
 use App\User;
 use App\Operation;
@@ -13,7 +16,6 @@ use App\Notifications\Recouvrement;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
-use App\Notifications\Recouvrement as Notif_recouvrement;
 
 class CaisseController extends Controller
 {
@@ -23,7 +25,8 @@ class CaisseController extends Controller
     function __construct()
     {
         $ges_flotte = Roles::GESTION_FLOTTE;
-        $this->middleware("permission:$ges_flotte");
+        $rz = Roles::RECOUVREUR;
+        $this->middleware("permission:$ges_flotte|$rz");
     }
 
     /**
@@ -798,5 +801,156 @@ class CaisseController extends Controller
         }
 
         return $returnedHandovers;
+    }
+
+    /**
+     * //Creer un echange de liquidité
+     */
+    public function give_to_rz(Request $request)
+    {
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [
+            'id_reception' => ['required', 'Numeric'], //id de l'utilisateur qui va recevoir de l'argent
+            'montant' => ['required', 'Numeric']
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        //On verifi si le receveur est vraiment utilisateur
+        if (!($reception = User::find($request->id_reception))) {
+            return response()->json([
+                'message' => "l'utilisateur en paramettre n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        //recuperer la caisse de l'utilisateur qui recoit le verssement
+        $caisse_reception = $reception->caisse->first();
+
+        //recuperer la caisse de l'utilisateur connecté
+        $user = Auth::user();
+        $caisse = $user->caisse->first();
+
+        //On verifi si le solde du payeur est suffisant
+        if ($caisse->solde < $request->montant) {
+            return response()->json([
+                'message' => "le solde du payeur est insuffisant",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        // Récupérer les données validées
+        $id_reception = $request->id_reception;
+        $id_emission = $user->id;
+        $montant = $request->montant;
+        $note = "pour un versement";
+
+        // Nouveau transfert
+        $transfert = new Liquidite ([
+            'id_user' => $id_emission,
+            'id_reception' => $id_reception,
+            'montant' => $montant,
+            'statut' => Statut::EN_ATTENTE,
+            'note' => $note,
+        ]);
+
+
+        // creation du versement
+        if ($transfert->save())
+        {
+            //notification du donneur
+            $reception = User::find($id_reception);
+            $reception->notify(new Approvisionnement([
+                'data' => $transfert,
+                'message' => "Nouvel échange de liquidité"
+            ]));
+
+            //on credite le compte du donneur
+            $caisse->solde = $caisse->solde + $montant;
+            $caisse->save();
+
+            //on débite le solde de celui qui recoi l'argent
+            $caisse_reception->solde = $caisse_reception->solde - $montant;
+            $caisse_reception->save();
+
+            // Renvoyer un message de succès
+            return response()->json([
+                'message' => 'transfert de liquidité effectué avec succès',
+                'status' => true,
+                'data' => [
+                    'transfert' => $transfert,
+                    'emeteur' => $user,
+                    'receveur' => $reception,
+                ]
+            ]);
+        } else {
+            // Renvoyer une erreur
+            return response()->json([
+                'message' => 'Erreur lors de l\'operation',
+                'status' => false,
+                'data' => null
+            ]);
+        }
+    }
+
+
+    /**
+     * ////lister mes échanges de liquidité
+     */
+    public function give_to_rz_list()
+    {
+        $my_id = Auth::user()->id;
+
+        $liqudites = Liquidite::where('id_user', $my_id)->orwhere('id_reception', $my_id)->orderBy('created_at', 'desc')->paginate(6);
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'liqudites' => $liqudites,
+            ]
+        ]);
+    }
+
+    /**
+     * ////Details d'un verssement
+     */
+    public function give_to_rz_details($id)
+    {
+        $liqudite = Liquidite::find($id);
+
+        return response()->json(
+            [
+                'message' => '',
+                'status' => true,
+                'data' => $liqudite
+            ]
+        );
+    }
+
+    /**
+     * ////Details d'un verssement
+     */
+    public function give_to_rz_approuve($id)
+    {
+        $liqudite = Liquidite::find($id);
+        $liqudite->statut = Statut::APPROUVE;
+        $liqudite->save();
+
+        return response()->json(
+            [
+                'message' => '',
+                'status' => true,
+                'data' => $liqudite
+            ]
+        );
     }
 }
