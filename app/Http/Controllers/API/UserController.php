@@ -151,29 +151,24 @@ class UserController extends Controller
         if ($userCount != 0) {
             $user = User::find($id);
 
-            return response()->json(
-                [
-                    'message' => '',
-                    'status' => true,
-                    'data' => [
-						'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
-						'role' => $user->roles->first(),
-						'zone' => $user->zone,
-						'puces' => $user->puces,
-                        'caisse' => Caisse::where('id_user', $user->id)->first()
-					]
+            return response()->json([
+                'message' => '',
+                'status' => true,
+                'data' => [
+                    'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
+                    'role' => $user->roles->first(),
+                    'zone' => $user->zone,
+                    'puces' => $user->puces,
+                    'caisse' => Caisse::where('id_user', $user->id)->first()
                 ]
-            );
+            ]);
          }else{
-            return response()->json(
-                [
-                    'message' => 'impossible de trouver l utilisateur spécifié',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Impossible de trouver l'utilisateur spécifié",
+                'status' => false,
+                'data' => null
+            ]);
          }
-
     }
 
     /**
@@ -185,65 +180,34 @@ class UserController extends Controller
         $user_status = $userDB->statut;
 
         if ($userDB == null) {
-
             // Renvoyer un message d'erreur
-            return response()->json(
-                [
-                    'message' => 'lutilisateur introuvable',
-                    'status' => true,
-                    'data' => null
-                ]
-            );
-
-        }elseif ($user_status == Statut::DECLINE) {
-
+            return response()->json([
+                'message' => "Utilisateur introuvable",
+                'status' => true,
+                'data' => null
+            ]);
+        } elseif ($user_status == Statut::DECLINE) {
             // Approuver
             $userDB->statut = Statut::APPROUVE;
-
-
-        }else{
-
+        } else {
             // desapprouver
             $userDB->statut = Statut::DECLINE;
         }
 
-
         if ($userDB->save()) {
-
-			$users = User::where('deleted_at', null)->get();
-            $returenedUers = [];
-            foreach($users as $user) {
-
-                $returenedUers[] = [
-					'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
-					'role' => $user->roles->first(),
-					'zone' => $user->zone,
-                    'puces' => $user->puces,
-                    'caisse' => Caisse::where('id_user', $user->id)->first()
-				];
-
-            }
-
-            // Renvoyer un message de succès
-            return response()->json(
-                [
-                    'message' => 'Statut changé',
-                    'status' => true,
-                    'data' => ['users' => $returenedUers]
-                ]
-            );
+            return response()->json([
+                'message' => "Statut de l'utilisateur changé avec succès",
+                'status' => true,
+                'data' => null
+            ]);
         } else {
-
             // Renvoyer une erreur
-            return response()->json(
-                [
-                    'message' => 'erreur lors de la modification du statut',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => 'Erreur lors de la modification du statut',
+                'status' => false,
+                'data' => null
+            ]);
         }
-
     }
 
     /**
@@ -301,6 +265,25 @@ class UserController extends Controller
             'status' => true,
             'data' => [
                 'recouvreurs' => $this->collectorsResponse($collectors)
+            ]
+        ]);
+    }
+
+    /**
+     * //lister des recouveurs
+     */
+    public function recouvreurs()
+    {
+        $collectors = User::orderBy('created_at', 'desc')->get()->filter(function(User $user) {
+            return ($user->roles->first()->name === Roles::RECOUVREUR);
+        });
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'recouvreurs' => $this->collectorsResponse($collectors),
+                'hasMoreData' => false,
             ]
         ]);
     }
@@ -407,15 +390,12 @@ class UserController extends Controller
     {
         //voir si l'utilisateur à modifier existe
         if(!User::Find($id)){
-
             // Renvoyer un message de notification
-            return response()->json(
-                [
-                    'message' => 'utilisateur non trouvé',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => 'Utilisateur non existant',
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         // Valider données envoyées
@@ -423,7 +403,7 @@ class UserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             // 'statut' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:255'],
-            'poste' => ['nullable', 'string', 'max:255'],
+            //'poste' => ['nullable', 'string', 'max:255'],
             // 'email' => ['required', 'string', 'email'],
             'adresse' => ['nullable', 'string', 'max:255'],
             // 'roles' => ['required'],
@@ -431,13 +411,11 @@ class UserController extends Controller
 			'email' => 'nullable|email',
         ]);
         if ($validator->fails()) {
-            return response()->json(
-                [
-                    'message' => "Le formulaire contient des champs mal renseignés",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         // Récupérer les données validées
@@ -446,7 +424,7 @@ class UserController extends Controller
         $email = $request->email;
         $adresse = $request->adresse;
         // $status = $request->status;
-        $poste = $request->poste;
+        //$poste = $request->poste;
         // $phone = $request->phone;
 
         // Modifier le profil de l'utilisateur
@@ -454,7 +432,7 @@ class UserController extends Controller
         $user->name = $name;
         // $user->statut = $status;
         // $user->phone = $phone;
-        $user->poste = $poste;
+        //$user->poste = $poste;
 
         $user->description = $description;
         $user->email = $email;
@@ -463,29 +441,24 @@ class UserController extends Controller
         if ($user->save()) {
 
             // Renvoyer un message de succès
-            return response()->json(
-                [
-                    'message' => 'profil modifié',
+            return response()->json([
+                    'message' => 'Utilisateur mis à jour avec succès',
                     'status' => true,
-                   'data' => [
+                    'data' => [
 						'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
-						'role' => $user->roles->first(),
 						'zone' => $user->zone,
-                       'puces' => $user->puces,
+                        'puces' => $user->puces,
                         'caisse' => Caisse::where('id_user', $user->id)->first()
-					]
+					 ]
                 ]
             );
         } else {
-
             // Renvoyer une erreur
-            return response()->json(
-                [
-                    'message' => 'erreur lors de la modification',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => 'Erreur lors de la modification',
+                'status' => false,
+                'data' => null
+            ]);
         }
     }
 
@@ -577,54 +550,43 @@ class UserController extends Controller
         if(!User::Find($id)){
 
             // Renvoyer un message de notification
-            return response()->json(
-                [
-                    'message' => 'utilisateur non trouvé',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
-
+            return response()->json([
+                'message' => 'Utilisateur non existant',
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
-
             'id_zone' => ['required']
-
         ]);
         if ($validator->fails()) {
-            return response()->json(
-                [
-                    'message' => "Le formulaire contient des champs mal renseignés",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         // on verifie si la zone est définit
         $zoneExist = Zone::find($request->input('id_zone'));
         if ($zoneExist === null) {
-            return response()->json(
-                [
-                    'message' => 'cette zone n est pas défini',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => 'Cette zone n est pas défini',
+                'status' => false,
+                'data' => null
+            ]);
         }
         $user = User::find($id);
         // On vérifie s'il ya déjà un responsable dans cette zone
         if($user->roles->first()->name === Roles::RECOUVREUR) {
             if($zoneExist->id_responsable !== null) {
-                return response()->json(
-                    [
-                        'message' => 'Un responsable est déjà présent dans cette zone',
-                        'status' => false,
-                        'data' => null
-                    ]
-                );
+                return response()->json([
+                    'message' => 'Un responsable est déjà présent dans cette zone',
+                    'status' => false,
+                    'data' => null
+                ]);
             }
             // Detacher le responsable de l'ancienne zone
             $ancienne_zone = Zone::where('id_responsable', $user->id)->first();
@@ -641,30 +603,25 @@ class UserController extends Controller
 		$user->id_zone = $request->input('id_zone');
 
         if ($user->save()) {
-
             // Renvoyer un message de succès
-            return response()->json(
-                [
-                    'message' => 'Role modifié',
+            return response()->json([
+                    'message' => 'Zone mis à jour avec succès',
                     'status' => true,
                      'data' => [
 						'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
 						'zone' => $user->zone,
-                         'puces' => $user->puces,
+                        'puces' => $user->puces,
                         'caisse' => Caisse::where('id_user', $user->id)->first()
 					]
                 ]
             );
         } else {
-
             // Renvoyer une erreur
-            return response()->json(
-                [
-                    'message' => 'erreur lors de la modification',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => 'Erreur lors de la modification',
+                'status' => false,
+                'data' => null
+            ]);
         }
     }
 
@@ -683,13 +640,11 @@ class UserController extends Controller
             'password' => 'required|string|min:6',
         ]);
         if ($validator->fails()) {
-            return response()->json(
-                [
-                    'message' => "Le formulaire contient des champs mal renseignés",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         $role = Role::where('name', Roles::RECOUVREUR)->first();
@@ -698,18 +653,17 @@ class UserController extends Controller
         $input['password'] = bcrypt($input['password']);
         //$input['avatar'] = $server_image_name_path;
         $input['add_by'] = Auth::user()->id;
+        $input['statut'] = Statut::APPROUVE;
         //$input['id_zone'] = json_encode($request->id_zone);
 
         // On vérifie s'il ya déjà un responsable dans cette zone
         $zone = Zone::find($input['id_zone']);
         if($zone->id_responsable !== null) {
-            return response()->json(
-                [
-                    'message' => 'Un responsable est déjà présent dans cette zone',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => 'Un responsable est déjà présent dans cette zone',
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         $user = User::create($input);
@@ -741,23 +695,22 @@ class UserController extends Controller
 				'cards' => '[0,1,2,3,4,5,6,7,8,9]',
 			]);
 
-            return response()->json(
-                [
-                    'message' => '',
-                    'status' => true,
-                    'data' => ['user'=>$success]
+            return response()->json([
+                'message' => 'tresponsable de zone crée avec succès',
+                'status' => true,
+                'data' => [
+                    'recouvreur' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
+                    'zone' => $user->zone,
+                    'caisse' => Caisse::where('id_user', $user->id)->first()
                 ]
-            );
+            ]);
         }
 
-
-        return response()->json(
-            [
-                'message' => "l'utilisateur n'a pas été créé",
-                'status' => false,
-                'data' => null
-            ]
-        );
+        return response()->json([
+            'message' => "Erreur lors de création du responsable de zone",
+            'status' => false,
+            'data' => null
+        ]);
     }
 
     /**

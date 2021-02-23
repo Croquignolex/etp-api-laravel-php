@@ -453,7 +453,6 @@ class AgentController extends Controller
         }
 
         if ($userDB->save()) {
-
             return response()->json([
                 'message' => "Statut de l'agent changé avec succès",
                 'status' => true,
@@ -467,7 +466,6 @@ class AgentController extends Controller
                 'data' => null
             ]);
         }
-
     }
 
     /**
@@ -838,41 +836,35 @@ class AgentController extends Controller
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
 			'numero' => ['required', 'string', 'max:255', 'unique:puces,numero'],
-            'reference' => ['nullable', 'string', 'max:255','unique:puces,reference'],
+            //'reference' => ['nullable', 'string', 'max:255','unique:puces,reference'],
             'id_flotte' => ['required', 'numeric'],
             'nom' => ['required', 'string'],
             'description' => ['nullable', 'string'],
         ]);
         if ($validator->fails()) {
-            return response()->json(
-                [
-                    'message' => "Le formulaire contient des champs mal renseignés",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         //si l'utilisateur n'est pas responsable de zonne'
         $rz = User::find($id);
         if (is_null($rz)) {
-            return response()->json(
-                [
-                    'message' => "Vous devez choisir un Responsable de zonne qui existe",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Vous devez choisir un Responsable de zonne qui existe",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         if (!($rz->hasRole([Roles::RECOUVREUR]))) {
-            return response()->json(
-                [
-                    'message' => "Vous devez choisir un Responsable de zonne",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Vous devez choisir un Responsable de zonne",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         //recuperer le type de puce
@@ -900,9 +892,8 @@ class AgentController extends Controller
 
 			$puces = $rz->puces;
             // Renvoyer un message de succès
-            return response()->json(
-                [
-                    'message' => '',
+            return response()->json([
+                    'message' => 'Puce ajoutée avec succès',
                     'status' => true,
                     'data' => [
 						'zone' => $rz->zone,
@@ -914,13 +905,11 @@ class AgentController extends Controller
             );
         } else {
             // Renvoyer une erreur
-            return response()->json(
-                [
-                    'message' => "Erreur l'ors de l'ajout de la nouvelle puce",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Erreur l'ors de l'ajout de la nouvelle puce",
+                'status' => false,
+                'data' => null
+            ]);
         }
     }
 
