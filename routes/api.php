@@ -61,7 +61,7 @@ Route::group(['middleware' => 'auth:api'], function(){
             ->where('id', '[0-9]+');
 
             //details d'un utilisateur
-            Route::get('details/{id}', 'API\UserController@details_user')
+            Route::get('details_user/{id}', 'API\UserController@details_user')
             ->where('id', '[0-9]+');
 
             //Changer le role d'un utilisateur

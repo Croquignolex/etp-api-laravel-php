@@ -1,13 +1,12 @@
 <?php
 
-use App\Agent;
 use App\Puce;
 use App\Zone;
+use App\User;
 use App\Setting;
 use App\Type_puce;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
-use App\User;
 use Spatie\Permission\Models\Permission;
 
 class CreateAdminUserSeeder extends Seeder
@@ -19,11 +18,6 @@ class CreateAdminUserSeeder extends Seeder
      */
     public function run()
     {
-		$user = Zone::create([
-        	'nom' => 'Douala',
-			'map' => '<iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d127357.54605115415!2d9.671763356449453!3d4.036071988407635!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x1061128be2e1fe6d%3A0x92daa1444781c48b!2sDouala!5e0!3m2!1sfr!2scm!4v1594723557579!5m2!1sfr!2scm" width="600" height="450" frameborder="0" style="border:0;" allowfullscreen="" aria-hidden="false" tabindex="0"></iframe>'
-        ]);
-
         //creer l'admin et les autre utilisateurs par defaut
 
         $user = User::create([
@@ -59,7 +53,7 @@ class CreateAdminUserSeeder extends Seeder
 
 		$user22 = User::create([
 
-        	'name' => 'AGENT EMI WHITE',
+        	'name' => 'RESSOURCE EMI WHITE',
 
             'email' => 'agent2@etp.com',
 
@@ -238,11 +232,11 @@ class CreateAdminUserSeeder extends Seeder
                 $role2->givePermissionTo(App\Enums\Roles::AGENT);
             //au gestionnaire de flotte
                 $role3->givePermissionTo(App\Enums\Roles::GESTION_FLOTTE);
-                $role3->givePermissionTo(App\Enums\Roles::AGENT);
+//                $role3->givePermissionTo(App\Enums\Roles::AGENT);
             //au supperviseur
                 $role5->givePermissionTo(App\Enums\Roles::SUPERVISEUR);
-                $role5->givePermissionTo(App\Enums\Roles::GESTION_FLOTTE);
-                $role5->givePermissionTo(App\Enums\Roles::AGENT);
+//                $role5->givePermissionTo(App\Enums\Roles::GESTION_FLOTTE);
+//                $role5->givePermissionTo(App\Enums\Roles::AGENT);
 
 
 
@@ -306,5 +300,11 @@ class CreateAdminUserSeeder extends Seeder
 			'bars' => '[0,1,2,3,4,5,6,7,8,9]',
 			'id_user' => $user4->id
 		]);
+
+        Zone::create([
+            'nom' => 'Douala',
+            'id_responsable' => 5,
+            'map' => '<iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d127357.54605115415!2d9.671763356449453!3d4.036071988407635!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x1061128be2e1fe6d%3A0x92daa1444781c48b!2sDouala!5e0!3m2!1sfr!2scm!4v1594723557579!5m2!1sfr!2scm" width="600" height="450" frameborder="0" style="border:0;" allowfullscreen="" aria-hidden="false" tabindex="0"></iframe>'
+        ]);
     }
 }

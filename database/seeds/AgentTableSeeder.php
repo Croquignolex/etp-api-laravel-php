@@ -12,7 +12,7 @@ class AgentTableSeeder extends Seeder {
 		// 'agent_2'
 		$agent_par_defaut = Agent::create(array(
 			'id_creator' => '1',
-			'id_user' => '2',
+			'id_user' => '3',
 			'img_cni' => null,
 			'img_cni_back' => null,
 			'reference' => Roles::RESSOURCE,
@@ -24,7 +24,7 @@ class AgentTableSeeder extends Seeder {
 
 		$agent_par_defaut2 = Agent::create(array(
 			'id_creator' => '1',
-			'id_user' => '3',
+			'id_user' => '2',
 			'img_cni' => null,
 			'img_cni_back' => null,
 			'reference' => Roles::AGENT,
@@ -43,7 +43,7 @@ class AgentTableSeeder extends Seeder {
 
 				'type' => 1,
 
-				'id_agent' => $agent_par_defaut->id,
+				'id_agent' => $agent_par_defaut2->id,
 
 				'nom' => 'JOE MANI'
 
@@ -58,7 +58,7 @@ class AgentTableSeeder extends Seeder {
 
 				'type' => 1,
 
-				'id_agent' => $agent_par_defaut->id,
+				'id_agent' => $agent_par_defaut2->id,
 
 				'nom' => 'JOE MANI'
 
@@ -70,9 +70,9 @@ class AgentTableSeeder extends Seeder {
 
 				'numero' => '673000000',
 
-				'type' => 1,
+				'type' => 2,
 
-				'id_agent' => $agent_par_defaut2->id,
+				'id_agent' => $agent_par_defaut->id,
 
 				'nom' => 'EMI WHITE'
 
