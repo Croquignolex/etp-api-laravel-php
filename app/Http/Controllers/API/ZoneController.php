@@ -38,73 +38,46 @@ class ZoneController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'reference' => ['nullable', 'string', 'max:255'],
             'map' => ['nullable', 'string'],
-            //'id_responsable' => ['nullable', 'Numeric'],
             'description' => ['nullable', 'string']
         ]);
+
         if ($validator->fails()) {
-            return response()->json(
-                [
-                    'message' => "Le formulaire contient des champs mal renseignés",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
-
-        //On recupère l'utilisateur passé en paramettre
-        //$responsable = User::find($request->id_responsable);
-
-        //On verifi si l'utilisateur passé est un responsable de zone
-        /*if (!$responsable->hasRole([Roles::RECOUVREUR])) {
-            return response()->json(
-                [
-                    'message' => "Une zonne ne peut etre attribuée qu'à un responsable de zonne",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
-        }*/
-
-
         // Récupérer les données validées
-
         $name = $request->name;
         $reference = $request->reference;
         $map = $request->map;
         $description = $request->description;
-        $id_responsable = $request->id_responsable;
-
 
         // Nouvelle zone
         $zone = new Zone ([
             'nom' => $name,
             'reference' => $reference,
             'map' => $map,
-            //'id_responsable' => $id_responsable,
             'description' => $description
         ]);
 
         // creation de La zone
         if ($zone->save()) {
-
             // Renvoyer un message de succès
-            return response()->json(
-                [
-                    'message' => 'zone créée',
-                    'status' => true,
-                    'data' => ['zone' => $zone]
-                ]
-            );
+            return response()->json([
+                'message' => 'Zone créer avec succès',
+                'status' => true,
+                'data' => ['zone' => $zone]
+            ]);
         } else {
             // Renvoyer une erreur
-            return response()->json(
-                [
-                    'message' => 'erreur lors de la Creation',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => 'Erreur lors de la Creation',
+                'status' => false,
+                'data' => null
+            ]);
         }
     }
 
@@ -117,8 +90,8 @@ class ZoneController extends Controller
         $zone = Zone::find($id);
 
 		$agents = [];
-//		$recouvreurs = [];
 		$users = $zone->users;
+
 		 foreach($users as $user)
 		 {
 			 $userRole = $user->roles->first()->name;
@@ -126,37 +99,27 @@ class ZoneController extends Controller
 			 if($userRole === Roles::AGENT)
 			 {
 				 $agents[] = ['user' => $user, 'agent' => $user_agent];
-				  //$user_zones = json_decode($user->id_zone);
-				  //if(array_search($zone->id, $user_zones)) $agents[] = $user;
 			 }
-			 /*else if($userRole === Roles::RECOUVREUR)
-			 {
-				 $recouvreurs[] = $user;
-				 //$user_zones = json_decode($user->id_zone);
-				 //if(array_search($zone->id, $user_zones)) $recouvreurs[] = $user;
-			 }*/
 		 }
 
         //Envoie des information
         if(Zone::find($id)){
 
-            return response()->json(
-                [
-                    'message' => '',
-                    'status' => true,
-                    'data' => ['zone' => $zone, 'agents' => $agents, 'recouvreur' => $zone->responsable]
+            return response()->json([
+                'message' => '',
+                'status' => true,
+                'data' => [
+                    'zone' => $zone,
+                    'agents' => $agents,
+                    'recouvreur' => $zone->responsable
                 ]
-            );
-
-        }else{
-
-            return response()->json(
-                [
-                    'message' => 'ecette zone n existe pas',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            ]);
+        } else {
+            return response()->json([
+                'message' => "Cette zone n'existe",
+                'status' => false,
+                'data' => null
+            ]);
         }
     }
 
@@ -237,13 +200,11 @@ class ZoneController extends Controller
             'description' => ['nullable', 'string']
         ]);
         if ($validator->fails()) {
-            return response()->json(
-                [
-                    'message' => "Le formulaire contient des champs mal renseignés",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         // Récupérer les données validées
@@ -267,7 +228,6 @@ class ZoneController extends Controller
 
 			$users = $zone->users;
 			$agents = [];
-//			$recouvreurs = [];
 			 foreach($users as $user)
 			 {
 				 $userRole = $user->roles->first()->name;
@@ -275,34 +235,22 @@ class ZoneController extends Controller
 				 if($userRole === Roles::AGENT)
 				 {
 					 $agents[] = ['user' => $user, 'agent' => $user_agent];
-					  //$user_zones = json_decode($user->id_zone);
-					  //if(array_search($zone->id, $user_zones)) $agents[] = $user;
 				 }
-				 /*else if($userRole === Roles::RECOUVREUR)
-				 {
-					 $recouvreurs[] = $user;
-					 //$user_zones = json_decode($user->id_zone);
-					 //if(array_search($zone->id, $user_zones)) $recouvreurs[] = $user;
-				 }*/
 			 }
 
             // Renvoyer un message de succès
-            return response()->json(
-                [
-                    'message' => '',
-                    'status' => true,
-                    'data' => ['zone' => $zone, 'agents' => $agents, 'recouvreur' => $zone->responsable]
-                ]
-            );
+            return response()->json([
+                'message' => 'Zone mise à jour avec succès',
+                'status' => true,
+                'data' => ['zone' => $zone, 'agents' => $agents, 'recouvreur' => $zone->responsable]
+            ]);
         } else {
             // Renvoyer une erreur
-            return response()->json(
-                [
-                    'message' => 'erreur lors de la modification',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => 'Erreur lors de la modification',
+                'status' => false,
+                'data' => null
+            ]);
         }
     }
 
