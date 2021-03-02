@@ -35,39 +35,38 @@ class PuceController extends Controller
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
             'numero' => ['required', 'string', 'max:255', 'unique:puces,numero'],
-            'reference' => ['nullable', 'string', 'max:255','unique:puces,reference'],
+            'reference' => ['nullable', 'string', 'max:255'],
             'id_flotte' => ['required', 'Numeric'],
-            //'id_agent' => ['required', 'Numeric'],
-            //'id_corporate' => ['required', 'Numeric'],
-            //'id_recouvreur' => ['required', 'Numeric'],
+            'id_agent' => ['nullable', 'Numeric'],
+            'id_ressource' => ['nullable', 'Numeric'],
+            'id_corporate' => ['nullable', 'Numeric'],
+            'id_recouvreur' => ['nullable', 'Numeric'],
             'nom' => ['required', 'string'],
             'description' => ['nullable', 'string'],
 			'type' => ['required', 'numeric'],
         ]);
 
         if ($validator->fails()) {
-            return response()->json(
-                [
-                    'message' => "Le formulaire contient des champs mal renseignés",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         // Récupérer les données validées
         $nom = $request->nom;
 		$type = $request->type;
         $numero = $request->numero;
+        $reference = $request->reference;
 
-        $user = User::find($request->id_agent);
-        $agent = $user->agent->first();
-
-        $id_agent = $agent->id;
+        $id = $reference === Roles::AGENT ? $request->id_agent : $request->id_ressource;
+        $user = is_null($id) ? $id : User::find($id);
+        $agent = is_null($id) ? $id : $user->agent->first();
+        $id_agent = is_null($id) ? $id : $agent->id;
 
         $id_corporate = $request->id_corporate;
         $id_recouvreur = $request->id_recouvreur;
-        $reference = $request->reference;
         $id_flotte = $request->id_flotte;
         $description = $request->description;
 
@@ -82,27 +81,32 @@ class PuceController extends Controller
             'corporate' => $id_corporate,
             'description' => $description,
             'id_rz' => $id_recouvreur,
+            'solde' => 0
         ]);
 
         // creation de La puce
         if ($puce->save()) {
             // Renvoyer un message de succès
-            return response()->json(
-                [
-                    'message' => 'puce créée',
-                    'status' => true,
-                    'data' => ['puce' => $puce]
+            return response()->json([
+                'message' => 'Puce créer avec succès',
+                'status' => true,
+                'data' => [
+                    'puce' => $puce,
+                    'flote' => $puce->flote,
+                    'type' => $puce->type_puce,
+                    'agent' => $agent,
+                    'user' => $user,
+                    'corporate' => $puce->company,
+                    'recouvreur' => $puce->rz,
                 ]
-            );
+            ]);
         } else {
             // Renvoyer une erreur
-            return response()->json(
-                [
-                    'message' => 'erreur lors de la Creation',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => 'Erreur lors de la Creation',
+                'status' => false,
+                'data' => null
+            ]);
         }
     }
 
@@ -190,7 +194,6 @@ class PuceController extends Controller
         //$puce->id_agent = $id_agent;
         $puce->description = $description;
 
-
         if ($puce->save()) {
 			$id_agent = $puce->id_agent;
 			$agent = is_null($id_agent) ? $id_agent : $puce->agent;
@@ -198,7 +201,7 @@ class PuceController extends Controller
             // Renvoyer un message de succès
             return response()->json(
                 [
-                    'message' => '',
+                    'message' => 'Puce mise à jour avec succès',
                     'status' => true,
                     'data' => [
                         'puce' => $puce,

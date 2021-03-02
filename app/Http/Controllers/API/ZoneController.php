@@ -454,13 +454,11 @@ class ZoneController extends Controller
                 //'point_de_vente' => ['nullable', 'string', 'max:255']
         ]);
         if ($validator->fails()) {
-            return response()->json(
-                [
-                    'message' => "Le formulaire contient des champs mal renseignés",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
 		$name = $request->name;
@@ -548,33 +546,27 @@ class ZoneController extends Controller
 
         if ($user !== null) {
 			$agents = [];
-//			$recouvreurs = [];
 			$users = $zone->users;
 			 foreach($users as $user)
 			 {
 				 $userRole = $user->roles->first()->name;
 				 $user_agent = Agent::where('id_user', $user->id)->first();
 				 if($userRole === Roles::AGENT) $agents[] = ['user' => $user, 'agent' => $user_agent];
-//				 else if($userRole === Roles::RECOUVREUR) $recouvreurs[] = $user;
 			 }
 
             // Renvoyer un message de succès
-            return response()->json(
-                [
-                    'message' => '',
-                    'status' => true,
-                    'data' => ['zone' => $zone, 'agents' => $agents, 'recouvreur' => $zone->responsable]
-                ]
-            );
+            return response()->json([
+                'message' => $reference === Roles::AGENT ? "Agent ajouté avec succès" : "Ressource ajoutée avec succès",
+                'status' => true,
+                'data' => ['zone' => $zone, 'agents' => $agents, 'recouvreur' => $zone->responsable]
+            ]);
         } else {
             // Renvoyer une erreur
-            return response()->json(
-                [
-                    'message' => "Erreur l'ors de lsuppression d'un recouvreur",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Erreur l'ors de lsuppression d'un recouvreur",
+                'status' => false,
+                'data' => null
+            ]);
         }
     }
 
