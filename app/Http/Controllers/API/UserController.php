@@ -307,6 +307,25 @@ class UserController extends Controller
     }
 
     /**
+     * //lister des gestionnaires
+     */
+    public function gestionnaires()
+    {
+        $managers = User::orderBy('created_at', 'desc')->get()->filter(function(User $user) {
+            return ($user->roles->first()->name === Roles::GESTION_FLOTTE);
+        });
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'gestionnaires' => $this->managersResponse($managers),
+                'hasMoreData' => false,
+            ]
+        ]);
+    }
+
+    /**
      * supprimer un utilisateur
      *
      * @param $id
@@ -650,11 +669,11 @@ class UserController extends Controller
         $role = Role::where('name', Roles::RECOUVREUR)->first();
 
         $input = $request->all();
+
         $input['password'] = bcrypt($input['password']);
-        //$input['avatar'] = $server_image_name_path;
         $input['add_by'] = Auth::user()->id;
         $input['statut'] = Statut::APPROUVE;
-        //$input['id_zone'] = json_encode($request->id_zone);
+        $input['avatar'] = null;
 
         // On vérifie s'il ya déjà un responsable dans cette zone
         $zone = Zone::find($input['id_zone']);
@@ -696,7 +715,7 @@ class UserController extends Controller
 			]);
 
             return response()->json([
-                'message' => 'tresponsable de zone crée avec succès',
+                'message' => 'Responsable de zone crée avec succès',
                 'status' => true,
                 'data' => [
                     'recouvreur' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
@@ -708,6 +727,79 @@ class UserController extends Controller
 
         return response()->json([
             'message' => "Erreur lors de création du responsable de zone",
+            'status' => false,
+            'data' => null
+        ]);
+    }
+
+    /**
+     * Creation d'une gestionnaire de flotte
+     */
+    public function create_gestionnaire(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required',
+            'phone' => 'required|numeric|unique:users,phone',
+            'adresse' => 'nullable',
+            'description' => 'nullable',
+            'email' => 'nullable|email',
+            'password' => 'required|string|min:6',
+        ]);
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
+
+        $input = $request->all();
+
+        $input['password'] = bcrypt($input['password']);
+        $input['add_by'] = Auth::user()->id;
+        $input['statut'] = Statut::APPROUVE;
+        $input['avatar'] = null;
+
+        $user = User::create($input);
+
+        if (isset($user)) {
+            //On crée la caisse de l'utilisateur
+            $caisse = new Caisse([
+                'nom' => 'Caisse ' . $request->name,
+                'description' => Null,
+                'id_user' => $user->id,
+                'reference' => Null,
+                'solde' => 0
+            ]);
+            $caisse->save();
+
+            //on lui donne un role
+            $user->assignRole($role);
+
+            //On lui crée un token
+            $success['token'] =  $user->createToken('MyApp')->accessToken;
+            $success['user'] =  $user;
+
+            $user->setting()->create([
+                'bars' => '[0,1,2,3,4,5,6,7,8,9]',
+                'charts' => '[0,1,2,3,4,5,6,7,8,9]',
+                'cards' => '[0,1,2,3,4,5,6,7,8,9]',
+            ]);
+
+            return response()->json([
+                'message' => 'Gestionnaire de flotte crée avec succès',
+                'status' => true,
+                'data' => [
+                    'gestionnaire' => $user->setHidden(['deleted_at', 'add_by']),
+                    'caisse' => Caisse::where('id_user', $user->id)->first()
+                ]
+            ]);
+        }
+
+        return response()->json([
+            'message' => "Erreur lors de création de la gestionnaire de flotte",
             'status' => false,
             'data' => null
         ]);

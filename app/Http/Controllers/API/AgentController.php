@@ -138,7 +138,7 @@ class AgentController extends Controller
         // Nouvel utilisateur
             $user = new User([
                 'add_by' => $add_by_id,
-                //'poste' => $poste,
+                'avatar' => null,
                 'name' => $name,
                 'email' => $email,
                 'password' => $password,

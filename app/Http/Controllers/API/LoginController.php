@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Enums\Roles;
+use App\Enums\Statut;
 use App\User;
 use App\Zone;
 use App\Caisse;
@@ -40,7 +41,7 @@ class LoginController extends Controller
          }
 
          // Check if user exist into database
-         $userEnable = User::where('phone', $request->phone)->first();
+         $userEnable = User::where('phone', $request->phone)->where('statut', Statut::APPROUVE)->first();
 
          // si la connexion est bonne
          if ($userEnable !== null) {

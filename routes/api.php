@@ -78,6 +78,9 @@ Route::group(['middleware' => 'auth:api'], function(){
 			 //Creation d'un agent de recouvrement
             Route::post('create_recouvreur', 'API\UserController@create_recouvreur');
 
+            //Creation d'une gestionnaire de flotte
+            Route::post('create_gestionnaire', 'API\UserController@create_gestionnaire');
+
 			 //Changer la zone d'un utilisateur
             Route::post('edit_zone_user/{id}', 'API\UserController@edit_zone_user')
             ->where('id', '[0-9]+');
