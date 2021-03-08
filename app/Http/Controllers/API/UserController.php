@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Validator;
 
 class UserController extends Controller
 {
-	/**
+    /**
      * les conditions de lecture des methodes
      */
     function __construct()
@@ -320,6 +320,44 @@ class UserController extends Controller
             'status' => true,
             'data' => [
                 'gestionnaires' => $this->managersResponse($managers),
+                'hasMoreData' => false,
+            ]
+        ]);
+    }
+
+    /**
+     * //lister des superviseurs
+     */
+    public function superviseurs()
+    {
+        $supervisors = User::orderBy('created_at', 'desc')->get()->filter(function(User $user) {
+            return ($user->roles->first()->name === Roles::SUPERVISEUR);
+        });
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'superviseurs' => $this->supervisorsResponse($supervisors),
+                'hasMoreData' => false,
+            ]
+        ]);
+    }
+
+    /**
+     * //lister des administrateurs
+     */
+    public function administrateurs()
+    {
+        $admins = User::orderBy('created_at', 'desc')->get()->filter(function(User $user) {
+            return ($user->roles->first()->name === Roles::ADMIN);
+        });
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'administrateurs' => $this->adminsResponse($admins),
                 'hasMoreData' => false,
             ]
         ]);
@@ -806,6 +844,152 @@ class UserController extends Controller
     }
 
     /**
+     * Creation d'un superviseur
+     */
+    public function create_superviseur(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required',
+            'phone' => 'required|numeric|unique:users,phone',
+            'adresse' => 'nullable',
+            'description' => 'nullable',
+            'email' => 'nullable|email',
+            'password' => 'required|string|min:6',
+        ]);
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        $role = Role::where('name', Roles::SUPERVISEUR)->first();
+
+        $input = $request->all();
+
+        $input['password'] = bcrypt($input['password']);
+        $input['add_by'] = Auth::user()->id;
+        $input['statut'] = Statut::APPROUVE;
+        $input['avatar'] = null;
+
+        $user = User::create($input);
+
+        if (isset($user)) {
+            //On crée la caisse de l'utilisateur
+            $caisse = new Caisse([
+                'nom' => 'Caisse ' . $request->name,
+                'description' => Null,
+                'id_user' => $user->id,
+                'reference' => Null,
+                'solde' => 0
+            ]);
+            $caisse->save();
+
+            //on lui donne un role
+            $user->assignRole($role);
+
+            //On lui crée un token
+            $success['token'] =  $user->createToken('MyApp')->accessToken;
+            $success['user'] =  $user;
+
+            $user->setting()->create([
+                'bars' => '[0,1,2,3,4,5,6,7,8,9]',
+                'charts' => '[0,1,2,3,4,5,6,7,8,9]',
+                'cards' => '[0,1,2,3,4,5,6,7,8,9]',
+            ]);
+
+            return response()->json([
+                'message' => 'Superviseur crée avec succès',
+                'status' => true,
+                'data' => [
+                    'superviseur' => $user->setHidden(['deleted_at', 'add_by']),
+                    'caisse' => Caisse::where('id_user', $user->id)->first()
+                ]
+            ]);
+        }
+
+        return response()->json([
+            'message' => "Erreur lors de création du superviseur",
+            'status' => false,
+            'data' => null
+        ]);
+    }
+
+    /**
+     * Creation d'un administrateur
+     */
+    public function create_administrateur(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required',
+            'phone' => 'required|numeric|unique:users,phone',
+            'adresse' => 'nullable',
+            'description' => 'nullable',
+            'email' => 'nullable|email',
+            'password' => 'required|string|min:6',
+        ]);
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        $role = Role::where('name', Roles::ADMIN)->first();
+
+        $input = $request->all();
+
+        $input['password'] = bcrypt($input['password']);
+        $input['add_by'] = Auth::user()->id;
+        $input['statut'] = Statut::APPROUVE;
+        $input['avatar'] = null;
+
+        $user = User::create($input);
+
+        if (isset($user)) {
+            //On crée la caisse de l'utilisateur
+            $caisse = new Caisse([
+                'nom' => 'Caisse ' . $request->name,
+                'description' => Null,
+                'id_user' => $user->id,
+                'reference' => Null,
+                'solde' => 0
+            ]);
+            $caisse->save();
+
+            //on lui donne un role
+            $user->assignRole($role);
+
+            //On lui crée un token
+            $success['token'] =  $user->createToken('MyApp')->accessToken;
+            $success['user'] =  $user;
+
+            $user->setting()->create([
+                'bars' => '[0,1,2,3,4,5,6,7,8,9,10]',
+                'charts' => '[0,1,2,3,4,5,6,7,8,9,10]',
+                'cards' => '[0,1,2,3,4,5,6,7,8,9,10]',
+            ]);
+
+            return response()->json([
+                'message' => 'Administrateur crée avec succès',
+                'status' => true,
+                'data' => [
+                    'administrateur' => $user->setHidden(['deleted_at', 'add_by']),
+                    'caisse' => Caisse::where('id_user', $user->id)->first()
+                ]
+            ]);
+        }
+
+        return response()->json([
+            'message' => "Erreur lors de création de l'administrateur",
+            'status' => false,
+            'data' => null
+        ]);
+    }
+
+    /**
      * Solde de l'utilisateur connecté
      *
      * @return JsonResponse
@@ -904,11 +1088,40 @@ class UserController extends Controller
 
         foreach($managers as $manager) {
             $returenedManagers[] = [
-                'gestionnaire' => $manager->setHidden(['deleted_at', 'add_by', 'id_zone']),
+                'gestionnaire' => $manager->setHidden(['deleted_at', 'add_by']),
                 'caisse' => Caisse::where('id_user', $manager->id)->first()
             ];
         }
 
         return $returenedManagers;
+    }
+
+    // Build supervisors return data
+    private function supervisorsResponse($supervisors)
+    {
+        $returenedSupervisors = [];
+
+        foreach($supervisors as $supervisor) {
+            $returenedSupervisors[] = [
+                'superviseur' => $supervisor->setHidden(['deleted_at', 'add_by']),
+                'caisse' => Caisse::where('id_user', $supervisor->id)->first()
+            ];
+        }
+
+        return $returenedSupervisors;
+    }
+
+    // Build admins return data
+    private function adminsResponse($admins)
+    {
+        $returenedAdmins = [];
+
+        foreach($admins as $admin) {
+            $returenedAdmins[] = [
+                'administrateur' => $admin->setHidden(['deleted_at', 'add_by'])
+            ];
+        }
+
+        return $returenedAdmins;
     }
 }

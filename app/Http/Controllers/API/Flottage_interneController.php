@@ -203,13 +203,11 @@ class Flottage_interneController extends Controller
             'id_puce_to' => ['required', 'numeric'],
         ]);
         if ($validator->fails()) {
-            return response()->json(
-                [
-                    'message' => "Le formulaire contient des champs mal renseignés",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         // On verifi que les puces passées en paramettre existent
@@ -232,46 +230,38 @@ class Flottage_interneController extends Controller
             $flote_from = $puce_from->flote;
 
             //On se rassure que les puces passée en paramettre respectent toutes les conditions
-            if ($type_puce_from != Statut::FLOTTAGE_SECONDAIRE || $type_puce_to != Statut::PUCE_RZ) {
-                return response()->json(
-                    [
-                        'message' => "Choisir des puces valide pour la transation",
-                        'status' => false,
-                        'data' => null
-                    ]
-                );
-            }
-
-        }else {
-            return response()->json(
-                [
-                    'message' => "une ou plusieurs puces entrées n'existe pas",
+            if ($type_puce_from != Statut::FLOTTAGE_SECONDAIRE && $type_puce_to != Statut::PUCE_RZ) {
+                return response()->json([
+                    'message' => "Choisir une puce valide pour la reception",
                     'status' => false,
                     'data' => null
-                ]
-            );
+                ]);
+            }
+
+        } else {
+            return response()->json([
+                'message' => "Une ou plusieurs puces entrées n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         //On verifie que c'est les puce du meme reseau
         if ($flote_to != $flote_from) {
-            return response()->json(
-                [
-                    'message' => "Vous devez choisir les puces du meme réseau",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Vous devez choisir les puces du meme réseau",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         //On se rassure que le solde est suffisant
         if ($puce_from->solde < $request->montant) {
-            return response()->json(
-                [
-                    'message' => "le solde est insuffisant",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le solde est insuffisant",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         //on debite le solde du supperviseur
@@ -280,9 +270,13 @@ class Flottage_interneController extends Controller
         //On credite le solde du responsable de zonne
         $puce_to->solde = $puce_to->solde + $request->montant;
 
-        //On debite la caisse du responsable de zonne
-        $caisse_rz = $puce_to->rz->caisse->first();
-        $caisse_rz->solde = $caisse_rz->solde - $request->montant;
+        // On débite la caisse de l'utilisateur associé à la puce receptrice si celui-ci est un responsable de zone
+        $receiver = $puce_to->rz;
+        if($receiver !== null) {
+            $caisse_rz2 = $receiver->caisse->first();
+            $caisse_rz2->solde = $caisse_rz2->solde - $request->montant;
+            $caisse_rz2->save();
+        }
 
         //Le supperviseur
         $supperviseur = Auth::user();
@@ -295,7 +289,7 @@ class Flottage_interneController extends Controller
             'reference' => null,
             'statut' => Statut::EFFECTUER,
             'note' => null,
-            'type' => Roles::RECOUVREUR,
+            'type' => Roles::SUPERVISEUR,
             'montant' => $request->montant,
             'reste' => 0
         ]);
@@ -305,66 +299,43 @@ class Flottage_interneController extends Controller
 
             $puce_from->save();
             $puce_to->save();
-            $caisse_rz->save();
 
-            //Notification du responsable de zone
-            $puce_to->rz->notify(new Notif_flottage([
-                'data' => $flottage_interne,
-                'message' => "Nouveau flottage Interne"
-            ]));
-
-
-            //On recupere les Flottages
-            //$flottage_internes = Flottage_interne::where('type', Statut::PUCE_RZ)->get();
-            $flottage_internes = Flottage_interne::get();
-
-            $flottages = [];
-
-            foreach($flottage_internes as $flottage_interne) {
-
-                //recuperer la puce du superviseur
-                $puce_emetrice = Puce::find($flottage_interne->id_sim_from);
-
-                //recuperer la puce du responsable de zonne
-                $puce_receptrice = Puce::find($flottage_interne->id_sim_to);
-
-                //recuperer le responsable de zone
-                $responsable = User::find($puce_receptrice->id_rz);
-
-                //recuperer celui qui a effectué le flottage
-                $superviseur = User::find($flottage_interne->id_user);
-
-
-                $flottages[] = [
-                    'puce_receptrice' => $puce_receptrice,
-                    'puce_emetrice' => $puce_emetrice,
-                    'superviseur' => $superviseur,
-                    'responsable' => $responsable,
-                    'flottage' => $flottage_interne
-                ];
+            if($receiver !== null) {
+                //Notification du responsable de zone
+                $puce_to->rz->notify(new Notif_flottage([
+                    'data' => $flottage_interne,
+                    'message' => "Nouveau flottage Interne"
+                ]));
             }
 
+            //recuperer la puce du superviseur
+            $puce_emetrice = Puce::find($flottage_interne->id_sim_from);
+
+            //recuperer la puce du gestionnaire de flotte
+            $puce_receptrice = Puce::find($flottage_interne->id_sim_to);
+
+            //recuperer celui qui a effectué le flottage
+            $superviseur = User::find($flottage_interne->id_user);
+
             // Renvoyer un message de succès
-            return response()->json(
-                [
-                    'message' => "Le flottage c'est bien passé",
-                    'status' => true,
-                    'data' => ['flottages' => $flottages]
+            return response()->json([
+                'message' => "Transfert de flotte effectué avec succès",
+                'status' => true,
+                'data' => [
+                    'puce_receptrice' => $puce_receptrice,
+                    'puce_emetrice' => $puce_emetrice,
+                    'utilisateur' => $superviseur,
+                    'flottage' => $flottage_interne
                 ]
-            );
-        }else {
-
+            ]);
+        } else {
             // Renvoyer une erreur
-            return response()->json(
-                [
-                    'message' => 'erreur lors du flottage',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
-
+            return response()->json([
+                'message' => 'Erreur lors du flottage',
+                'status' => false,
+                'data' => null
+            ]);
         }
-
     }
 
     /**
@@ -516,7 +487,7 @@ class Flottage_interneController extends Controller
             //On se rassure que la puce qui recoit est GF ou SUP ou RZ
             if ($type_puce_to != Statut::FLOTTAGE && $type_puce_to != Statut::FLOTTAGE_SECONDAIRE && $type_puce_to != Statut::PUCE_RZ) {
                 return response()->json([
-                    'message' => "Choisier une puce valide pour la reception",
+                    'message' => "Choisir une puce valide pour la reception",
                     'status' => false,
                     'data' => null
                 ]);

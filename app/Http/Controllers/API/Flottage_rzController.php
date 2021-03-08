@@ -5,7 +5,6 @@ namespace App\Http\Controllers\API;
 use App\User;
 use App\Puce;
 use App\Role;
-use App\Agent;
 use App\Type_puce;
 use App\Flottage_Rz;
 use App\Enums\Roles;
@@ -40,8 +39,7 @@ class Flottage_rzController extends Controller
             'id_puce_to' => ['required', 'numeric'],
         ]);
         if ($validator->fails()) {
-            return response()->json(
-                [
+            return response()->json([
                     'message' => "Le formulaire contient des champs mal renseignés",
                     'status' => false,
                     'data' => null
@@ -65,9 +63,9 @@ class Flottage_rzController extends Controller
             $type_puce_to = Type_puce::find($puce_to->type)->name;
 
             //On se rassure que les puces passée en paramettre respectent toutes les conditions
-            if ($type_puce_from != Statut::FLOTTAGE || $type_puce_to != Statut::PUCE_RZ) {
+            if ($type_puce_to != Statut::PUCE_RZ) {
                 return response()->json([
-                    'message' => "Choisir des puces valide pour la transation",
+                    'message' => "Choisir une puce valide pour la reception",
                     'status' => false,
                     'data' => null
                 ]);

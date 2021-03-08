@@ -5,7 +5,6 @@ namespace App\Http\Controllers\API;
 use App\Puce;
 use App\User;
 use App\Role;
-use App\Agent;
 use App\Caisse;
 use App\Destockage;
 use App\Enums\Roles;
@@ -214,7 +213,7 @@ class ApprovisionnementEtpController extends Controller
             'fournisseur' => ['nullable', 'string', 'max:255'], // si le type est BY_DIGIT_PARTNER ou BY_BANK
             'id_agent' => ['nullable', 'Numeric'],       // obligatoire si le type est BY_AGENT
             'id_puce' => ['required', 'Numeric'],
-            'recu' => ['required', 'file', 'max:10000'],
+            'recu' => ['nullable', 'file', 'max:10000'],
             'montant' => ['required', 'Numeric'],
         ]);
 
@@ -408,7 +407,7 @@ class ApprovisionnementEtpController extends Controller
         //si le destockage n'existe pas
         if (!($destockage = Destockage::find($id))) {
             return response()->json([
-                'message' => "Le destockage n'existe pas",
+                'message' => "L'approvisionnement n'existe pas",
                 'status' => false,
                 'data' => null
             ]);

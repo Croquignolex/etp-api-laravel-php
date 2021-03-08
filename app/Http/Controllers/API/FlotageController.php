@@ -174,11 +174,7 @@ class FlotageController extends Controller
             $demande_flotte->source = $puce_etp->id;
 
             //On change le statut de la demande de flotte
-            if ($demande_flotte->reste == 0) {
-                $demande_flotte->statut = Statut::EFFECTUER ;
-            } else {
-                $demande_flotte->statut = Statut::EN_COURS ;
-            }
+            $demande_flotte->statut = Statut::EFFECTUER ;
 
             //Enregistrer les oppérations
             $demande_flotte->save();

@@ -2,11 +2,9 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Liquidite;
-use App\Notifications\Approvisionnement;
-use App\Notifications\Recouvrement as Notif_recouvrement;
 use App\Role;
 use App\User;
+use App\Liquidite;
 use App\Operation;
 use App\Versement;
 use App\Enums\Roles;
@@ -15,7 +13,9 @@ use Illuminate\Http\Request;
 use App\Notifications\Recouvrement;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
+use App\Notifications\Approvisionnement;
 use Illuminate\Support\Facades\Validator;
+use App\Notifications\Recouvrement as Notif_recouvrement;
 
 class CaisseController extends Controller
 {
@@ -279,13 +279,13 @@ class CaisseController extends Controller
         $caisse = $user->caisse->first();
 
         //On verifi si le compte du payeur est suffisant
-        if ($caisse->solde < $request->montant) {
+        /*if ($caisse->solde < $request->montant) {
             return response()->json([
                 'message' => "Le solde du payeur est insuffisant",
                 'status' => false,
                 'data' => null
             ]);
-        }
+        }*/
 
         // Récupérer les données validées
         $receveur = $request->id_receveur;

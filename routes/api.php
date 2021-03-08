@@ -53,6 +53,12 @@ Route::group(['middleware' => 'auth:api'], function(){
             //lister les gestionnaires
             Route::get('gestionnaires', 'API\UserController@gestionnaires');
 
+            //lister les superviseurs
+            Route::get('superviseurs', 'API\UserController@superviseurs');
+
+            //lister les administrateurs
+            Route::get('administrateurs', 'API\UserController@administrateurs');
+
             //lister tous les gestionnaires
             Route::get('gestionnaires_all', 'API\UserController@gestionnaires_all');
 
@@ -81,7 +87,13 @@ Route::group(['middleware' => 'auth:api'], function(){
             //Creation d'une gestionnaire de flotte
             Route::post('create_gestionnaire', 'API\UserController@create_gestionnaire');
 
-			 //Changer la zone d'un utilisateur
+            //Creation d'un superviseur
+            Route::post('create_superviseur', 'API\UserController@create_superviseur');
+
+            //Creation d'un administrateur
+            Route::post('create_administrateur', 'API\UserController@create_administrateur');
+
+            //Changer la zone d'un utilisateur
             Route::post('edit_zone_user/{id}', 'API\UserController@edit_zone_user')
             ->where('id', '[0-9]+');
 
@@ -222,6 +234,9 @@ Route::group(['middleware' => 'auth:api'], function(){
 
         //liste des puces d'un responsable de zone
         Route::get('puce_list_agent', 'API\PuceController@list_responsable');
+
+        //liste des puces d'une gestionnaire de flotte
+        Route::get('puce_list_gestionnaire', 'API\PuceController@list_gestionnaire');
 
         //liste des puces d'un ressource
         Route::get('puce_list_resource', 'API\PuceController@list_agent');

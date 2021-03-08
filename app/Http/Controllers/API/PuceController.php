@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Enums\Statut;
 use App\Puce;
 use App\User;
 use App\Type_puce;
@@ -458,6 +459,38 @@ class PuceController extends Controller
         } else {
             return response()->json([
                 'message' => "Cet utilisateur n'est pas un responsable de zone",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+    }
+
+    /**
+     * //lister les puces d'une gestionnaire de flotte
+     */
+    public function list_gestionnaire()
+    {
+        $user = Auth::user();
+        $userRole = $user->roles->first()->name;
+
+        if($userRole === Roles::GESTION_FLOTTE) {
+            $id_puce = Type_puce::where('name', Statut::FLOTTAGE)->first()->id;
+            $puces = Puce::where('type', $id_puce)->orderBy('created_at', 'desc')->paginate(6);
+
+            $sims_response =  $this->simsResponse($puces->items());
+
+            return response()->json([
+                'message' => '',
+                'status' => true,
+                'data' => [
+                    'puces' => $sims_response,
+                    'hasMoreData' => $puces->hasMorePages(),
+                ]
+            ]);
+        } else {
+            return response()->json([
+                'message' => "Cet utilisateur n'est pas une gestionnaire de flotte",
                 'status' => false,
                 'data' => null
             ]);

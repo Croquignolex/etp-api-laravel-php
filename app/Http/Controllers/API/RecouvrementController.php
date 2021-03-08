@@ -147,13 +147,12 @@ class RecouvrementController extends Controller
             //On change le statut du flottage
             if ($flottage->reste == 0) {
                 $flottage->statut = \App\Enums\Statut::EFFECTUER ;
-            }else {
+            } else {
                 $flottage->statut = \App\Enums\Statut::EN_COURS ;
             }
 
             //Enregistrer les oppérations
             $flottage->save();
-
 
             //gestion de la caisse de l'agent qui recouvre
             $connected_user = Auth::user();
