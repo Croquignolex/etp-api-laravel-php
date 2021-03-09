@@ -13,6 +13,7 @@ use App\Enums\Statut;
 use App\Demande_flote;
 use App\FlotageAnonyme;
 use App\Approvisionnement;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Events\NotificationsEvent;
@@ -608,10 +609,7 @@ class FlotageController extends Controller
             //On recupère la puce qui envoie
             $puce_from = Puce::find($request->id_puce_from);
 
-            //on recupère les types de la puce qui envoie
-            $type_puce_from = Type_puce::find($puce_from->type)->name;
-
-        }else {
+        } else {
             return response()->json([
                 'message' => "Une ou plusieurs puces entrées n'existe pas",
                 'status' => false,
@@ -638,60 +636,189 @@ class FlotageController extends Controller
         $caisse = $user->caisse()->first();
         $caisse->solde = $caisse->solde + $request->montant;
 
-        // Nouveau flottage
-        $flottage_anonyme = new FlotageAnonyme([
-            'id_user' => $user->id,
-            'id_sim_from' => $puce_from->id,
-            'nro_sim_to' => $request->nro_puce_to,
-            'reference' => null,
-            'statut' => Statut::EFFECTUER,
-            'nom_agent' => $request->nom_agent,
-            'montant' => $request->montant
-        ]);
 
-        //si l'enregistrement du flottage a lieu
-        if ($flottage_anonyme->save()) {
+        // On verrifie si la puce anonyme existe dans la list des puces agents connus
+       $agent_sim_type_id = Type_puce::where('name', Statut::AGENT)->get()->first()->id;
+       $resource_sim_type_id = Type_puce::where('name', Statut::RESOURCE)->get()->first()->id;
 
-            $puce_from->save();
-            $caisse->save();
+        $needle_sim = Puce::where('numero', $request->nro_puce_to)->get()->first();
 
-            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
-            $role2 = Role::where('name', Roles::SUPERVISEUR)->first();
+        if(($needle_sim !== null) && (
+            ($needle_sim->type === $agent_sim_type_id) ||
+            ($needle_sim->type === $resource_sim_type_id)
+        )) {
+            //======================================================================
+            // Enregistrement du flottage agent
 
-            //Database Notification
-            $users = User::all();
-            foreach ($users as $user) {
-                if($user->roles->first()->name !== Roles::RECOUVREUR) {
-                    if ($user->hasRole([$role->name]) || $user->hasRole([$role2->name])) {
+            //recuperer l'agent concerné
+            $user = $needle_sim->agent->user;
+            $connected_user = Auth::user();
 
-                        $user->notify(new Notif_flottage([
-                            'data' => $flottage_anonyme,
-                            'message' => "Nouveau flottage anonyme"
-                        ]));
+            // Récupérer les données pour la création d'une demande fictive de flotte
+            $id_user = $user->id;
+            $add_by = $user->id;
+            $reference = null;
+            $montant = $request->montant;
+            $statut = Statut::EFFECTUER;
+            $source = $puce_from->id;
+            $id_puce = $needle_sim->id;
+
+            // Nouvelle demande fictive de flotte
+            $demande_flotte = new Demande_flote([
+                'id_user' => $id_user,
+                'add_by' => $add_by,
+                'reference' => $reference,
+                'montant' => $montant,
+                'reste' => 0,
+                'statut' => $statut,
+                'id_puce' => $id_puce,
+                'source' => $source
+            ]);
+
+            // creation de La demande fictive de flotte
+            if ($demande_flotte->save()) {
+
+                //Montant du depot
+                $montant = $request->montant;
+
+                //Caisse de l'agent concerné
+                $caisse = Caisse::where('id_user', $demande_flotte->id_user)->first();
+
+                // Nouveau flottage
+                $flottage = new Approvisionnement([
+                    'id_demande_flote' => $demande_flotte->id,
+                    'id_user' => $connected_user->id,
+                    'reference' => null,
+                    'statut' => Statut::EN_ATTENTE,
+                    'note' => null,
+                    'from' => $puce_from->id,
+                    'montant' => $montant,
+                    'reste' => $montant
+                ]);
+
+                //si l'enregistrement du flottage a lieu
+                if ($flottage->save()) {
+
+                    //Broadcast Notification des responsables de zone
+                    $role = Role::where('name', Roles::RECOUVREUR)->first();
+                    $event = new NotificationsEvent($role->id, ['message' => 'Nouveau flottage']);
+                    broadcast($event)->toOthers();
+
+                    //Database Notification
+
+                    //noifier l'agent concerné
+                    $user->notify(new Notif_flottage([
+                        'data' => $flottage,
+                        'message' => "Nouveau flottage"
+                    ]));
+
+                    //noifier les responsables de zonne
+                    $users = User::all();
+                    foreach ($users as $_user) {
+
+                        if ($_user->hasRole([$role->name])) {
+
+                            $_user->notify(new Notif_flottage([
+                                'data' => $flottage,
+                                'message' => "Nouveau flottage"
+                            ]));
+                        }
+                    }
+
+                    //notification de l'agent flotté
+                    $user->notify(new Notif_flottage([
+                        'data' => $flottage,
+                        'message' => "Nouveau flottage"
+                    ]));
+
+                    ////ce que le flottage implique
+
+                    //On credite la puce de l'Agent
+                    $needle_sim->solde = $needle_sim->solde + $montant;
+                    $needle_sim->save();
+
+                    //On debite la caisse de l'Agent pour le paiement de la flotte envoyée, ce qui implique qu'il doit à ETP
+                    $caisse->solde = $caisse->solde - $montant;
+                    $caisse->save();
+
+                    return response()->json([
+                        'message' => "Numéro réconnu par le system. Flottage agent éffectué à la place.",
+                        'status' => true,
+                        'data' => null
+                    ]);
+                } else {
+                    // Renvoyer une erreur
+                    return response()->json([
+                        'message' => 'Erreur lors du flottage',
+                        'status' => false,
+                        'data' => null
+                    ]);
+                }
+            } else {
+                // Renvoyer une erreur
+                return response()->json([
+                        'message' => 'Erreur lors de la demande de flotte',
+                        'status' => false,
+                        'data' => null
+                    ]
+                );
+            }
+        } else {
+            //=================================================================================
+            // Nouveau flottage
+            $flottage_anonyme = new FlotageAnonyme([
+                'id_user' => $user->id,
+                'id_sim_from' => $puce_from->id,
+                'nro_sim_to' => $request->nro_puce_to,
+                'reference' => null,
+                'statut' => Statut::EFFECTUER,
+                'nom_agent' => $request->nom_agent,
+                'montant' => $request->montant
+            ]);
+
+            //si l'enregistrement du flottage a lieu
+            if ($flottage_anonyme->save()) {
+
+                $puce_from->save();
+                $caisse->save();
+
+                $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
+                $role2 = Role::where('name', Roles::SUPERVISEUR)->first();
+
+                //Database Notification
+                $users = User::all();
+                foreach ($users as $user) {
+                    if($user->roles->first()->name !== Roles::RECOUVREUR) {
+                        if ($user->hasRole([$role->name]) || $user->hasRole([$role2->name])) {
+
+                            $user->notify(new Notif_flottage([
+                                'data' => $flottage_anonyme,
+                                'message' => "Nouveau flottage anonyme"
+                            ]));
+                        }
                     }
                 }
+
+                $puce_envoie = Puce::find($flottage_anonyme->id_sim_from);
+
+                // Renvoyer un message de succès
+                return response()->json([
+                    'message' => "Flottage anonyme effectué avec succès",
+                    'status' => true,
+                    'data' => [
+                        'puce_emetrice' => $puce_envoie,
+                        'user' => User::find($flottage_anonyme->id_user),
+                        'flottage' => $flottage_anonyme
+                    ]
+                ]);
+            } else {
+                // Renvoyer une erreur
+                return response()->json([
+                    'message' => 'Erreur perdant le processus de flottage',
+                    'status' => false,
+                    'data' => null
+                ]);
             }
-
-            $puce_envoie = Puce::find($flottage_anonyme->id_sim_from);
-
-            // Renvoyer un message de succès
-            return response()->json([
-                'message' => "Flottage anonyme effectué avec succès",
-                'status' => true,
-                'data' => [
-                    'puce_emetrice' => $puce_envoie,
-                    'user' => User::find($flottage_anonyme->id_user),
-                    'flottage' => $flottage_anonyme
-                ]
-            ]);
-        }else {
-
-            // Renvoyer une erreur
-            return response()->json([
-                'message' => 'Erreur perdant le processus de flottage',
-                'status' => false,
-                'data' => null
-            ]);
         }
     }
 
