@@ -628,6 +628,7 @@ class FlotageController extends Controller
 
         //on debite le solde de celui qui envoie
         $puce_from->solde = $puce_from->solde - $request->montant;
+        $puce_from->save();
 
         //L'utilisateur qui envoie
         $user = Auth::user();
@@ -635,6 +636,7 @@ class FlotageController extends Controller
         //On credite la caisse de celui qui envoie
         $caisse = $user->caisse()->first();
         $caisse->solde = $caisse->solde + $request->montant;
+        $caisse->save();
 
 
         // On verrifie si la puce anonyme existe dans la list des puces agents connus
@@ -644,8 +646,8 @@ class FlotageController extends Controller
         $needle_sim = Puce::where('numero', $request->nro_puce_to)->get()->first();
 
         if(($needle_sim !== null) && (
-            ($needle_sim->type === $agent_sim_type_id) ||
-            ($needle_sim->type === $resource_sim_type_id)
+            ($needle_sim->type == $agent_sim_type_id) ||
+            ($needle_sim->type == $resource_sim_type_id)
         )) {
             //======================================================================
             // Enregistrement du flottage agent
@@ -682,7 +684,7 @@ class FlotageController extends Controller
                 $montant = $request->montant;
 
                 //Caisse de l'agent concerné
-                $caisse = Caisse::where('id_user', $demande_flotte->id_user)->first();
+                $caisse0 = Caisse::where('id_user', $demande_flotte->id_user)->first();
 
                 // Nouveau flottage
                 $flottage = new Approvisionnement([
@@ -738,8 +740,8 @@ class FlotageController extends Controller
                     $needle_sim->save();
 
                     //On debite la caisse de l'Agent pour le paiement de la flotte envoyée, ce qui implique qu'il doit à ETP
-                    $caisse->solde = $caisse->solde - $montant;
-                    $caisse->save();
+                    $caisse0->solde = $caisse0->solde - $montant;
+                    $caisse0->save();
 
                     return response()->json([
                         'message' => "Numéro réconnu par le system. Flottage agent éffectué à la place.",
@@ -778,9 +780,6 @@ class FlotageController extends Controller
 
             //si l'enregistrement du flottage a lieu
             if ($flottage_anonyme->save()) {
-
-                $puce_from->save();
-                $caisse->save();
 
                 $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
                 $role2 = Role::where('name', Roles::SUPERVISEUR)->first();
