@@ -235,8 +235,20 @@ Route::group(['middleware' => 'auth:api'], function(){
         //liste des puces d'un responsable de zone
         Route::get('puce_list_agent', 'API\PuceController@list_responsable');
 
-        //liste des puces d'une gestionnaire de flotte
+        //liste des puces d'une gestionnaire de flotte (puces de flottage)
         Route::get('puce_list_gestionnaire', 'API\PuceController@list_gestionnaire');
+
+        //liste des puces master
+        Route::get('puce_list_master', 'API\PuceController@list_master');
+
+        //liste des puces responsable de zone
+        Route::get('puce_list_collector', 'API\PuceController@list_collector');
+
+        //liste des puces ressource
+        Route::get('puce_list_all_resource', 'API\PuceController@list_all_resource');
+
+        //liste des puces ressource
+        Route::get('puce_list_all_agent', 'API\PuceController@list_all_agent');
 
         //liste des puces d'un ressource
         Route::get('puce_list_resource', 'API\PuceController@list_agent');
@@ -505,7 +517,7 @@ Route::group(['middleware' => 'auth:api'], function(){
         Route::get('list_flottage_anonyme', 'API\FlotageController@list_flottage_anonyme')
             ->where('id', '[0-9]+');
 
-           /*
+   /*
     //////////////////////Approvisionnement des Puces de ETP/////////////////////
     */
         //traitement d'une demande de destockage (juste pour signaler au système que je traite totalement ou en partie une demande)
@@ -789,7 +801,6 @@ Route::group(['middleware' => 'auth:api'], function(){
         Route::post('delete_puce_rz/{id}', 'API\AgentController@delete_puce_rz')
         ->where('id', '[0-9]+');
 
-        //todo: new code 09/12/2020, 04 routes créées pour les dépences spontannée par  un utilisateur
     /*
 //////////////////////Effectuer une dépense/////////////////////
 */
@@ -807,9 +818,6 @@ Route::group(['middleware' => 'auth:api'], function(){
     Route::get('depence_list/{id}', 'API\CaisseController@depence_user')
         ->where('id', '[0-9]+');
 
-
-
-    //todo: new code 15/12/2020, 04 routes créées pour les Acquisition d'argent ou de flotte ne provenant pas de la gestionnaire de flotte
     /*
 //////////////////////Effectuer une acquisition/////////////////////
 */
@@ -868,4 +876,11 @@ Route::group(['middleware' => 'auth:api'], function(){
     Route::post('treasury_in', 'API\TreasuryController@treasury_in');
     // Treasuries out (decaissement)
     Route::post('treasury_out', 'API\TreasuryController@treasury_out');
+
+    // ------------------------------ Flottage anonyme RZ
+    //Creer un Flottage pour un anonyme
+    Route::post('flottage_anonyme_rz', 'API\FlotageAnonymeRZController@flottage_anonyme');
+
+    //lister tous les Flottages anonymes
+    Route::get('list_flottage_anonyme_rz', 'API\FlotageAnonymeRZController@list_flottage_anonyme');
 });

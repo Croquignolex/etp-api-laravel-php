@@ -585,7 +585,7 @@ class FlotageController extends Controller
      * @return JsonResponse
      * Creer un Flottage pour un anonyme
      */
-    Public function flottage_anonyme(Request $request)
+    public function flottage_anonyme(Request $request)
     {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
@@ -772,7 +772,7 @@ class FlotageController extends Controller
                 'id_user' => $user->id,
                 'id_sim_from' => $puce_from->id,
                 'nro_sim_to' => $request->nro_puce_to,
-                'reference' => null,
+                'reference' => Statut::FLOTTAGE_ANONYME_GESTIONNAIRE,
                 'statut' => Statut::EFFECTUER,
                 'nom_agent' => $request->nom_agent,
                 'montant' => $request->montant
@@ -889,9 +889,13 @@ class FlotageController extends Controller
 
         $connected_user = Auth::user();
         if($connected_user->roles->first()->name === Roles::SUPERVISEUR) {
-            $anonymous = FlotageAnonyme::orderBy('created_at', 'desc')->paginate(6);
+            $anonymous = FlotageAnonyme::orderBy('created_at', 'desc')
+                ->wherte('reference', Statut::FLOTTAGE_ANONYME_GESTIONNAIRE)
+                ->paginate(6);
         } else {
-            $anonymous = FlotageAnonyme::where('id_user', $connected_user->id)->orderBy('created_at', 'desc')->paginate(6);
+            $anonymous = FlotageAnonyme::where('id_user', $connected_user->id)
+                ->wherte('reference', Statut::FLOTTAGE_ANONYME_GESTIONNAIRE)
+                ->orderBy('created_at', 'desc')->paginate(6);
         }
 
         $anonymous_response =  $this->anonymousResponse($anonymous->items());

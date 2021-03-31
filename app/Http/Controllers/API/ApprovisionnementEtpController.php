@@ -304,16 +304,19 @@ class ApprovisionnementEtpController extends Controller
 
             $connected_user = Auth::user();
 
-            //la caisse de l'utilisateur connecté
-            $connected_caisse = Caisse::where('id_user', $connected_user->id)->first();
+            // on se rassure qu'on est dans une operation de d'stockage et non approvisionnement
+            if($type === Statut::BY_AGENT) {
+                //la caisse de l'utilisateur connecté
+                $connected_caisse = Caisse::where('id_user', $connected_user->id)->first();
 
-            //mise à jour de la caisse de l'utilisateur qui effectue l'oppération
-            if ($connected_user->hasRole([Roles::GESTION_FLOTTE])) {
-                $connected_caisse->solde = $connected_caisse->solde - $montant;
-            }else {
-                $connected_caisse->solde = $connected_caisse->solde + $montant;
+                //mise à jour de la caisse de l'utilisateur qui effectue l'oppération
+                if ($connected_user->hasRole([Roles::GESTION_FLOTTE])) {
+                    $connected_caisse->solde = $connected_caisse->solde - $montant;
+                } else if($connected_user->hasRole([Roles::RECOUVREUR])) {
+                    $connected_caisse->solde = $connected_caisse->solde + $montant;
+                }
+                $connected_caisse->save();
             }
-            $connected_caisse->save();
 
             $agent = $destockage->id_agent === null ? $destockage->id_agent : User::find($destockage->id_agent)->agent->first();
             $user = $destockage->id_agent === null ? $destockage->id_agent : User::find($destockage->id_agent);

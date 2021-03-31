@@ -474,7 +474,7 @@ class PuceController extends Controller
         $user = Auth::user();
         $userRole = $user->roles->first()->name;
 
-        if($userRole === Roles::GESTION_FLOTTE) {
+        if($userRole === Roles::GESTION_FLOTTE || $userRole === Roles::SUPERVISEUR) {
             $id_puce = Type_puce::where('name', Statut::FLOTTAGE)->first()->id;
             $puces = Puce::where('type', $id_puce)->orderBy('created_at', 'desc')->paginate(6);
 
@@ -490,7 +490,135 @@ class PuceController extends Controller
             ]);
         } else {
             return response()->json([
-                'message' => "Cet utilisateur n'est pas une gestionnaire de flotte",
+                'message' => "Cet utilisateur n'est ni une gestionnaire de flotte ni un superviseur",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+    }
+
+    /**
+     * //lister les puces master
+     */
+    public function list_master()
+    {
+        $user = Auth::user();
+        $userRole = $user->roles->first()->name;
+
+        if($userRole === Roles::SUPERVISEUR) {
+            $id_puce = Type_puce::where('name', Statut::FLOTTAGE_SECONDAIRE)->first()->id;
+            $puces = Puce::where('type', $id_puce)->orderBy('created_at', 'desc')->paginate(6);
+
+            $sims_response =  $this->simsResponse($puces->items());
+
+            return response()->json([
+                'message' => '',
+                'status' => true,
+                'data' => [
+                    'puces' => $sims_response,
+                    'hasMoreData' => $puces->hasMorePages(),
+                ]
+            ]);
+        } else {
+            return response()->json([
+                'message' => "Cet utilisateur n'est pas un superviseur",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+    }
+
+    /**
+     * //lister les puces RZ
+     */
+    public function list_collector()
+    {
+        $user = Auth::user();
+        $userRole = $user->roles->first()->name;
+
+        if($userRole === Roles::SUPERVISEUR) {
+            $id_puce = Type_puce::where('name', Statut::PUCE_RZ)->first()->id;
+            $puces = Puce::where('type', $id_puce)->orderBy('created_at', 'desc')->paginate(6);
+
+            $sims_response =  $this->simsResponse($puces->items());
+
+            return response()->json([
+                'message' => '',
+                'status' => true,
+                'data' => [
+                    'puces' => $sims_response,
+                    'hasMoreData' => $puces->hasMorePages(),
+                ]
+            ]);
+        } else {
+            return response()->json([
+                'message' => "Cet utilisateur n'est pas un superviseur",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+    }
+
+    /**
+     * //lister les puces ressource
+     */
+    public function list_all_resource()
+    {
+        $user = Auth::user();
+        $userRole = $user->roles->first()->name;
+
+        if($userRole === Roles::SUPERVISEUR) {
+            $id_puce = Type_puce::where('name', Statut::RESOURCE)->first()->id;
+            $puces = Puce::where('type', $id_puce)->orderBy('created_at', 'desc')->paginate(6);
+
+            $sims_response =  $this->simsResponse($puces->items());
+
+            return response()->json([
+                'message' => '',
+                'status' => true,
+                'data' => [
+                    'puces' => $sims_response,
+                    'hasMoreData' => $puces->hasMorePages(),
+                ]
+            ]);
+        } else {
+            return response()->json([
+                'message' => "Cet utilisateur n'est pas un superviseur",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+    }
+
+    /**
+     * //lister les puces agent
+     */
+    public function list_all_agent()
+    {
+        $user = Auth::user();
+        $userRole = $user->roles->first()->name;
+
+        if($userRole === Roles::SUPERVISEUR) {
+            $id_puce = Type_puce::where('name', Statut::AGENT)->first()->id;
+            $puces = Puce::where('type', $id_puce)->orderBy('created_at', 'desc')->paginate(6);
+
+            $sims_response =  $this->simsResponse($puces->items());
+
+            return response()->json([
+                'message' => '',
+                'status' => true,
+                'data' => [
+                    'puces' => $sims_response,
+                    'hasMoreData' => $puces->hasMorePages(),
+                ]
+            ]);
+        } else {
+            return response()->json([
+                'message' => "Cet utilisateur n'est pas un superviseur",
                 'status' => false,
                 'data' => null
             ]);

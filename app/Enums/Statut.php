@@ -36,8 +36,6 @@ class Statut
     const BY_DIGIT_PARTNER = "D'un Digital Partner";
     const BY_BANK = "De la Banque";
 
-
-
     //types de recouvrement
     const RECOUVREMENT = "Un recouvrement";
     const RETOUR_FLOTTE = "Retour de flotte";
@@ -45,6 +43,10 @@ class Statut
     //Flux d'opération
     const DEPENSE = "Dépense d'argent";
     const ACQUISITION = "Reception d'argent";
+
+    // Type de flottage anonyme
+    const FLOTTAGE_ANONYME_GESTIONNAIRE = "FLOTTAGE_ANONYME_GESTIONNAIRE";
+    const FLOTTAGE_ANONYME_RESPONSABLE = "FLOTTAGE_ANONYME_RESPONSABLE";
 
 
     /**
