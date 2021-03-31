@@ -13,12 +13,17 @@ class Destockage extends Model
     use SoftDeletes;
 
     protected $dates = ['deleted_at'];
-    protected $fillable = array('id_recouvreur','type','id_puce','id_agent','fournisseur','recu', 'reference', 'statut', 'note', 'montant');
-    protected $visible = array('id', 'id_recouvreur','type','id_puce','id_agent','fournisseur','recu', 'reference', 'statut', 'note', 'montant','created_at');
+    protected $fillable = array('id_recouvreur','type','id_puce','id_agent','id_fournisseur','recu', 'reference', 'statut', 'note', 'montant');
+    protected $visible = array('id', 'id_recouvreur','type','id_puce','id_agent','id_fournisseur','recu', 'reference', 'statut', 'note', 'montant','created_at');
 
     public function user()
     {
         return $this->belongsTo('App\User', 'add_by');
+    }
+
+    public function fournisseur()
+    {
+        return $this->belongsTo('App\Vendor', 'id_fournisseur');
     }
 
     public function agent()

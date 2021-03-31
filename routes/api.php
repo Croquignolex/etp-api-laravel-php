@@ -827,11 +827,9 @@ Route::group(['middleware' => 'auth:api'], function(){
     Route::get('acquisition_list/{id}', 'API\CaisseController@acquisition_user')
         ->where('id', '[0-9]+');
 
-
-    /* //todo: new code 19/02/2021, échange de liquidité entre les RZ (04 routes créées)
+    /*
     //////////////////////Passation des liquidités entre les RZ/////////////////////
     */
-
     //creer une passation d'argent d'un RZ vers un autre RZ
     Route::post('give_to_rz', 'API\CaisseController@give_to_rz');
 
@@ -846,4 +844,28 @@ Route::group(['middleware' => 'auth:api'], function(){
     //lister les passations d'argent d'un RZ vers un autre RZ
     Route::get('give_to_rz_list', 'API\CaisseController@give_to_rz_list');
 
+
+    // --------------------------- Vendors
+    // Vendors list
+    Route::get('vendors', 'API\VendorController@list');
+    // All vendors list
+    Route::get('all_vendors', 'API\VendorController@list_all');
+    // Add new vendor
+    Route::post('new_vendor', 'API\VendorController@store');
+    // Edit a vendors
+    Route::post('edit_vendor/{id}', 'API\VendorController@update')
+        ->where('id', '[0-9]+');
+    // Show a vendor details
+    Route::get('show_vendor/{id}', 'API\VendorController@show')
+        ->where('id', '[0-9]+');
+
+    // --------------------------- Treasuries
+    // Treasuries list (encaissement)
+    Route::get('treasuries_in', 'API\TreasuryController@treasuries_in');
+    // Treasuries manager list (decaissement)
+    Route::get('treasuries_out', 'API\TreasuryController@treasuries_out');
+    // Treasuries in (encaissement)
+    Route::post('treasury_in', 'API\TreasuryController@treasury_in');
+    // Treasuries out (decaissement)
+    Route::post('treasury_out', 'API\TreasuryController@treasury_out');
 });

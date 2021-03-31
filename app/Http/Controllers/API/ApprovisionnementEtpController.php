@@ -210,7 +210,7 @@ class ApprovisionnementEtpController extends Controller
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
             'type' => ['required', 'string', 'max:255'], //BY_AGENT, BY_DIGIT_PARTNER or BY_BANK
-            'fournisseur' => ['nullable', 'string', 'max:255'], // si le type est BY_DIGIT_PARTNER ou BY_BANK
+            'id_fournisseur' => ['nullable', 'Numeric'], // si le type est BY_DIGIT_PARTNER ou BY_BANK
             'id_agent' => ['nullable', 'Numeric'],       // obligatoire si le type est BY_AGENT
             'id_puce' => ['required', 'Numeric'],
             'recu' => ['nullable', 'file', 'max:10000'],
@@ -244,7 +244,7 @@ class ApprovisionnementEtpController extends Controller
             $recu = $request->recu->store('recu');
         }
         $type = $request->type;
-        $fournisseur = $request->fournisseur;
+        $fournisseur = $request->id_fournisseur;
         $id_agent = $request->id_agent;
         $id_puce = $request->id_puce;
         $montant = $request->montant;
@@ -260,7 +260,7 @@ class ApprovisionnementEtpController extends Controller
             'type' => $type,
             'id_puce' => $id_puce,
             'id_agent' => isset($request->id_agent) ? $id_agent : null,
-            'fournisseur' => isset($request->fournisseur) ? $fournisseur : null,
+            'id_fournisseur' => isset($request->id_fournisseur) ? $fournisseur : null,
             'recu' => $recu,
             'reference' => null,
             'statut' => $statut,

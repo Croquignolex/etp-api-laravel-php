@@ -13,7 +13,8 @@ class Transations
     const RECOUVREMENT = 'Recouvrement';
     const RETOUR_FLOTTE = 'Retour flotte';
 
-    
+    const TREASURY_OUT = 'Décaissement';
+    const TREASURY_IN = 'Encaissement';
 
     /**
      * Returns the list of all enum variants

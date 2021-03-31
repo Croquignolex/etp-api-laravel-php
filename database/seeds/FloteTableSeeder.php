@@ -1,7 +1,7 @@
 <?php
 
-use Illuminate\Database\Seeder;
 use App\Flote;
+use Illuminate\Database\Seeder;
 
 class FloteTableSeeder extends Seeder {
 
@@ -20,5 +20,14 @@ class FloteTableSeeder extends Seeder {
 				'nom' => \App\Enums\Statut::ORANGE,
 				'description' => 'opérateur Orange'
 			));
+
+		// vendors
+        \App\Vendor::create(array(
+            'name' => \App\Enums\Statut::BY_DIGIT_PARTNER
+        ));
+
+        \App\Vendor::create(array(
+            'name' => \App\Enums\Statut::BY_BANK
+        ));
 	}
 }

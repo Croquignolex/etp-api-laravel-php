@@ -245,29 +245,26 @@ class RecouvrementController extends Controller
      */
     public function list_recouvrement($id)
     {
-        if (!Approvisionnement::Find($id)){
+        if (!Approvisionnement::find($id)){
 
-            return response()->json(
-                [
-                    'message' => "le flottage n'existe pas",
+            return response()->json([
+                    'message' => "Le flottage n'existe pas",
                     'status' => true,
-                    'data' => []
+                    'data' => null
                 ]
             );
         }
 
         //On recupere les recouvrements
-        $recouvrements = Recouvrement::where('id_flottage', $id)->get();
+        $recoveries = Recouvrement::where('id_flottage', $id)->get();
 
-
-        return response()->json(
-            [
-                'message' => '',
-                'status' => true,
-                'data' => ['recouvrements' => $recouvrements]
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'recouvrements' => $this->recoveriesResponse($recoveries)
             ]
-        );
-
+        ]);
     }
 
     /**

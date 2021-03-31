@@ -268,29 +268,27 @@ class Retour_flotteController extends Controller
      */
     public function list_retour_flotte($id)
     {
-        if (!Approvisionnement::Find($id)){
+        if (!Approvisionnement::find($id)){
 
             return response()->json(
                 [
-                    'message' => "le flottage n'existe pas",
+                    'message' => "Le flottage n'existe pas",
                     'status' => true,
-                    'data' => []
+                    'data' => null
                 ]
             );
         }
 
         //On recupere les retour flotte
-        $retour_flotes = Retour_flote::where('id_approvisionnement', $id)->get();
+        $recoveries = Retour_flote::where('id_approvisionnement', $id)->get();
 
-
-        return response()->json(
-            [
-                'message' => '',
-                'status' => true,
-                'data' => ['retour_flotes' => $retour_flotes]
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'recouvrements' => $this->recoveriesResponse($recoveries)
             ]
-        );
-
+        ]);
     }
 
     /**

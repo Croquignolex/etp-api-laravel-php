@@ -347,9 +347,16 @@ class CaisseController extends Controller
      */
     public function encaissement_list()
     {
-        $getionnaire_id = Auth::user()->id;
+        $user = Auth::user();
+        $connected_user_role = $user->roles->first()->name;
 
-        $versements = Versement::where('add_by', $getionnaire_id)->where('note', "pour un versement")->orderBy('created_at', 'desc')->paginate(6);
+        if ($connected_user_role === Roles::RECOUVREUR) {
+            $versements = Versement::where('correspondant', $user->id)->where('note', "pour un versement")->orderBy('created_at', 'desc')->paginate(9);
+        } elseif($connected_user_role === Roles::GESTION_FLOTTE) {
+            $versements = Versement::where('add_by', $user->id)->where('note', "pour un versement")->orderBy('created_at', 'desc')->paginate(6);
+        } else {
+            $versements = Versement::where('note', "pour un versement")->orderBy('created_at', 'desc')->paginate(6);
+        }
 
         $versements_response =  $this->paymentsResponse($versements->items());
 
@@ -368,9 +375,16 @@ class CaisseController extends Controller
      */
     public function encaissement_list_all()
     {
-        $getionnaire_id = Auth::user()->id;
+        $user = Auth::user();
+        $connected_user_role = $user->roles->first()->name;
 
-        $versements = Versement::where('add_by', $getionnaire_id)->where('note', "pour un versement")->orderBy('created_at', 'desc')->get();
+        if ($connected_user_role === Roles::RECOUVREUR) {
+            $versements = Versement::where('correspondant', $user->id)->where('note', "pour un versement")->orderBy('created_at', 'desc')->get();
+        } elseif($connected_user_role === Roles::GESTION_FLOTTE) {
+            $versements = Versement::where('add_by', $user->id)->where('note', "pour un versement")->orderBy('created_at', 'desc')->get();
+        } else {
+            $versements = Versement::where('note', "pour un versement")->orderBy('created_at', 'desc')->get();
+        }
 
         return response()->json([
             'message' => '',
@@ -386,9 +400,16 @@ class CaisseController extends Controller
      */
     public function decaissement_list()
     {
-        $getionnaire_id = Auth::user()->id;
+        $user = Auth::user();
+        $connected_user_role = $user->roles->first()->name;
 
-        $versements = Versement::where('add_by', $getionnaire_id)->where('note', 'pour un Decaissement')->orderBy('created_at', 'desc')->paginate(6);
+        if ($connected_user_role === Roles::RECOUVREUR) {
+            $versements = Versement::where('correspondant', $user->id)->where('note', "pour un Decaissement")->orderBy('created_at', 'desc')->paginate(9);
+        } elseif($connected_user_role === Roles::GESTION_FLOTTE) {
+            $versements = Versement::where('add_by', $user->id)->where('note', "pour un Decaissement")->orderBy('created_at', 'desc')->paginate(6);
+        } else {
+            $versements = Versement::where('note', "pour un Decaissement")->orderBy('created_at', 'desc')->paginate(6);
+        }
 
         $versements_response =  $this->paymentsResponse($versements->items());
 
@@ -407,9 +428,16 @@ class CaisseController extends Controller
      */
     public function decaissement_list_all()
     {
-        $getionnaire_id = Auth::user()->id;
+        $user = Auth::user();
+        $connected_user_role = $user->roles->first()->name;
 
-        $versements = Versement::where('add_by', $getionnaire_id)->where('note', 'pour un Decaissement')->orderBy('created_at', 'desc')->get();
+        if ($connected_user_role === Roles::RECOUVREUR) {
+            $versements = Versement::where('correspondant', $user->id)->where('note', "pour un Decaissement")->orderBy('created_at', 'desc')->get();
+        } elseif($connected_user_role === Roles::GESTION_FLOTTE) {
+            $versements = Versement::where('add_by', $user->id)->where('note', "pour un Decaissement")->orderBy('created_at', 'desc')->get();
+        } else {
+            $versements = Versement::where('note', "pour un Decaissement")->orderBy('created_at', 'desc')->get();
+        }
 
         return response()->json([
             'message' => '',
@@ -839,9 +867,9 @@ class CaisseController extends Controller
         $caisse = $user->caisse->first();
 
         //On verifi si le solde du payeur est suffisant
-        if ($caisse->solde < $request->montant) {
+        if ($caisse->solde >= 0) {
             return response()->json([
-                'message' => "le solde du payeur est insuffisant",
+                'message' => "Vous n'êtes pas sensé avoir de liquidité sur vous",
                 'status' => false,
                 'data' => null
             ]);
@@ -861,7 +889,6 @@ class CaisseController extends Controller
             'statut' => Statut::EN_ATTENTE,
             'note' => $note,
         ]);
-
 
         // creation du versement
         if ($transfert->save())
@@ -883,12 +910,12 @@ class CaisseController extends Controller
 
             // Renvoyer un message de succès
             return response()->json([
-                'message' => 'transfert de liquidité effectué avec succès',
+                'message' => 'Transfert de liquidité effectué avec succès',
                 'status' => true,
                 'data' => [
-                    'transfert' => $transfert,
-                    'emeteur' => $user,
-                    'receveur' => $reception,
+                    'liqudite' => $transfert,
+                    'emetteur' => $user,
+                    'recepteur' => $reception,
                 ]
             ]);
         } else {
@@ -901,7 +928,6 @@ class CaisseController extends Controller
         }
     }
 
-
     /**
      * ////lister mes échanges de liquidité
      */
@@ -911,11 +937,14 @@ class CaisseController extends Controller
 
         $liqudites = Liquidite::where('id_user', $my_id)->orwhere('id_reception', $my_id)->orderBy('created_at', 'desc')->paginate(6);
 
+        $liquidates_response =  $this->liquidatesResponse($liqudites->items());
+
         return response()->json([
             'message' => '',
             'status' => true,
             'data' => [
-                'liqudites' => $liqudites,
+                'liqudites' => $liquidates_response,
+                'hasMoreData' => $liqudites->hasMorePages(),
             ]
         ]);
     }
@@ -945,12 +974,27 @@ class CaisseController extends Controller
         $liqudite->statut = Statut::APPROUVE;
         $liqudite->save();
 
-        return response()->json(
-            [
-                'message' => '',
-                'status' => true,
-                'data' => $liqudite
-            ]
-        );
+        return response()->json([
+            'message' => 'Confirmation de la liquidité éffectuée avec succès',
+            'status' => true,
+            'data' => null
+        ]);
+    }
+
+    // Build liquidates return data
+    private function liquidatesResponse($liquidates)
+    {
+        $returnedLiquidates = [];
+
+        foreach($liquidates as $liquidate)
+        {
+            $returnedLiquidates[] = [
+                'liqudite' => $liquidate,
+                'emetteur' => $liquidate->emission,
+                'recepteur' => $liquidate->reception,
+            ];
+        }
+
+        return $returnedLiquidates;
     }
 }
