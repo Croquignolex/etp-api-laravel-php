@@ -38,7 +38,7 @@ class CaisseController extends Controller
         $validator = Validator::make($request->all(), [
             'id_donneur' => ['required', 'Numeric'], //id de l'utilisateur qui verse l'argent
             'montant' => ['required', 'Numeric'],
-            'recu' => ['required', 'file', 'max:10000']
+            'recu' => ['nullable', 'file', 'max:10000']
         ]);
 
         if ($validator->fails()) {
@@ -134,7 +134,7 @@ class CaisseController extends Controller
         $validator = Validator::make($request->all(), [
             'id_receveur' => ['required', 'Numeric'], //id de l'utilisateur qui recoit l'argent
             'montant' => ['required', 'Numeric'],
-            'recu' => ['required', 'file', 'max:10000']
+            'recu' => ['nullable', 'file', 'max:10000']
         ]);
 
         if ($validator->fails()) {

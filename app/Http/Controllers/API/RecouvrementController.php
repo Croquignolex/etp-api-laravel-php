@@ -39,7 +39,7 @@ class RecouvrementController extends Controller
         $validator = Validator::make($request->all(), [
             'montant' => ['required', 'Numeric'],
             'id_flottage' => ['required', 'Numeric'],
-            'recu' => ['required', 'file', 'max:10000']
+            'recu' => ['nullable', 'file', 'max:10000']
         ]);
 
         if ($validator->fails()) {

@@ -890,11 +890,11 @@ class FlotageController extends Controller
         $connected_user = Auth::user();
         if($connected_user->roles->first()->name === Roles::SUPERVISEUR) {
             $anonymous = FlotageAnonyme::orderBy('created_at', 'desc')
-                ->wherte('reference', Statut::FLOTTAGE_ANONYME_GESTIONNAIRE)
+                ->where('reference', Statut::FLOTTAGE_ANONYME_GESTIONNAIRE)
                 ->paginate(6);
         } else {
             $anonymous = FlotageAnonyme::where('id_user', $connected_user->id)
-                ->wherte('reference', Statut::FLOTTAGE_ANONYME_GESTIONNAIRE)
+                ->where('reference', Statut::FLOTTAGE_ANONYME_GESTIONNAIRE)
                 ->orderBy('created_at', 'desc')->paginate(6);
         }
 
