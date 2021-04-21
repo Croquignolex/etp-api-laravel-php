@@ -2,26 +2,19 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Flottage_Rz;
 use App\User;
 use App\Puce;
-use App\Role;
-use App\Agent;
 use App\Caisse;
 use App\Type_puce;
+use App\Flottage_Rz;
 use App\Enums\Roles;
 use App\Enums\Statut;
-use App\Demande_flote;
 use App\FlotageAnonyme;
-use App\Approvisionnement;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use App\Events\NotificationsEvent;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
-use App\Notifications\Flottage as Notif_flottage;
 
 class FlotageAnonymeRZController extends Controller
 {

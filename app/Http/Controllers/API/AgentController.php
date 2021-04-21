@@ -426,6 +426,33 @@ class AgentController extends Controller
     }
 
     /**
+     * liste des Agents par raport à la recherche
+     *
+     * @return JsonResponse
+     */
+    public function list_search(Request $request)
+    {
+        $needle = mb_strtolower($request->query('needle'));
+
+        $agents = Agent::orderBy('created_at', 'desc')->get()->filter(function (Agent $agent) use ($needle) {
+
+            $user = User::find($agent->id_user);
+            $name = mb_strtolower($user->name);
+            $phone = $user->phone;
+
+            return (strstr($name, $needle) || strstr($phone, $needle));
+        });
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'agents' => $this->agentsResponse($agents)
+            ]
+        ]);
+    }
+
+    /**
      * //Approuver ou desapprouver un agent
      * @param $id
      * @return JsonResponse

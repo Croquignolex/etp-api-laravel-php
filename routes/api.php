@@ -145,6 +145,9 @@ Route::group(['middleware' => 'auth:api'], function(){
         //liste de tous les Agents
         Route::get('list_agents_all', 'API\AgentController@list_all');
 
+        //Search agents by needle
+        Route::get('search_agents', 'API\AgentController@list_search');
+
         //supprimer un Agents
         Route::post('delete_agent/{id}', 'API\AgentController@delete')
         ->where('id', '[0-9]+');
