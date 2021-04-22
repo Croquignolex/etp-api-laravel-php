@@ -247,7 +247,7 @@ class Flottage_rzController extends Controller
         //On verifie que c'est les puce du meme reseau
         if ($flote_to != $flote_from) {
             return response()->json([
-                'message' => "Vous devez choisir les puces du meme réseau",
+                'message' => "Vous devez choisir les puces du même opérateur",
                 'status' => false,
                 'data' => null
             ]);

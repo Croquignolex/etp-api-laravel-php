@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Puce;
 use App\Role;
 use App\User;
 use App\Liquidite;
@@ -865,11 +866,23 @@ class CaisseController extends Controller
         //recuperer la caisse de l'utilisateur connecté
         $user = Auth::user();
         $caisse = $user->caisse->first();
+        $balance = $caisse->solde;
+
+        // Chercher les puces du RZ
+        $sims = Puce::where('id_rz', $user->id)->get();
+        $sims_amount = $sims->sum('solde');
+
+        // Déduire le solde caisse potentiel
+        if($balance <= 0) {
+            $positiveBalance = -1 * $balance;
+            if($balance >= $positiveBalance) $cash_balance = 0;
+            else $cash_balance = $positiveBalance - $sims_amount;
+        } else $cash_balance = 0;
 
         //On verifi si le solde du payeur est suffisant
-        if ($caisse->solde >= 0) {
+        if ($cash_balance < $request->montant) {
             return response()->json([
-                'message' => "Vous n'êtes pas sensé avoir de liquidité sur vous",
+                'message' => "Solde caisse insuffisant pour cet opération",
                 'status' => false,
                 'data' => null
             ]);

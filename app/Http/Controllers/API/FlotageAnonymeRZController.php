@@ -73,6 +73,15 @@ class FlotageAnonymeRZController extends Controller
             ]);
         }
 
+        //On se rassure que le solde est suffisant
+        if ($puce_from->solde < $request->montant) {
+            return response()->json([
+                'message' => "Le solde de la puce est insuffisant",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
         //on debite le solde de celui qui envoie
         $puce_from->solde = $puce_from->solde - $request->montant;
         $puce_from->save();
@@ -92,7 +101,6 @@ class FlotageAnonymeRZController extends Controller
         )) {
             //======================================================================
             // Enregistrement du flottage agent
-
             // Récupérer les données pour la création d'une demande fictive de flotte
 
             //Montant du depot
@@ -105,16 +113,7 @@ class FlotageAnonymeRZController extends Controller
             //On verifie que c'est les puce du meme reseau
             if ($flote_to != $flote_from) {
                 return response()->json([
-                    'message' => "Vous devez choisir les puces du meme réseau",
-                    'status' => false,
-                    'data' => null
-                ]);
-            }
-
-            //On se rassure que le solde est suffisant
-            if ($puce_from->solde < $request->montant) {
-                return response()->json([
-                    'message' => "Le solde est insuffisant",
+                    'message' => "Vous devez choisir les puces du même opérateur",
                     'status' => false,
                     'data' => null
                 ]);
