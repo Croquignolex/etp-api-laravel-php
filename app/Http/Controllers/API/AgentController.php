@@ -21,18 +21,6 @@ use Illuminate\Support\Facades\Validator;
 class AgentController extends Controller
 {
     /**
-     * les conditions de lecture des methodes
-     */
-    function __construct()
-    {
-        /*$agent = Roles::AGENT;
-        $recouvreur = Roles::RECOUVREUR;
-        $superviseur = Roles::SUPERVISEUR;
-        $ges_flotte = Roles::GESTION_FLOTTE;
-        $this->middleware("permission:$recouvreur|$superviseur|$ges_flotte|$agent");*/
-    }
-
-    /**
      * creer un Agent
      * @param Request $request
      * @return JsonResponse

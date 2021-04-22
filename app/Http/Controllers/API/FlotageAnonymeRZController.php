@@ -80,11 +80,6 @@ class FlotageAnonymeRZController extends Controller
         //L'utilisateur qui envoie
         $user = Auth::user();
 
-        //On credite la caisse de celui qui envoie (RZ plutot débit)
-        $caisse = $user->caisse()->first();
-        $caisse->solde = $caisse->solde - $request->montant;
-        $caisse->save();
-
         // On verrifie si la puce anonyme existe dans la list des puces agents connus
        $agent_sim_type_id = Type_puce::where('name', Statut::AGENT)->get()->first()->id;
        $resource_sim_type_id = Type_puce::where('name', Statut::RESOURCE)->get()->first()->id;

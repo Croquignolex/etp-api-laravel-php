@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Enums\Statut;
 use App\Puce;
 use App\User;
 use App\Type_puce;
 use App\Enums\Roles;
+use App\Enums\Statut;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
@@ -49,7 +49,7 @@ class PuceController extends Controller
 
         if ($validator->fails()) {
             return response()->json([
-                'message' => "Le formulaire contient des champs mal renseignés",
+                'message' => "Le formulaire contient des champs mal renseignées ou la puce existe déjà dans le système",
                 'status' => false,
                 'data' => null
             ]);

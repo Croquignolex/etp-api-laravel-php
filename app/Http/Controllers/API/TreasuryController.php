@@ -20,7 +20,8 @@ class TreasuryController extends Controller
     {
         $ges_flotte = Roles::GESTION_FLOTTE;
         $superviseur = Roles::SUPERVISEUR;
-        $this->middleware("permission:$ges_flotte|$superviseur");
+        $responsable = Roles::RECOUVREUR;
+        $this->middleware("permission:$ges_flotte|$superviseur|$responsable");
     }
 
     /**
@@ -59,16 +60,32 @@ class TreasuryController extends Controller
         $montant = $request->montant;
         $description = $request->description;
 
-        // Nouveau versement
-        $versement = new Treasury([
-            'receipt' => $recu,
-            'name' => $nom,
-            'amount' => $montant,
-            'reason' => $raison,
-            'type' => Transations::TREASURY_IN,
-            'id_manager' => $user->id,
-            'description' => $description,
-        ]);
+        $userRole = $user->roles->first()->name;
+        if($userRole === Roles::GESTION_FLOTTE) {
+            // Gestionnaire de flotte
+            // Nouveau versement
+            $versement = new Treasury([
+                'receipt' => $recu,
+                'name' => $nom,
+                'amount' => $montant,
+                'reason' => $raison,
+                'type' => Transations::TREASURY_GF_IN,
+                'id_manager' => $user->id,
+                'description' => $description,
+            ]);
+        } else {
+            // responsable de zone
+            // Nouveau versement
+            $versement = new Treasury([
+                'receipt' => $recu,
+                'name' => $nom,
+                'amount' => $montant,
+                'reason' => $raison,
+                'type' => Transations::TREASURY_RZ_IN,
+                'id_manager' => $user->id,
+                'description' => $description,
+            ]);
+        }
 
         // creation du versement
         if ($versement->save())
@@ -81,7 +98,15 @@ class TreasuryController extends Controller
 
             //on credite le compte du donneur
             $caisse = $user->caisse->first();
-            $caisse->solde = $caisse->solde + $montant;
+
+            if($userRole === Roles::GESTION_FLOTTE) {
+                // Gestionnaire de flotte
+                $caisse->solde = $caisse->solde + $montant;
+            } else {
+                // responsable de zone
+                $caisse->solde = $caisse->solde - $montant;
+            }
+
             $caisse->save();
 
             // Renvoyer un message de succès
@@ -139,20 +164,38 @@ class TreasuryController extends Controller
         $montant = $request->montant;
         $description = $request->description;
 
-        // Nouveau versement
-        $versement = new Treasury([
-            'receipt' => $recu,
-            'name' => $nom,
-            'amount' => $montant,
-            'reason' => $raison,
-            'type' => Transations::TREASURY_OUT,
-            'id_manager' => $user->id,
-            'description' => $description,
-        ]);
+        $userRole = $user->roles->first()->name;
+        if($userRole === Roles::GESTION_FLOTTE) {
+            // Gestionnaire de flotte
+            // Nouveau versement
+            $versement = new Treasury([
+                'receipt' => $recu,
+                'name' => $nom,
+                'amount' => $montant,
+                'reason' => $raison,
+                'type' => Transations::TREASURY_GF_OUT,
+                'id_manager' => $user->id,
+                'description' => $description,
+            ]);
+        } else {
+            // responsable de zone
+            // Nouveau versement
+            $versement = new Treasury([
+                'receipt' => $recu,
+                'name' => $nom,
+                'amount' => $montant,
+                'reason' => $raison,
+                'type' => Transations::TREASURY_RZ_OUT,
+                'id_manager' => $user->id,
+                'description' => $description,
+            ]);
+        }
 
         $caisse = $user->caisse->first();
 
-        if($caisse->solde > $montant) {
+        $threshold = ($userRole === Roles::GESTION_FLOTTE) ? $caisse->solde : -1 * $caisse->solde;
+
+        if($threshold >= $montant) {
             // creation du versement
             if ($versement->save())
             {
@@ -163,7 +206,14 @@ class TreasuryController extends Controller
                 ]));
 
                 //on credite le compte du donneur
-                $caisse->solde = $caisse->solde - $montant;
+                if($userRole === Roles::GESTION_FLOTTE) {
+                    // Gestionnaire de flotte
+                    $caisse->solde = $caisse->solde - $montant;
+                } else {
+                    // responsable de zone
+                    $caisse->solde = $caisse->solde + $montant;
+                }
+
                 $caisse->save();
 
                 // Renvoyer un message de succès
@@ -202,9 +252,13 @@ class TreasuryController extends Controller
         $userRole = $user->roles->first()->name;
 
         if($userRole === Roles::GESTION_FLOTTE) {
-            $versements = Treasury::where('id_manager', $user->id)->where('type', Transations::TREASURY_IN)->orderBy('created_at', 'desc')->paginate(6);
+            $versements = Treasury::where('id_manager', $user->id)->where('type', Transations::TREASURY_GF_IN)->orderBy('created_at', 'desc')->paginate(6);
+        } else if($userRole === Roles::RECOUVREUR) {
+            $versements = Treasury::where('id_manager', $user->id)->where('type', Transations::TREASURY_RZ_IN)->orderBy('created_at', 'desc')->paginate(6);
         } else {
-            $versements = Treasury::where('type', Transations::TREASURY_IN)->orderBy('created_at', 'desc')->paginate(6);
+            $versements = Treasury::where('type', Transations::TREASURY_GF_IN)
+                ->orWhere('type', Transations::TREASURY_RZ_IN)
+                ->orderBy('created_at', 'desc')->paginate(6);
         }
 
         $versements_response =  $this->treasuriesResponse($versements->items());
@@ -228,9 +282,13 @@ class TreasuryController extends Controller
         $userRole = $user->roles->first()->name;
 
         if($userRole === Roles::GESTION_FLOTTE) {
-            $versements = Treasury::where('id_manager', $user->id)->where('type', Transations::TREASURY_OUT)->orderBy('created_at', 'desc')->paginate(6);
+            $versements = Treasury::where('id_manager', $user->id)->where('type', Transations::TREASURY_GF_OUT)->orderBy('created_at', 'desc')->paginate(6);
+        } else if($userRole === Roles::RECOUVREUR) {
+            $versements = Treasury::where('id_manager', $user->id)->where('type', Transations::TREASURY_RZ_OUT)->orderBy('created_at', 'desc')->paginate(6);
         } else {
-            $versements = Treasury::where('type', Transations::TREASURY_OUT)->orderBy('created_at', 'desc')->paginate(6);
+            $versements = Treasury::where('type', Transations::TREASURY_GF_OUT)
+                ->orWhere('type', Transations::TREASURY_RZ_OUT)
+                ->orderBy('created_at', 'desc')->paginate(6);
         }
 
         $versements_response =  $this->treasuriesResponse($versements->items());
