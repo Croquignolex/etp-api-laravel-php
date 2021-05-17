@@ -291,6 +291,9 @@ Route::group(['middleware' => 'auth:api'], function(){
         Route::post('list_puce_agent/{id}', 'API\PuceController@list_puce_agent')
         ->where('id', '[0-9]+');
 
+        //Search sim by needle
+        Route::get('search_sims', 'API\PuceController@list_search');
+
         /*
     //////////////////////Demande de Flotte/////////////////////
     */

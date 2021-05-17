@@ -474,7 +474,7 @@ class PuceController extends Controller
         $user = Auth::user();
         $userRole = $user->roles->first()->name;
 
-        if($userRole === Roles::GESTION_FLOTTE || $userRole === Roles::SUPERVISEUR) {
+        if($userRole === Roles::GESTION_FLOTTE || $userRole === Roles::SUPERVISEUR || $userRole === Roles::ADMIN) {
             $id_puce = Type_puce::where('name', Statut::FLOTTAGE)->first()->id;
             $puces = Puce::where('type', $id_puce)->orderBy('created_at', 'desc')->paginate(6);
 
@@ -490,7 +490,7 @@ class PuceController extends Controller
             ]);
         } else {
             return response()->json([
-                'message' => "Cet utilisateur n'est ni une gestionnaire de flotte ni un superviseur",
+                'message' => "Cet utilisateur n'est ni une gestionnaire de flotte ni un superviseur ni un administrateur",
                 'status' => false,
                 'data' => null
             ]);
@@ -506,7 +506,7 @@ class PuceController extends Controller
         $user = Auth::user();
         $userRole = $user->roles->first()->name;
 
-        if($userRole === Roles::SUPERVISEUR) {
+        if($userRole === Roles::SUPERVISEUR || $userRole === Roles::ADMIN) {
             $id_puce = Type_puce::where('name', Statut::FLOTTAGE_SECONDAIRE)->first()->id;
             $puces = Puce::where('type', $id_puce)->orderBy('created_at', 'desc')->paginate(6);
 
@@ -522,7 +522,7 @@ class PuceController extends Controller
             ]);
         } else {
             return response()->json([
-                'message' => "Cet utilisateur n'est pas un superviseur",
+                'message' => "Cet utilisateur n'est ni un superviseur ni un administrateur",
                 'status' => false,
                 'data' => null
             ]);
@@ -538,7 +538,7 @@ class PuceController extends Controller
         $user = Auth::user();
         $userRole = $user->roles->first()->name;
 
-        if($userRole === Roles::SUPERVISEUR || $userRole === Roles::GESTION_FLOTTE) {
+        if($userRole === Roles::SUPERVISEUR || $userRole === Roles::GESTION_FLOTTE  || $userRole === Roles::ADMIN) {
             $id_puce = Type_puce::where('name', Statut::PUCE_RZ)->first()->id;
             $puces = Puce::where('type', $id_puce)->orderBy('created_at', 'desc')->paginate(6);
 
@@ -554,7 +554,7 @@ class PuceController extends Controller
             ]);
         } else {
             return response()->json([
-                'message' => "Cet utilisateur n'est ni un superviseur ni une gestionnaire de flotte",
+                'message' => "Cet utilisateur n'est ni un superviseur ni une gestionnaire de flotte ni un administrateur",
                 'status' => false,
                 'data' => null
             ]);
@@ -570,7 +570,7 @@ class PuceController extends Controller
         $user = Auth::user();
         $userRole = $user->roles->first()->name;
 
-        if($userRole === Roles::SUPERVISEUR || $userRole === Roles::GESTION_FLOTTE) {
+        if($userRole === Roles::SUPERVISEUR || $userRole === Roles::GESTION_FLOTTE || $userRole === Roles::ADMIN) {
             $id_puce = Type_puce::where('name', Statut::RESOURCE)->first()->id;
             $puces = Puce::where('type', $id_puce)->orderBy('created_at', 'desc')->paginate(6);
 
@@ -586,7 +586,7 @@ class PuceController extends Controller
             ]);
         } else {
             return response()->json([
-                'message' => "Cet utilisateur n'est ni un superviseur ni une gestionnaire de flotte",
+                'message' => "Cet utilisateur n'est ni un superviseur ni une gestionnaire de flotte ni un administrateur",
                 'status' => false,
                 'data' => null
             ]);
@@ -602,7 +602,7 @@ class PuceController extends Controller
         $user = Auth::user();
         $userRole = $user->roles->first()->name;
 
-        if($userRole === Roles::SUPERVISEUR || $userRole === Roles::GESTION_FLOTTE ) {
+        if($userRole === Roles::SUPERVISEUR || $userRole === Roles::GESTION_FLOTTE || $userRole === Roles::ADMIN) {
             $id_puce = Type_puce::where('name', Statut::AGENT)->first()->id;
             $puces = Puce::where('type', $id_puce)->orderBy('created_at', 'desc')->paginate(6);
 
@@ -618,7 +618,7 @@ class PuceController extends Controller
             ]);
         } else {
             return response()->json([
-                'message' => "Cet utilisateur n'est ni un superviseur ni une gestionnaire de flotte",
+                'message' => "Cet utilisateur n'est ni un superviseur ni une gestionnaire de flotte ni un administrateur",
                 'status' => false,
                 'data' => null
             ]);
@@ -813,6 +813,32 @@ class PuceController extends Controller
                 'data' => null
             ]);
          }
+    }
+
+    /**
+     * liste des puces par raport à la recherche
+     *
+     * @return JsonResponse
+     */
+    public function list_search(Request $request)
+    {
+        $needle = mb_strtolower($request->query('needle'));
+
+        $puces = Puce::orderBy('created_at', 'desc')->get()->filter(function (Puce $puce) use ($needle) {
+
+            $name = mb_strtolower($puce->nom);
+            $phone = $puce->numero;
+
+            return (strstr($name, $needle) || strstr($phone, $needle));
+        });
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'puces' => $this->simsResponse($puces)
+            ]
+        ]);
     }
 
     // Build sims return data
