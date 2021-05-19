@@ -152,7 +152,9 @@ class Demande_destockage_recouvreurController extends Controller
      */
     public function list_all_status()
     {
-        $demandes_destockage = Demande_destockage::orderBy('created_at', 'desc')->paginate(6);
+        $demandes_destockage = Demande_destockage::orderBy('statut', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->paginate(6);
 
         $clearance_response =  $this->clearancesResponse($demandes_destockage->items());
 
@@ -439,14 +441,19 @@ class Demande_destockage_recouvreurController extends Controller
         {
             //recuperer l'utilisateur concerné
             $user = $demande_destockage->user;
-
             //recuperer l'agent concerné
             $agent = Agent::where('id_user', $user->id)->first();
-
             //recuperer le demandeur
             $demandeur = User::find($demande_destockage->add_by);
 
-            $demandes_destockages[] = ['demande' => $demande_destockage, 'demandeur' => $demandeur, 'agent' => $agent, 'user' => $user, 'puce' => $demande_destockage->puce];
+            $demandes_destockages[] = [
+                'demande' => $demande_destockage,
+                'demandeur' => $demandeur,
+                'agent' => $agent,
+                'user' => $user,
+                'puce' => $demande_destockage->puce,
+                'operateur' => $demande_destockage->puce->flote
+            ];
         }
 
         return $demandes_destockages;

@@ -4,7 +4,6 @@ namespace App\Http\Controllers\API;
 
 use App\User;
 use App\Puce;
-use App\Role;
 use App\Type_puce;
 use App\Flottage_Rz;
 use App\Enums\Roles;
@@ -56,9 +55,6 @@ class Flottage_rzController extends Controller
             //On recupère la puce qui recoit
             $puce_to = Puce::find($request->id_puce_to);
 
-            //on recupère les types de la puce qui envoie
-            $type_puce_from = Type_puce::find($puce_from->type)->name;
-
             //on recupère les types de la puce qui recoit
             $type_puce_to = Type_puce::find($puce_to->type)->name;
 
@@ -87,16 +83,6 @@ class Flottage_rzController extends Controller
             ]);
         }
 
-        //on debite le solde du gestionnaire de flotte
-        $puce_from->solde = $puce_from->solde - $request->montant;
-
-        //On credite le solde du rz
-        $puce_to->solde = $puce_to->solde + $request->montant;
-
-        //On debite la caisse du rz
-        $rz_caisse = $puce_to->rz->caisse->first();
-        $rz_caisse->solde = $rz_caisse->solde - $request->montant;
-
         $gestionnaire = Auth::user();
 
         // Nouveau flottage
@@ -105,8 +91,8 @@ class Flottage_rzController extends Controller
             'id_sim_from' => $puce_from->id,
             'id_sim_to' => $puce_to->id,
             'reference' => null,
-            'statut' => Statut::EFFECTUER,
-            'type' => 'GF->RZ',
+            'statut' => Statut::EN_COURS,
+            'type' => Roles::GESTION_FLOTTE,
             'note' => null,
             'montant' => $request->montant,
             'reste' => null
@@ -114,19 +100,6 @@ class Flottage_rzController extends Controller
 
         //si l'enregistrement du flottage a lieu
         if ($flottage_rz->save()) {
-
-            $puce_from->save();
-            $puce_to->save();
-            $rz_caisse->save();
-
-            $role = Role::where('name', Roles::RECOUVREUR)->first();
-
-            //Database Notification
-            //notifier le responsable de zone
-            $puce_to->rz->notify(new Notif_flottage([
-                'data' => $flottage_rz,
-                'message' => "Nouveau flottage Dans votre puce"
-            ]));
 
             //recuperer la puce du superviseur
             $puce_emetrice = Puce::find($flottage_rz->id_sim_from);
@@ -145,7 +118,9 @@ class Flottage_rzController extends Controller
                     'puce_receptrice' => $puce_receptrice,
                     'puce_emetrice' => $puce_emetrice,
                     'utilisateur' => $superviseur,
-                    'flottage' => $flottage_rz
+                    'flottage' => $flottage_rz,
+                    'operateur' => $puce_emetrice->flote,
+                    'type_recepteur' => $puce_receptrice->type_puce
                 ]
             ]);
         } else {

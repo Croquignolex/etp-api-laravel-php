@@ -123,7 +123,8 @@ class DemandeflotteController extends Controller
                     'demandeur' => $demandeur,
                     'agent' => $agent,
                     'user' => $user,
-                    'puce' => $demande_flote->puce
+                    'puce' => $demande_flote->puce,
+                    'operateur' => $demande_flote->puce->flote
                 ]
             ]);
         } else {
@@ -297,7 +298,10 @@ class DemandeflotteController extends Controller
         $userRole = $user->roles->first()->name;
 
         if($userRole === Roles::AGENT || $userRole === Roles::RESSOURCE) {
-            $demandes_flote = Demande_flote::where('id_user', $user->id)->orderBy('created_at', 'desc')->paginate(6);
+            $demandes_flote = Demande_flote::where('id_user', $user->id)
+                ->orderBy('statut', 'desc')
+                ->orderBy('created_at', 'desc')
+                ->paginate(6);
 
             $demandes_flotes = $this->fleetsResponse($demandes_flote->items());
 
@@ -323,7 +327,9 @@ class DemandeflotteController extends Controller
      */
     public function list_demandes_flote_general()
     {
-        $demandes_flote = Demande_flote::orderBy('created_at', 'desc')->paginate(6);
+        $demandes_flote = Demande_flote::orderBy('statut', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->paginate(6);
 
         $demandes_flotes = $this->fleetsResponse($demandes_flote->items());
 
@@ -564,14 +570,19 @@ class DemandeflotteController extends Controller
         foreach($fleets as $demande_flote) {
             //recuperer l'utilisateur concerné
             $user = $demande_flote->user;
-
             //recuperer l'agent concerné
             $agent = $user->agent->first();
-
             //recuperer le demandeur
             $demandeur = User::find($demande_flote->add_by);
-
-            $demandes_flotes[] = ['demande' => $demande_flote, 'demandeur' => $demandeur, 'agent' => $agent, 'user' => $user, 'puce' => $demande_flote->puce];
+            // Build
+            $demandes_flotes[] = [
+                'demande' => $demande_flote,
+                'demandeur' => $demandeur,
+                'agent' => $agent,
+                'user' => $user,
+                'puce' => $demande_flote->puce,
+                'operateur' => $demande_flote->puce->flote,
+            ];
         }
 
         return $demandes_flotes;

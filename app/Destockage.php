@@ -35,10 +35,5 @@ class Destockage extends Model
     {
         return $this->belongsTo('App\Puce', 'id_puce');
     }
-
-    public function demande_destockage()
-    {
-        return $this->belongsTo('App\Demande_destockage', 'id_demande_destockage');
-    }
 }
 

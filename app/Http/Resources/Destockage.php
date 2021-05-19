@@ -33,6 +33,7 @@ class Destockage extends JsonResource
             'created_at' => $this->created_at,
             'recouvreur' => User::find($this->id_recouvreur),
             'puce' => $this->puce,
+            'operateur' => $this->puce->flote,
             'agent' => $agent,
             'user' => $user,
         ];

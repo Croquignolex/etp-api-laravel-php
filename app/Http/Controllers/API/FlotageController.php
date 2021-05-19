@@ -13,7 +13,6 @@ use App\Enums\Statut;
 use App\Demande_flote;
 use App\FlotageAnonyme;
 use App\Approvisionnement;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Events\NotificationsEvent;
@@ -49,6 +48,9 @@ class FlotageController extends Controller
             'id_puce' => ['required', 'numeric']
         ]);
 
+        //Montant du depot
+        $montant = $request->montant;
+
         if ($validator->fails()) {
             return response()->json([
                 'message' => "Le formulaire contient des champs mal renseignés",
@@ -67,7 +69,7 @@ class FlotageController extends Controller
         }
 
         //On verifi que le montant n'est pas supperieur au montant demandé
-        if (Demande_flote::find($request->id_demande_flotte)->reste < $request->montant) {
+        if (Demande_flote::find($request->id_demande_flotte)->reste < $montant) {
             return response()->json([
                 'message' => "Vous essayez d'envoyer plus de flotte que prevu",
                 'status' => false,
@@ -99,6 +101,14 @@ class FlotageController extends Controller
                 ]);
             }
 
+            // Solde flotte insufisant
+            if($puce_etp->solde < $montant) {
+                return response()->json([
+                    'message' => "Solde flotte insufisant dans cette puce de flottage",
+                    'status' => false,
+                    'data' => null
+                ]);
+            }
         } else {
             return response()->json([
                 'message' => "Cette puce n'existe pas",
@@ -106,15 +116,6 @@ class FlotageController extends Controller
                 'data' => null
             ]);
         }
-
-        //Montant du depot
-        $montant = $request->montant;
-
-        //Caisse de l'agent concerné
-        $caisse = Caisse::where('id_user', $demande_flotte->id_user)->first();
-
-        //L'agent concerné
-        $agent = Agent::where('id_user', $demande_flotte->id_user)->first();
 
         //La gestionnaire concernée
         $gestionnaire = Auth::user();
@@ -134,9 +135,11 @@ class FlotageController extends Controller
         //si l'enregistrement du flottage a lieu
         if ($flottage->save())
         {
+            $message = "Nouveau flottage éffectué par " . $gestionnaire->nom;
+
             //Broadcast Notification des responsables de zone
             $role = Role::where('name', Roles::RECOUVREUR)->first();
-            $event = new NotificationsEvent($role->id, ['message' => 'Nouveau flottage']);
+            $event = new NotificationsEvent($role->id, ['message' => $message]);
             broadcast($event)->toOthers();
 
             //Database Notification
@@ -153,7 +156,7 @@ class FlotageController extends Controller
             }
 
             //Database Notification de l'agent
-            User::find($demande_flotte->id_user)->notify(new Notif_flottage(['message' => "Nouveau flottage", 'data' => $flottage,]));
+            User::find($demande_flotte->id_user)->notify(new Notif_flottage(['message' => $message, 'data' => $flottage]));
 
             ////ce que le flottage implique
 
@@ -165,10 +168,6 @@ class FlotageController extends Controller
             $puce_agent->solde = $puce_agent->solde + $montant;
             $puce_agent->save();
 
-            //On debite la caisse de l'Agent pour le paiement de la flotte envoyée, ce qui implique qu'il doit à ETP
-            $caisse->solde = $caisse->solde - $montant;
-            $caisse->save();
-
             //On calcule le reste de flotte à envoyer
             $demande_flotte->reste = $demande_flotte->reste - $montant;
 
@@ -179,9 +178,6 @@ class FlotageController extends Controller
 
             //Enregistrer les oppérations
             $demande_flotte->save();
-
-            $user = $demande_flotte->user;
-            $demandeur = User::find($demande_flotte->add_by);
 
             // Renvoyer un message de succès
             return response()->json([
@@ -446,7 +442,10 @@ class FlotageController extends Controller
         $user = Auth::user();
 
         //On recupere les Flottages
-        $flottages = Approvisionnement::get()->filter(function(Approvisionnement $approvisionnement) use ($user) {
+        $flottages = Approvisionnement::orderBy('statut', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->filter(function(Approvisionnement $approvisionnement) use ($user) {
             $demande_de_flotte = $approvisionnement->demande_flote;
             return ($demande_de_flotte->user->id == $user->id);
         });
@@ -938,19 +937,14 @@ class FlotageController extends Controller
         {
             //recuperer la demande correspondante
             $demande = $flottage->demande_flote;
-
             //recuperer l'agent concerné
             $user = $demande->user;
-
             //recuperer l'agent concerné
             $agent = Agent::where('id_user', $user->id)->first();
-
             // recuperer celui qui a effectué le flottage
             $gestionnaire = User::find($flottage->id_user);
-
             //recuperer la puce de l'agent
             $puce_receptrice = Puce::find($demande->id_puce);
-
             //recuperer la puce de ETP
             $puce_emetrice = Puce::find($flottage->from);
 
@@ -961,6 +955,7 @@ class FlotageController extends Controller
                 'gestionnaire' => $gestionnaire,
                 'puce_emetrice' => $puce_emetrice,
                 'puce_receptrice' => $puce_receptrice,
+                'operateur' => $puce_emetrice->flote,
             ];
         }
 

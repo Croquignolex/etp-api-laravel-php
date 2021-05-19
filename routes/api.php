@@ -716,7 +716,9 @@ Route::group(['middleware' => 'auth:api'], function(){
         //lister les Flottages de la gestionnaire de flotte vers Responsable de zonne
         Route::get('list_all_flottage_rz', 'API\Flottage_rzController@list_all');
 
-
+        //Confirmation de la reception du transfert de flotte
+            Route::post('approuve_flottage_interne/{id}', 'API\Flottage_interneController@approuve')
+                ->where('id', '[0-9]+');
 
         //Creer un Flottage d'un superviseur vers un responsable de zone
         Route::post('flottage_interne_rz', 'API\Flottage_interneController@flottage_interne_rz');

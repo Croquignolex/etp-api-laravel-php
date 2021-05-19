@@ -339,7 +339,10 @@ class Retour_flotteController extends Controller
         }
 
         // $id est le id du user directement
-        $retour_flotes = Retour_flote::get()->filter(function(Retour_flote $retour_flote) use ($user){
+        $retour_flotes = Retour_flote::orderBy('statut', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->filter(function(Retour_flote $retour_flote) use ($user){
             $demande_flote = $retour_flote->flotage->demande_flote;
             $id_user = $demande_flote->id_user;
             return $id_user == $user->id;
@@ -447,12 +450,9 @@ class Retour_flotteController extends Controller
         foreach($recoveries as $recovery)
         {
             $puce_agent = Puce::find($recovery->user_source);
-
             $agent = $puce_agent->agent;
             $user = $agent->user;
-
             $recouvreur = User::find($recovery->id_user);
-
             $puce_flottage = Puce::find($recovery->user_destination);
 
             $returnedRecoveries[] = [
@@ -462,6 +462,7 @@ class Retour_flotteController extends Controller
                 'recouvreur' => $recouvreur,
                 'puce_agent' => $puce_agent,
                 'puce_flottage' => $puce_flottage,
+                'operateur' => $puce_flottage->flote
             ];
         }
 

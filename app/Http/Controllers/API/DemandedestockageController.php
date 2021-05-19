@@ -18,9 +18,7 @@ use App\Notifications\Demande_destockage as Notif_demande_destockage;
 class DemandedestockageController extends Controller
 {
     /**
-
      * les conditions de lecture des methodes
-
      */
     function __construct()
 	{
@@ -122,7 +120,8 @@ class DemandedestockageController extends Controller
                     'demandeur' => $demandeur,
                     'agent' => $agent,
                     'user' => $user,
-                    'puce' => $demande_destockage->puce
+                    'puce' => $demande_destockage->puce,
+                    'operateur' => $demande_destockage->puce->flote,
                 ]
             ]);
         } else {
@@ -222,7 +221,10 @@ class DemandedestockageController extends Controller
      */
     public function list_all_status()
     {
-        $demandes_destockage = Demande_destockage::where('id_user', Auth::user()->id)->orderBy('created_at', 'desc')->paginate(6);
+        $demandes_destockage = Demande_destockage::where('id_user', Auth::user()->id)
+            ->orderBy('statut', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->paginate(6);
 
         $clearance_response =  $this->clearancesResponse($demandes_destockage->items());
 
@@ -384,7 +386,14 @@ class DemandedestockageController extends Controller
             //recuperer le demandeur
             $demandeur = User::find($demande_destockage->add_by);
 
-            $demandes_destockages[] = ['demande' => $demande_destockage, 'demandeur' => $demandeur, 'agent' => $agent, 'user' => $user, 'puce' => $demande_destockage->puce];
+            $demandes_destockages[] = [
+                'demande' => $demande_destockage,
+                'demandeur' => $demandeur,
+                'agent' => $agent,
+                'user' => $user,
+                'puce' => $demande_destockage->puce,
+                'operateur' => $demande_destockage->puce->flote
+            ];
         }
 
         return $demandes_destockages;

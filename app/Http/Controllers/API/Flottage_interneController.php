@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Events\NotificationsEvent;
 use App\User;
 use App\Puce;
 use App\Role;
@@ -15,6 +16,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
 use App\Notifications\Flottage as Notif_flottage;
+use App\Notifications\Destockage as Notif_destockage;
 
 class Flottage_interneController extends Controller
 {
@@ -162,7 +164,9 @@ class Flottage_interneController extends Controller
                         'puce_receptrice' => $puce_receptrice,
                         'puce_emetrice' => $puce_emetrice,
                         'superviseur' => $superviseur,
-                        'flottage' => $flottage_interne
+                        'flottage' => $flottage_interne,
+                        'operateur' => $puce_emetrice->flote,
+                        'type_recepteur' => $puce_receptrice->type_puce
                     ];
                 //}
             }
@@ -187,7 +191,102 @@ class Flottage_interneController extends Controller
             );
 
         }
+    }
 
+    /**
+     * ////approuver le transfert de flotte
+     */
+    public function approuve($id)
+    {
+        //si le destockage n'existe pas
+        if (!($transfert_flotte = Flottage_interne::find($id))) {
+            return response()->json([
+                'message' => "Le transfert de flotte n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        $montant = $transfert_flotte->montant;
+        $puce_emetrice = Puce::find($transfert_flotte->id_sim_from);
+        $puce_receptrice = Puce::find($transfert_flotte->id_sim_to);
+
+        if($puce_emetrice->solde < $montant) {
+            return response()->json([
+                'message' => "Le Solde de la puce émetrice est insuffisant",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        //on approuve le destockage
+        $transfert_flotte->statut = Statut::EFFECTUER;
+
+        //message de reussite
+        if ($transfert_flotte->save()) {
+            // Traitement des flottes
+            $puce_emetrice->solde = $puce_emetrice->solde - $montant;
+            $puce_receptrice->solde = $puce_receptrice->solde + $montant;
+            $puce_emetrice->save();
+            $puce_receptrice->save();
+
+            // Augmenter la dette si nous somme en presence d'un RZ en puce receptrice
+            if ($puce_receptrice->type_puce->name === Statut::PUCE_RZ) {
+                $rz = $puce_receptrice->rz;
+                $rz->dette = $rz->dette + $montant;
+                $rz->save();
+            }
+
+            // Dimunuer la dette si nous somme en presence d'un RZ en puce emetrice
+            if ($puce_emetrice->type_puce->name === Statut::PUCE_RZ) {
+                $rz = $puce_emetrice->rz;
+                $rz->dette = $rz->dette - $montant;
+                $rz->save();
+            }
+
+            $users = User::all();
+
+            if($puce_emetrice->type_puce->name === Statut::PUCE_RZ) {
+                $rz = $puce_emetrice->rz;
+                $rz->notify(new Notif_destockage([
+                    'data' => $transfert_flotte,
+                    'message' => "Transfert de flotte Apprové"
+                ]));
+            } else if($puce_emetrice->type_puce->name === Statut::FLOTTAGE_SECONDAIRE) {
+                $role = Role::where('name', Roles::SUPERVISEUR)->first();
+                foreach ($users as $user) {
+                    if ($user->hasRole([$role->name])) {
+                        $user->notify(new Notif_destockage([
+                            'data' => $transfert_flotte,
+                            'message' => "Transfert de flotte Apprové"
+                        ]));
+                    }
+                }
+            } else if($puce_emetrice->type_puce->name === Statut::FLOTTAGE) {
+                $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
+                foreach ($users as $user) {
+                    if ($user->hasRole([$role->name])) {
+                        $user->notify(new Notif_destockage([
+                            'data' => $transfert_flotte,
+                            'message' => "Transfert de flotte Apprové"
+                        ]));
+                    }
+                }
+            }
+
+            return response()->json([
+                'message' => "Transfert de flotte apprové avec succès",
+                'status' => true,
+                'data' => null
+            ]);
+        } else {
+            // Renvoyer une erreur
+            return response()->json([
+                'message' => 'Erreur lors de la confirmation',
+                'status'=>false,
+                'data' => null
+            ]);
+        }
     }
 
     /**
@@ -346,11 +445,15 @@ class Flottage_interneController extends Controller
         $connected_user_role = Auth::user()->roles->first()->name;
 
         if ($connected_user_role === Roles::RECOUVREUR) {
-            $transfers = Flottage_interne::orderBy('created_at', 'desc')->get();
+            $transfers = Flottage_interne::orderBy('statut', 'desc')
+                ->orderBy('created_at', 'desc')
+                ->get();
             $transfers_response =  $this->transfersResponse($transfers);
             $hasMoreData = false;
         } else {
-            $transfers = Flottage_interne::orderBy('created_at', 'desc')->paginate(6);
+            $transfers = Flottage_interne::orderBy('statut', 'desc')
+                ->orderBy('created_at', 'desc')
+                ->paginate(6);
             $transfers_response =  $this->transfersResponse($transfers->items());
             $hasMoreData = $transfers->hasMorePages();
         }
@@ -790,10 +893,8 @@ class Flottage_interneController extends Controller
         {
             //recuperer la puce du superviseur
             $puce_emetrice = Puce::find($flottage_interne->id_sim_from);
-
             //recuperer la puce du gestionnaire de flotte
             $puce_receptrice = Puce::find($flottage_interne->id_sim_to);
-
             //recuperer celui qui a effectué le flottage
             $superviseur = User::find($flottage_interne->id_user);
 
@@ -807,7 +908,8 @@ class Flottage_interneController extends Controller
                         'puce_receptrice' => $puce_receptrice,
                         'puce_emetrice' => $puce_emetrice,
                         'utilisateur' => $superviseur,
-                        'flottage' => $flottage_interne
+                        'flottage' => $flottage_interne,
+                        'operateur' => $puce_emetrice->flote
                     ];
                 }
             } else {
@@ -816,7 +918,9 @@ class Flottage_interneController extends Controller
                     'puce_receptrice' => $puce_receptrice,
                     'puce_emetrice' => $puce_emetrice,
                     'utilisateur' => $superviseur,
-                    'flottage' => $flottage_interne
+                    'flottage' => $flottage_interne,
+                    'operateur' => $puce_emetrice->flote,
+                    'type_recepteur' => $puce_receptrice->type_puce
                 ];
             }
         }
