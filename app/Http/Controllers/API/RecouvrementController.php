@@ -6,7 +6,6 @@ use App\User;
 use App\Puce;
 use App\Role;
 use App\Agent;
-use App\Caisse;
 use App\Enums\Roles;
 use App\Recouvrement;
 use App\Enums\Statut;
@@ -33,6 +32,10 @@ class RecouvrementController extends Controller
         $this->middleware("permission:$recouvreur|$superviseur|$ges_flotte|$agent");
     }
 
+    /**
+     * Recouvrement d'espèces
+     */
+    // GESTIONNAIRE DE FLOTTE
     public function store(Request $request)
     {
         // Valider données envoyées
@@ -49,8 +52,10 @@ class RecouvrementController extends Controller
             ]);
         }
 
+        $flottage = Approvisionnement::find($request->id_flottage);
+        $montant = $request->montant;
         //On verifi si le flottage passée existe réellement
-        if (!Approvisionnement::find($request->id_flottage)) {
+        if (is_null($flottage)) {
             return response()->json([
                 'message' => "Le flottage n'existe pas",
                 'status' => false,
@@ -59,7 +64,7 @@ class RecouvrementController extends Controller
         }
 
         //On verifi que le montant n'est pas supperieur au montant demandé
-        if (Approvisionnement::find($request->id_flottage)->reste < $request->montant) {
+        if ($flottage->reste < $montant) {
             return response()->json([
                 'message' => "Vous essayez de recouvrir plus d'espèces que prevu",
                 'status' => false,
@@ -67,111 +72,79 @@ class RecouvrementController extends Controller
             ]);
         }
 
-        //On recupère le flottage à traiter
-        $flottage = Approvisionnement::find($request->id_flottage);
-
-        //Montant du depot
-        $montant = $request->montant;
-
-        //L'agent concerné
-        $user = User::find($flottage->demande_flote->id_user);
-
-        //la puce de L'agent concerné
-        $puce_agent = Puce::find($flottage->demande_flote->id_puce);
+        $user = $flottage->demande_flote->user;
 
         //Caisse de l'agent concerné
         $caisse = $user->caisse->first();
-
-        //recouvreur
-        $recouvreur = Auth::user();
+        $connected_user = Auth::user();
 
         // Nouveau recouvrement
         $recouvrement = new Recouvrement([
-            'id_user' => $recouvreur->id,
-            'id_transaction' => null,
-            'id_versement' => null,
+            'id_user' => $connected_user->id,
             'type_transaction' => Statut::RECOUVREMENT,
-            'reference' => null,
             'montant' => $montant,
             'reste' => $montant,
-            'id_flottage' => $request->id_flottage,
+            'id_flottage' => $flottage->ID,
             'statut' => Statut::EFFECTUER,
-            'user_destination' => $recouvreur->id,
+            'user_destination' => $connected_user->id,
             'user_source' => $user->id
         ]);
+        $recouvrement->save();
 
-        //si l'enregistrement du recouvrement a lieu
-        if ($recouvrement->save()) {
+        //Notification du gestionnaire de flotte
+        $message = "Recouvrement d'espèces éffectué par " . $connected_user->name;
+        $role = Role::where('name', Roles::SUPERVISEUR)->first();
+        $event = new NotificationsEvent($role->id, ['message' => $message]);
+        broadcast($event)->toOthers();
 
-            //Notification du gestionnaire de flotte
-            $message = "Recouvrement d'espèces éffectué par " . $recouvreur->name;
-            $role = Role::where('name', Roles::SUPERVISEUR)->first();
-            $event = new NotificationsEvent($role->id, ['message' => $message]);
-            broadcast($event)->toOthers();
+        //Database Notification
+        $users = User::all();
+        foreach ($users as $user) {
 
-            //Database Notification
-            $users = User::all();
-            foreach ($users as $user) {
+            if ($user->hasRole([$role->name])) {
 
-                if ($user->hasRole([$role->name])) {
-
-                    $user->notify(new Notif_recouvrement([
-                        'data' => $recouvrement,
-                        'message' => $message
-                    ]));
-                }
+                $user->notify(new Notif_recouvrement([
+                    'data' => $recouvrement,
+                    'message' => $message
+                ]));
             }
-
-            ////ce que le recouvrement implique
-
-            //On credite la caisse de l'Agent pour le remboursement de la flotte recu, ce qui implique qu'il rembource ses detes à ETP
-            $caisse->solde = $caisse->solde + $montant;
-            $caisse->save();
-
-            //On recupère la puce de l'agent concerné et on debite
-            $puce_agent->solde = $puce_agent->solde - $montant;
-            $puce_agent->save();
-
-            //On calcule le reste à recouvrir
-            $flottage->reste = $flottage->reste - $montant;
-
-            //On change le statut du flottage
-            if ($flottage->reste == 0) {
-                $flottage->statut = \App\Enums\Statut::EFFECTUER ;
-            } else {
-                $flottage->statut = \App\Enums\Statut::EN_COURS ;
-            }
-
-            //Enregistrer les oppérations
-            $flottage->save();
-
-            //gestion de la caisse de l'agent qui recouvre
-            $connected_user = Auth::user();
-
-            //la caisse de l'utilisateur connecté
-            $connected_caisse = Caisse::where('id_user', $connected_user->id)->first();
-
-            //mise à jour de la caisse de l'utilisateur qui effectue l'oppération
-            if ($connected_user->hasRole([Roles::GESTION_FLOTTE])) {
-                $connected_caisse->solde = $connected_caisse->solde + $montant;
-            }else {
-                $connected_caisse->solde = $connected_caisse->solde - $montant;
-            }
-            $connected_caisse->save();
-
-            return response()->json([
-                'message' => "Recouvrement d'espèces effectué avec succès",
-                'status' => true,
-                'data' => null
-            ]);
-        } else {
-            // Renvoyer une erreur
-            return response()->json([
-                'message' => 'Erreur lors du recouvrement',
-                'status' => false,
-                'data' => null
-            ]);
         }
+
+        ////ce que le recouvrement implique
+
+        //On credite la caisse de l'Agent pour le remboursement de la flotte recu, ce qui implique qu'il rembource ses detes à ETP
+        $caisse->solde = $caisse->solde - $montant;
+        $caisse->save();
+
+        //On calcule le reste à recouvrir
+        $flottage->reste = $flottage->reste - $montant;
+
+        //On change le statut du flottage
+        if ($flottage->reste == 0) $flottage->statut = Statut::EFFECTUER ;
+        else $flottage->statut = Statut::EN_COURS ;
+
+        //Enregistrer les oppérations
+        $flottage->save();
+
+        //la caisse de l'utilisateur connecté
+        $connected_caisse = $connected_user->caisse->first();
+
+        if ($connected_user->hasRole([Roles::GESTION_FLOTTE])) {
+            // Augmenter la caisse de la gestionnaire de flotte
+            $connected_caisse->solde = $connected_caisse->solde + $montant;
+            $connected_caisse->save();
+        } else if($connected_user->hasRole([Roles::RECOUVREUR])) {
+            // Augmenter la caisse du RZ et augmenter sa dette
+            $connected_caisse->solde = $connected_caisse->solde + $montant;
+            $connected_user->dette = $connected_user->dette + $montant;
+            $connected_caisse->save();
+        }
+
+        return response()->json([
+            'message' => "Recouvrement d'espèces effectué avec succès",
+            'status' => true,
+            'data' => null
+        ]);
     }
 
     /**
@@ -179,21 +152,18 @@ class RecouvrementController extends Controller
      */
     public function show($id)
     {
+        //si le recouvrement n'existe pas
+        if (!($recouvrement = Recouvrement::find($id))) {
+            return response()->json(
+                [
+                    'message' => "le recouvrement n'existe pas",
+                    'status' => false,
+                    'data' => null
+                ]
+            );
+        }
 
-            //si le recouvrement n'existe pas
-            if (!($recouvrement = Recouvrement::find($id))) {
-                return response()->json(
-                    [
-                        'message' => "le recouvrement n'existe pas",
-                        'status' => false,
-                        'data' => null
-                    ]
-                );
-            }
-
-            return new RecouvrementResource($recouvrement);
-
-
+        return new RecouvrementResource($recouvrement);
     }
 
     /**
@@ -232,22 +202,16 @@ class RecouvrementController extends Controller
     }
 
     /**
-     * ////lister les recouvrements d'un flottage
+     * Lister les recouvrements d'un flottage
      */
+    // GESTIONNAIRE DE FLOTTE
     public function list_recouvrement($id)
     {
-        if (!Approvisionnement::find($id)){
-
-            return response()->json([
-                    'message' => "Le flottage n'existe pas",
-                    'status' => true,
-                    'data' => null
-                ]
-            );
-        }
-
         //On recupere les recouvrements
-        $recoveries = Recouvrement::where('id_flottage', $id)->get();
+        $recoveries = Recouvrement::where('id_flottage', $id)
+            ->orderBy('statut', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->get();
 
         return response()->json([
             'message' => '',
@@ -414,11 +378,9 @@ class RecouvrementController extends Controller
 
         foreach($recoveries as $recovery)
         {
-            //recuperer l'agent concerné
-            $user = User::find($recovery->user_source);
+            $user = $recovery->source_user;
             $agent = $user->agent->first();
-
-            $recouvreur = User::find($recovery->id_user);
+            $recouvreur = $recovery->user;
 
             $returnedRecoveries[] = [
                 'user' => $user,

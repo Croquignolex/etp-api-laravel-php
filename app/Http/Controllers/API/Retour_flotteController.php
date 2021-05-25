@@ -5,7 +5,6 @@ namespace App\Http\Controllers\API;
 use App\Puce;
 use App\User;
 use App\Role;
-use App\Agent;
 use App\Enums\Roles;
 use App\Enums\Statut;
 use App\Retour_flote;
@@ -33,8 +32,9 @@ class Retour_flotteController extends Controller
     }
 
     /**
-     * ////Faire un retour de flotte
+     * Retour de flotte
      */
+    // GESTIONNAIRE DE FLOTTE
     public function retour(Request $request)
     {
         // Valider données envoyées
@@ -53,20 +53,20 @@ class Retour_flotteController extends Controller
             ]);
         }
 
+        $flottage = Approvisionnement::find($request->id_flottage);
         //On verifi si le flottage passée existe réellement
-        if (!Approvisionnement::find($request->id_flottage)) {
+        if (is_null($flottage)) {
             return response()->json([
-                    'message' => "Le flottage n'existe pas",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+                'message' => "Le flottage n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
-        //On verifi que le montant n'est pas supperieur au montant demandé
-        $flottage = Approvisionnement::find($request->id_flottage);
+        $montant = $request->montant;
 
-        if ($flottage->reste < $request->montant) {
+        // Vérification du montat à recouvrir
+        if ($flottage->reste < $montant) {
             return response()->json([
                 'message' => "Vous essayez de retourner plus de flotte que prevu",
                 'status' => false,
@@ -74,12 +74,10 @@ class Retour_flotteController extends Controller
             ]);
         }
 
-        //On verifi si la puce passée appartien à l'agent concerné
-        //L'agent concerné
-        $user = User::Find($flottage->demande_flote->id_user);
-        $agent = Agent::Where('id_user', $user->id)->first();
-        $puce_agent = Puce::Find($request->puce_agent);
-        $puce_flottage = Puce::Find($request->puce_flottage);
+        $user = $flottage->demande_flote->user;
+        $agent = $user->agent->first();
+        $puce_agent = Puce::find($request->puce_agent);
+        $puce_flottage = Puce::find($request->puce_flottage);
 
         //On verifi que le montant n'est pas supperieur au montant demandé
         if ($puce_agent == null || $puce_flottage == null) {
@@ -99,7 +97,7 @@ class Retour_flotteController extends Controller
         }
 
         //On verifi si les puce passée appartien à au meme oppérateur de flotte
-        if ($puce_flottage->flote->nom != $puce_agent->flote->nom) {
+        if ($puce_flottage->flote->id != $puce_agent->flote->id) {
             return response()->json([
                 'message' => "Les deux puces ne sont pas du même opérateur",
                 'status' => false,
@@ -108,58 +106,72 @@ class Retour_flotteController extends Controller
         }
 
         $connected_user = Auth::user();
-        $montant = $request->montant;
-
-        $is_manager = $connected_user->roles->first()->name === Roles::GESTION_FLOTTE;
+        $type_puce = $puce_flottage->type_puce->name;
+        $is_collector = $connected_user->roles->first()->name === Roles::RECOUVREUR;
+        $status = ($is_collector && ($type_puce !== Statut::PUCE_RZ)) ? Statut::EN_COURS : Statut::EFFECTUER;
 
         //initier le retour flotte
         $retour_flotte = new Retour_flote([
             'id_user' => $connected_user->id,
             'montant' => $montant,
             'reste' => $montant,
-            'id_approvisionnement' => $request->id_flottage,
-            'statut' => $is_manager ? Statut::EFFECTUER : Statut::EN_COURS,
+            'id_approvisionnement' => $flottage->id,
+            'statut' => $status,
             'user_destination' => $puce_flottage->id,
             'user_source' => $puce_agent->id
         ]);
         $retour_flotte->save();
 
-        //Notification du gestionnaire de flotte
-        $message = 'Retour de flote éffectué par ' . $user->name;
-        $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
-        $event = new NotificationsEvent($role->id, ['message' => $message]);
-        broadcast($event)->toOthers();
+        if($status === Statut::EN_COURS) {
+            //Notification du gestionnaire de flotte
+            $message = 'Retour de flote éffectué par ' . $connected_user->name;
+            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
+            $event = new NotificationsEvent($role->id, ['message' => $message]);
+            broadcast($event)->toOthers();
 
-        //Database Notification
-        $users = User::all();
-        foreach ($users as $_user) {
+            //Database Notification
+            $users = User::all();
+            foreach ($users as $_user) {
 
-            if ($_user->hasRole([$role->name])) {
+                if ($_user->hasRole([$role->name])) {
 
-                $_user->notify(new Notif_retour_flotte([
-                    'data' => $retour_flotte,
-                    'message' => $message
-                ]));
+                    $_user->notify(new Notif_retour_flotte([
+                        'data' => $retour_flotte,
+                        'message' => $message
+                    ]));
+                }
             }
         }
 
-        //on credite la puce de ETP concernée
-        $puce_flottage->solde = $puce_flottage->solde + $montant;
-        $puce_flottage->save();
+        //notification de l'agent
+        $user->notify(new Notif_retour_flotte([
+            'data' => $retour_flotte,
+            'message' => $message
+        ]));
 
-        //On recupère la puce de l'agent concerné et on debite
-        $puce_agent->solde = $puce_agent->solde - $montant;
-        $puce_agent->save();
+        if($status === Statut::EFFECTUER) {
+            //On recupère la puce de l'agent concerné et on debite
+            $puce_agent->solde = $puce_agent->solde - $montant;
+
+            //on credite la puce de ETP concernée
+            $puce_flottage->solde = $puce_flottage->solde + $montant;
+
+            if($is_collector && $type_puce === Statut::PUCE_RZ) {
+                // on augmente la dette du RZ s'il effectue le retour flotte dans sa puce
+                $connected_user->dette = $connected_user->dette + $montant;
+                $connected_user->save();
+            }
+
+            $puce_agent->save();
+            $puce_flottage->save();
+        }
 
         //On calcule le reste à recouvrir
         $flottage->reste = $flottage->reste - $montant;
 
         //On change le statut du flottage
-        if ($flottage->reste == 0) {
-            $flottage->statut = Statut::EFFECTUER ;
-        }else {
-            $flottage->statut = Statut::EN_COURS ;
-        }
+        if ($flottage->reste == 0) $flottage->statut = Statut::EFFECTUER ;
+        else $flottage->statut = Statut::EN_COURS ;
 
         //Enregistrer les oppérations
         $flottage->save();
@@ -228,23 +240,16 @@ class Retour_flotteController extends Controller
     }
 
     /**
-     * ////lister les retour flotte d'un flottage
+     * Lister les retour flotte d'un flottage
      */
+    // GESTIONNAIRE DE FLOTTE
     public function list_retour_flotte($id)
     {
-        if (!Approvisionnement::find($id)){
-
-            return response()->json(
-                [
-                    'message' => "Le flottage n'existe pas",
-                    'status' => true,
-                    'data' => null
-                ]
-            );
-        }
-
         //On recupere les retour flotte
-        $recoveries = Retour_flote::where('id_approvisionnement', $id)->get();
+        $recoveries = Retour_flote::where('id_approvisionnement', $id)
+            ->orderBy('statut', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->get();
 
         return response()->json([
             'message' => '',
@@ -413,11 +418,11 @@ class Retour_flotteController extends Controller
 
         foreach($recoveries as $recovery)
         {
-            $puce_agent = Puce::find($recovery->user_source);
+            $puce_agent = $recovery->puce_source;
             $agent = $puce_agent->agent;
             $user = $agent->user;
-            $recouvreur = User::find($recovery->id_user);
-            $puce_flottage = Puce::find($recovery->user_destination);
+            $recouvreur = $recovery->user;
+            $puce_flottage = $recovery->puce_destination;
 
             $returnedRecoveries[] = [
                 'recouvrement' => $recovery,

@@ -22,6 +22,11 @@ class Recouvrement extends Model
         return $this->belongsTo('App\User', 'id_user');
     }
 
+    public function source_user()
+    {
+        return $this->belongsTo('App\User', 'user_source');
+    }
+
     public function flottage()
     {
         return $this->belongsTo('App\Approvisionnement', 'id_flottage');

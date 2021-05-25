@@ -22,6 +22,11 @@ class Demande_flote extends Model
         return $this->belongsTo('App\User', 'id_user');
     }
 
+    public function creator()
+    {
+        return $this->belongsTo('App\User', 'add_by');
+    }
+
     public function puce()
     {
         return $this->belongsTo('App\Puce', 'id_puce');

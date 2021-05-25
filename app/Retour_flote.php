@@ -22,6 +22,16 @@ class Retour_flote extends Model
         return $this->belongsTo('App\User', 'id_user');
     }
 
+    public function puce_source()
+    {
+        return $this->belongsTo('App\Puce', 'user_source');
+    }
+
+    public function puce_destination()
+    {
+        return $this->belongsTo('App\Puce', 'user_destination');
+    }
+
     public function flotage()
     {
         return $this->belongsTo('App\Approvisionnement', 'id_approvisionnement');

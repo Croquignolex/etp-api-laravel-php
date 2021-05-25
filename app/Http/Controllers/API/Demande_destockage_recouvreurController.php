@@ -149,13 +149,14 @@ class Demande_destockage_recouvreurController extends Controller
     }
 
     /**
-     * ////lister mes demandes de destockage peu importe le statut
+     * Lister mes demandes de destockage peu importe le statut
      */
+    // GESTIONNAIRE DE FLOTTE
     public function list_all_status()
     {
         $demandes_destockage = Demande_destockage::orderBy('statut', 'desc')
             ->orderBy('created_at', 'desc')
-            ->paginate(6);
+            ->paginate(9);
 
         $clearance_response =  $this->clearancesResponse($demandes_destockage->items());
 
@@ -170,11 +171,14 @@ class Demande_destockage_recouvreurController extends Controller
     }
 
     /**
-     * ////lister toutes mes demandes de destockage peu importe le statut
+     * Lister toutes mes demandes de destockage peu importe le statut
      */
+    // GESTIONNAIRE DE FLOTTE
     public function list_all_status_all()
     {
-        $demandes_destockage = Demande_destockage::orderBy('created_at', 'desc')->get();
+        $demandes_destockage = Demande_destockage::orderBy('statut', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->get();
 
         return response()->json([
             'message' => '',
@@ -440,20 +444,18 @@ class Demande_destockage_recouvreurController extends Controller
 
         foreach($clearances as $demande_destockage)
         {
-            //recuperer l'utilisateur concerné
             $user = $demande_destockage->user;
-            //recuperer l'agent concerné
-            $agent = Agent::where('id_user', $user->id)->first();
-            //recuperer le demandeur
-            $demandeur = User::find($demande_destockage->add_by);
+            $agent = $user->agent->first();
+            $demandeur = $demande_destockage->creator;
+            $puce = $demande_destockage->puce;
 
             $demandes_destockages[] = [
                 'demande' => $demande_destockage,
                 'demandeur' => $demandeur,
                 'agent' => $agent,
                 'user' => $user,
-                'puce' => $demande_destockage->puce,
-                'operateur' => $demande_destockage->puce->flote
+                'puce' => $puce,
+                'operateur' => $puce->flote
             ];
         }
 

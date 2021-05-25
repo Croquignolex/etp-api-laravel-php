@@ -29,6 +29,7 @@ class Flottage_rzController extends Controller
     }
 
     //creer le flottage
+    // GESTIONNAIRE DE FLOTTE
     Public function store(Request $request)
     {
         // Valider données envoyées
@@ -37,36 +38,22 @@ class Flottage_rzController extends Controller
             'id_puce_from' => ['required', 'numeric'],
             'id_puce_to' => ['required', 'numeric'],
         ]);
+
         if ($validator->fails()) {
             return response()->json([
-                    'message' => "Le formulaire contient des champs mal renseignés",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
+        //On recupère la puce qui envoie
+        $puce_from = Puce::find($request->id_puce_from);
+        //On recupère la puce qui recoit
+        $puce_to = Puce::find($request->id_puce_to);
+
         // On verifi que la puce passée en paramettre existe
-        if (!is_null(Puce::find($request->id_puce_from)) && !is_null(Puce::find($request->id_puce_to))) {
-
-            //On recupère la puce qui envoie
-            $puce_from = Puce::find($request->id_puce_from);
-
-            //On recupère la puce qui recoit
-            $puce_to = Puce::find($request->id_puce_to);
-
-            //on recupère les types de la puce qui recoit
-            $type_puce_to = Type_puce::find($puce_to->type)->name;
-
-            //On se rassure que les puces passée en paramettre respectent toutes les conditions
-            if ($type_puce_to != Statut::PUCE_RZ) {
-                return response()->json([
-                    'message' => "Choisir une puce valide pour la reception",
-                    'status' => false,
-                    'data' => null
-                ]);
-            }
-        } else {
+        if (is_null($puce_from) || is_null($puce_to)) {
             return response()->json([
                 'message' => "Une ou plusieurs puces entrées n'existe pas",
                 'status' => false,
@@ -83,54 +70,42 @@ class Flottage_rzController extends Controller
             ]);
         }
 
-        $gestionnaire = Auth::user();
+        $connected_user = Auth::user();
 
         // Nouveau flottage
         $flottage_rz = new Flottage_interne([
-            'id_user' => $gestionnaire->id,
+            'id_user' => $connected_user->id,
             'id_sim_from' => $puce_from->id,
             'id_sim_to' => $puce_to->id,
-            'reference' => null,
             'statut' => Statut::EN_COURS,
             'type' => Roles::GESTION_FLOTTE,
-            'note' => null,
             'montant' => $request->montant,
-            'reste' => null
         ]);
+        $flottage_rz->save();
 
-        //si l'enregistrement du flottage a lieu
-        if ($flottage_rz->save()) {
-
-            //recuperer la puce du superviseur
-            $puce_emetrice = Puce::find($flottage_rz->id_sim_from);
-
-            //recuperer la puce du gestionnaire de flotte
-            $puce_receptrice = Puce::find($flottage_rz->id_sim_to);
-
-            //recuperer celui qui a effectué le flottage
-            $superviseur = User::find($flottage_rz->id_user);
-
-            // Renvoyer un message de succès
-            return response()->json([
-                'message' => "Transfert de flotte effectué avec succès",
-                'status' => true,
-                'data' => [
-                    'puce_receptrice' => $puce_receptrice,
-                    'puce_emetrice' => $puce_emetrice,
-                    'utilisateur' => $superviseur,
-                    'flottage' => $flottage_rz,
-                    'operateur' => $puce_emetrice->flote,
-                    'type_recepteur' => $puce_receptrice->type_puce
-                ]
-            ]);
-        } else {
-            // Renvoyer une erreur
-            return response()->json([
-                'message' => 'Erreur lors du flottage',
-                'status' => false,
-                'data' => null
-            ]);
+        //Database Notification du RZ
+        $rz = $puce_to->rz;
+        if(!is_null($rz)) {
+            $message = "Transfert de flotte éffectué par " . $connected_user->name;
+            $rz->notify(new Notif_flottage([
+                'message' => $message,
+                'data' => $flottage_rz
+            ]));
         }
+
+        // Renvoyer un message de succès
+        return response()->json([
+            'message' => "Transfert de flotte effectué avec succès",
+            'status' => true,
+            'data' => [
+                'puce_receptrice' => $puce_to,
+                'puce_emetrice' => $puce_from,
+                'utilisateur' => $connected_user,
+                'flottage' => $flottage_rz,
+                'operateur' => $puce_from->flote,
+                'type_recepteur' => $puce_to->type_puce
+            ]
+        ]);
     }
 
     /**

@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Enums\Statut;
 use App\User;
 use App\Role;
 use App\Puce;
 use App\Agent;
+use App\Enums\Statut;
 use \App\Enums\Roles;
 use App\Demande_flote;
 use Illuminate\Http\Request;
@@ -325,13 +325,14 @@ class DemandeflotteController extends Controller
     }
 
     /**
-     * //lister mes demandes de flotes (gestionnaire de flotte ou les admin)
+     * Lister mes demandes de flotes (gestionnaire de flotte ou les admin)
      */
+    // GESTIONNAIRE DE FLOTTE
     public function list_demandes_flote_general()
     {
         $demandes_flote = Demande_flote::orderBy('statut', 'desc')
             ->orderBy('created_at', 'desc')
-            ->paginate(6);
+            ->paginate(9);
 
         $demandes_flotes = $this->fleetsResponse($demandes_flote->items());
 
@@ -430,11 +431,14 @@ class DemandeflotteController extends Controller
     }
 
     /**
-     * //lister toutes mes demandes de flotes (gestionnaire de flotte ou les admin)
+     * lister toutes mes demandes de flotes (gestionnaire de flotte ou les admin)
      */
+    // GESTIONNAIRE DE FLOTTE
     public function list_demandes_flote_general_all()
     {
-        $demandes_flote = Demande_flote::orderBy('created_at', 'desc')->get();
+        $demandes_flote = Demande_flote::orderBy('statut', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->get();
 
         return response()->json([
             'message' => "",
@@ -570,13 +574,10 @@ class DemandeflotteController extends Controller
         $demandes_flotes = [];
 
         foreach($fleets as $demande_flote) {
-            //recuperer l'utilisateur concerné
             $user = $demande_flote->user;
-            //recuperer l'agent concerné
             $agent = $user->agent->first();
-            //recuperer le demandeur
-            $demandeur = User::find($demande_flote->add_by);
-            // Build
+            $demandeur = $demande_flote->creator;
+
             $demandes_flotes[] = [
                 'demande' => $demande_flote,
                 'demandeur' => $demandeur,

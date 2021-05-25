@@ -39,6 +39,7 @@ class FlotageController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
+    // GESTIONNAIRE DE FLOTTE
     public function store(Request $request)
     {
         // Valider données envoyées
@@ -48,9 +49,6 @@ class FlotageController extends Controller
             'id_puce' => ['required', 'numeric']
         ]);
 
-        //Montant du depot
-        $montant = $request->montant;
-
         if ($validator->fails()) {
             return response()->json([
                 'message' => "Le formulaire contient des champs mal renseignés",
@@ -59,8 +57,12 @@ class FlotageController extends Controller
             ]);
         }
 
+        //Montant du depot
+        $montant = $request->montant;
+        $demande_flotte = Demande_flote::find($request->id_demande_flotte);
+
         //On verifi si la demande passée existe réellement
-        if (!Demande_flote::find($request->id_demande_flotte)) {
+        if (is_null($demande_flotte)) {
             return response()->json([
                 'message' => "La demande de flotte n'existe pas",
                 'status' => false,
@@ -69,7 +71,7 @@ class FlotageController extends Controller
         }
 
         //On verifi que le montant n'est pas supperieur au montant demandé
-        if (Demande_flote::find($request->id_demande_flotte)->reste < $montant) {
+        if ($demande_flotte->reste < $montant) {
             return response()->json([
                 'message' => "Vous essayez d'envoyer plus de flotte que prevu",
                 'status' => false,
@@ -77,130 +79,116 @@ class FlotageController extends Controller
             ]);
         }
 
-        // On verifi que la puce passée en paramettre existe
-        if (Puce::find($request->id_puce)) {
+        // Data
+        $puce_etp = Puce::find($request->id_puce);
+        $puce_agent = Puce::find($demande_flotte->id_puce);
+        $type_puce = Type_puce::find($puce_etp->type)->name;
 
-            //On recupère la puce ETP qui va faire le depot
-            $puce_etp = Puce::find($request->id_puce);
-
-            //On recupère la demande à traiter
-            $demande_flotte = Demande_flote::find($request->id_demande_flotte);
-
-            //On recupère la puce de l'Agent qui va etre approvisionné
-            $puce_agent = Puce::find($demande_flotte->id_puce);
-
-            //on recupère le typ de la puce
-            $type_puce = Type_puce::find($puce_etp->type)->name;
-
-            //On se rassure que la puce passée en paramettre est reelement l'une des puces de flottage sollicités
-            if ($type_puce == Statut::AGENT || $type_puce == Statut::RESOURCE || $puce_etp->id_flotte != $puce_agent->id_flotte) {
-                return response()->json([
-                    'message' => "Cette puce n'est pas capable d'effectuer ce flottagage",
-                    'status' => false,
-                    'data' => null
-                ]);
-            }
-
-            // Solde flotte insufisant
-            if($puce_etp->solde < $montant) {
-                return response()->json([
-                    'message' => "Solde flotte insufisant dans cette puce de flottage",
-                    'status' => false,
-                    'data' => null
-                ]);
-            }
-        } else {
+        // Existance des puces
+        if(is_null($puce_etp) || is_null($puce_agent)) {
             return response()->json([
-                'message' => "Cette puce n'existe pas",
+                'message' => "Une des puces n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        // capacité de flottage de la puce emetrice
+        if($type_puce !== Statut::FLOTTAGE) {
+            return response()->json([
+                'message' => "Cette puce n'est pas capable d'effectuer un flottage",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        // Verification d'opérateur
+        if ($puce_etp->id_flotte != $puce_agent->id_flotte) {
+            return response()->json([
+                'message' => "Les deux puces ne sont pas du même opérateur",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        // Solde flotte insufisant
+        if($puce_etp->solde < $montant) {
+            return response()->json([
+                'message' => "Solde flotte insufisant dans cette puce de flottage",
                 'status' => false,
                 'data' => null
             ]);
         }
 
         //La gestionnaire concernée
-        $gestionnaire = Auth::user();
+        $connected_user = Auth::user();
 
         // Nouveau flottage
         $flottage = new Approvisionnement([
-            'note' => null,
             'reste' => $montant,
-            'reference' => null,
             'montant' => $montant,
             'from' => $puce_etp->id,
             'statut' => Statut::EN_ATTENTE,
-            'id_user' => $gestionnaire->id,
+            'id_user' => $connected_user->id,
             'id_demande_flote' => $demande_flotte->id,
         ]);
+        $flottage->save();
 
-        //si l'enregistrement du flottage a lieu
-        if ($flottage->save())
+        //Broadcast Notification des responsables de zone
+        $message = "Flottage éffectué par " . $connected_user->nom;
+        $role = Role::where('name', Roles::RECOUVREUR)->first();
+        $event = new NotificationsEvent($role->id, ['message' => $message]);
+        broadcast($event)->toOthers();
+
+        //Database Notification
+        $users = User::all();
+        foreach ($users as $user)
         {
-            $message = "Nouveau flottage éffectué par " . $gestionnaire->nom;
-
-            //Broadcast Notification des responsables de zone
-            $role = Role::where('name', Roles::RECOUVREUR)->first();
-            $event = new NotificationsEvent($role->id, ['message' => $message]);
-            broadcast($event)->toOthers();
-
-            //Database Notification
-            $users = User::all();
-            foreach ($users as $user)
+            if ($user->hasRole([$role->name]))
             {
-                if ($user->hasRole([$role->name]))
-                {
-                    $user->notify(new Notif_flottage([
-                        'data' => $flottage,
-                        'message' => "Nouveau flottage"
-                    ]));
-                }
+                $user->notify(new Notif_flottage([
+                    'data' => $flottage,
+                    'message' => $message
+                ]));
             }
-
-            //Database Notification de l'agent
-            User::find($demande_flotte->id_user)->notify(new Notif_flottage(['message' => $message, 'data' => $flottage]));
-
-            ////ce que le flottage implique
-
-            //On debite la puce de ETP
-            $puce_etp->solde = $puce_etp->solde - $montant;
-            $puce_etp->save();
-
-            //On credite la puce de l'Agent
-            $puce_agent->solde = $puce_agent->solde + $montant;
-            $puce_agent->save();
-
-            //On calcule le reste de flotte à envoyer
-            $demande_flotte->reste = $demande_flotte->reste - $montant;
-
-            $demande_flotte->source = $puce_etp->id;
-
-            //On change le statut de la demande de flotte
-            $demande_flotte->statut = Statut::EFFECTUER ;
-
-            //Enregistrer les oppérations
-            $demande_flotte->save();
-
-            // Renvoyer un message de succès
-            return response()->json([
-                'message' => "Flottage effectué avec succès",
-                'status' => true,
-                'data' => null
-            ]);
-        } else {
-            // Renvoyer une erreur
-            return response()->json([
-                'message' => 'Erreur inatendue lors du flottage',
-                'status' => false,
-                'data' => null
-            ]);
         }
+
+        //Database Notification de l'agent
+        $demande_flotte->user->notify(new Notif_flottage([
+            'message' => $message,
+            'data' => $flottage
+        ]));
+
+        ////ce que le flottage implique
+
+        //On debite la puce de ETP
+        $puce_etp->solde = $puce_etp->solde - $montant;
+        $puce_etp->save();
+
+        //On credite la puce de l'Agent
+        $puce_agent->solde = $puce_agent->solde + $montant;
+        $puce_agent->save();
+
+        //On calcule le reste de flotte à envoyer
+        $demande_flotte->reste = $demande_flotte->reste - $montant;
+        $demande_flotte->statut = Statut::EFFECTUER ;
+        $demande_flotte->source = $puce_etp->id;
+        $demande_flotte->save();
+
+        // Renvoyer un message de succès
+        return response()->json([
+            'message' => "Flottage effectué avec succès",
+            'status' => true,
+            'data' => null
+        ]);
     }
 
     /**
      * @param Request $request
      * @return JsonResponse
-     * GESTIONNAIRE DE FOTTE
      */
-    Public function flottage_express(Request $request)
+    // GESTIONNAIRE DE FOTTE
+    public function flottage_express(Request $request)
     {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
@@ -218,26 +206,29 @@ class FlotageController extends Controller
             ]);
         }
 
+        $user = User::find($request->id_agent);
         //On verifi si l'agent passé existe réellement
-        if (!User::find($request->id_agent)) {
+        if (is_null($user)) {
             return response()->json([
-                'message' => "Cet Agent n'existe pas",
+                'message' => "Cet agent n'existe pas",
                 'status' => false,
                 'data' => null
             ]);
         }
 
+        $puce_agent = Puce::find($request->id_puce_agent);
         //On verifi si la puce agent passée existe réellement
-        if (!Puce::find($request->id_puce_agent)) {
+        if (is_null($puce_agent)) {
             return response()->json([
-                'message' => "Cette puce Agent n'existe pas",
+                'message' => "Cette puce agent n'existe pas",
                 'status' => false,
                 'data' => null
             ]);
         }
 
+        $puce_etp = Puce::find($request->id_puce_flottage);
         //On verifi si la puce de  flottage passée existe réellement
-        if (!Puce::find($request->id_puce_flottage)) {
+        if (is_null($puce_etp)) {
             return response()->json([
                 'message' => "Cette puce de flottage n'existe pas",
                 'status' => false,
@@ -245,15 +236,12 @@ class FlotageController extends Controller
             ]);
         }
 
-        //On recupère la puce de l'Agent qui va etre approvisionné
-        $puce_agent = Puce::find($request->id_puce_agent);
-        //On recupère la puce ETP qui va faire le depot
-        $puce_etp = Puce::find($request->id_puce_flottage);
         $montant = $request->montant;
-
+        $connected_user = Auth::user();
+        // Verification du solde
         if($puce_etp->solde < $montant) {
             return response()->json([
-                'message' => "Solde insuffisant dans la puce de flottage",
+                'message' => "Solde insuffisant dans la puce émétrice",
                 'status' => false,
                 'data' => null
             ]);
@@ -268,17 +256,12 @@ class FlotageController extends Controller
             ]);
         }
 
-        //recuperer l'agent concerné
-        $user = User::find($request->id_agent);
-        $connected_user = Auth::user();
-
         // Récupérer les données pour la création d'une demande fictive de flotte
         $id_user = $user->id;
         $add_by = $connected_user->id;
         $reference = null;
         $statut = Statut::EFFECTUER;
         $source = $request->id_puce_flottage;
-        //recuperer l'id de puce de l'agent
         $id_puce = $request->id_puce_agent;
 
         // Nouvelle demande fictive de flotte
@@ -292,99 +275,74 @@ class FlotageController extends Controller
             'id_puce' => $id_puce,
             'source' => $source
         ]);
+        $demande_flotte->save();
 
-        // creation de La demande fictive de flotte
-        if ($demande_flotte->save()) {
+        // Nouveau flottage
+        $flottage = new Approvisionnement([
+            'id_demande_flote' => $demande_flotte->id,
+            'id_user' => $connected_user->id,
+            'statut' => Statut::EN_ATTENTE,
+            'from' => $request->id_puce_flottage,
+            'montant' => $montant,
+            'reste' => $montant
+        ]);
+        $flottage->save();
 
-            // Nouveau flottage
-            $flottage = new Approvisionnement([
-                'id_demande_flote' => $demande_flotte->id,
-                'id_user' => $connected_user->id,
-                'reference' => null,
-                'statut' => Statut::EN_ATTENTE,
-                'note' => null,
-                'from' => $request->id_puce_flottage,
-                'montant' => $montant,
-                'reste' => $montant
-            ]);
+        //Broadcast Notification des responsables de zone
+        $message = "Flottage éffectué par " . $connected_user->name;
+        $role = Role::where('name', Roles::RECOUVREUR)->first();
+        $event = new NotificationsEvent($role->id, ['message' => $message]);
+        broadcast($event)->toOthers();
 
-            //si l'enregistrement du flottage a lieu
-            if ($flottage->save()) {
+        //noifier les responsables de zonne
+        $users = User::all();
+        foreach ($users as $_user) {
 
-                //Broadcast Notification des responsables de zone
-                $message = "Flottage éffectué par " . $connected_user->name;
-                $role = Role::where('name', Roles::RECOUVREUR)->first();
-                $event = new NotificationsEvent($role->id, ['message' => $message]);
-                broadcast($event)->toOthers();
+            if ($_user->hasRole([$role->name])) {
 
-                //Database Notification
-                //noifier l'agent concerné
-                $user->notify(new Notif_flottage([
+                $_user->notify(new Notif_flottage([
                     'data' => $flottage,
                     'message' => $message
                 ]));
-
-                //noifier les responsables de zonne
-                $users = User::all();
-                foreach ($users as $_user) {
-
-                    if ($_user->hasRole([$role->name])) {
-
-                        $_user->notify(new Notif_flottage([
-                            'data' => $flottage,
-                            'message' => $message
-                        ]));
-                    }
-                }
-
-                ////ce que le flottage implique
-
-                //On debite la puce de ETP
-                $puce_etp->solde = $puce_etp->solde - $montant;
-                $puce_etp->save();
-
-                //On credite la puce de l'Agent
-                $puce_agent->solde = $puce_agent->solde + $montant;
-                $puce_agent->save();
-
-                return response()->json([
-                    'message' => 'Flottage effectué avec succès',
-                    'status' => true,
-                    'data' => [
-                        'approvisionnement' => $flottage,
-                        'user' => $user,
-                        'agent' => $request->id_agent,
-                        'gestionnaire' => $connected_user,
-                        'puce_emetrice' => $puce_etp,
-                        'puce_receptrice' => $puce_agent,
-                        'operateur' => $puce_etp->flote,
-                    ]
-                ]);
-            } else {
-                // Renvoyer une erreur
-                return response()->json([
-                    'message' => 'Erreur lors du flottage',
-                    'status' => false,
-                    'data' => null
-                ]);
             }
-        } else {
-            // Renvoyer une erreur
-            return response()->json(
-                [
-                    'message' => 'Erreur lors de la demande de flotte',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
         }
+
+        //noifier l'agent concerné
+        $user->notify(new Notif_flottage([
+            'data' => $flottage,
+            'message' => $message
+        ]));
+
+        ////ce que le flottage implique
+
+        //On debite la puce de ETP
+        $puce_etp->solde = $puce_etp->solde - $montant;
+        $puce_etp->save();
+
+        //On credite la puce de l'Agent
+        $puce_agent->solde = $puce_agent->solde + $montant;
+        $puce_agent->save();
+
+        return response()->json([
+            'message' => 'Flottage effectué avec succès',
+            'status' => true,
+            'data' => [
+                'approvisionnement' => $flottage,
+                'user' => $user,
+                'agent' => $user->agent->first(),
+                'gestionnaire' => $connected_user,
+                'puce_emetrice' => $puce_etp,
+                'puce_receptrice' => $puce_agent,
+                'operateur' => $puce_etp->flote,
+            ]
+        ]);
     }
 
     /**
      * @param Request $request
      * @return JsonResponse
-     * GESTIONNAIRE DE FOTTE
      */
+    // GESTIONNAIRE DE FOTTE
     public function flottage_anonyme(Request $request)
     {
         // Valider données envoyées
@@ -403,18 +361,17 @@ class FlotageController extends Controller
             ]);
         }
 
+        $puce_from = Puce::find($request->id_puce_from);
         //On verifi si la puce de  flottage passée existe réellement
-        if (!Puce::find($request->id_puce_from)) {
+        if ($puce_from) {
             return response()->json([
-                'message' => "Le puce émetrice n'existe pas",
+                'message' => "La puce émetrice n'existe pas",
                 'status' => false,
                 'data' => null
             ]);
         }
 
-        $puce_from = Puce::find($request->id_puce_from);
         $montant = $request->montant;
-
         //On se rassure que le solde est suffisant
         if ($puce_from->solde < $montant) {
             return response()->json([
@@ -556,13 +513,6 @@ class FlotageController extends Controller
             $event = new NotificationsEvent($role->id, ['message' => $message]);
             broadcast($event)->toOthers();
 
-            //Database Notification
-            //noifier l'agent concerné
-            $user->notify(new Notif_flottage([
-                'data' => $flottage,
-                'message' => $message
-            ]));
-
             //noifier les responsables de zonne
             $users = User::all();
             foreach ($users as $_user) {
@@ -575,6 +525,12 @@ class FlotageController extends Controller
                     ]));
                 }
             }
+
+            //noifier l'agent concerné
+            $user->notify(new Notif_flottage([
+                'data' => $flottage,
+                'message' => $message
+            ]));
 
             ////ce que le flottage implique
 
@@ -602,13 +558,14 @@ class FlotageController extends Controller
     }
 
     /**
-     * ////lister tous les flottages
+     * Lister tous les flottages
      */
+    // GESTIONNAIRE DE FLOTTE
     public function list_all()
     {
         $demandes_flote = Approvisionnement::orderBy('statut', 'desc')
             ->orderBy('created_at', 'desc')
-            ->paginate(6);
+            ->paginate(9);
 
         $demandes_flotes =  $this->fleetsResponse($demandes_flote->items());
 
@@ -882,18 +839,12 @@ class FlotageController extends Controller
 
         foreach($fleets as $flottage)
         {
-            //recuperer la demande correspondante
             $demande = $flottage->demande_flote;
-            //recuperer l'agent concerné
             $user = $demande->user;
-            //recuperer l'agent concerné
-            $agent = Agent::where('id_user', $user->id)->first();
-            // recuperer celui qui a effectué le flottage
-            $gestionnaire = User::find($flottage->id_user);
-            //recuperer la puce de l'agent
-            $puce_receptrice = Puce::find($demande->id_puce);
-            //recuperer la puce de ETP
-            $puce_emetrice = Puce::find($flottage->from);
+            $agent = $user->agent->first();
+            $gestionnaire = $flottage->user;
+            $puce_receptrice = $demande->puce;
+            $puce_emetrice = $flottage->puce;
 
             $approvisionnements[] = [
                 'approvisionnement' => $flottage,
