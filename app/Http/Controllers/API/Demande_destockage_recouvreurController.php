@@ -7,6 +7,7 @@ use App\Role;
 use App\Puce;
 use App\Agent;
 use App\Enums\Roles;
+use App\Enums\Statut;
 use App\Demande_destockage;
 use Illuminate\Http\Request;
 use App\Events\NotificationsEvent;
@@ -70,13 +71,12 @@ class Demande_destockage_recouvreurController extends Controller
 
         //recuperer l'agent concerné
         $user = User::find($request->id_agent);
-        $agent = $user->agent->first();
 
         $id_user = $user->id;
         $add_by = $add_by->id;
         $reference = null;
         $montant = $request->montant;
-        $statut = \App\Enums\Statut::EN_ATTENTE;
+        $statut = Statut::EN_ATTENTE;
         $destination = null;
         //recuperer l'id de puce de l'agent
         $id_puce = $request->id_puce;
@@ -97,9 +97,10 @@ class Demande_destockage_recouvreurController extends Controller
         if ($demande_destockage->save())
         {
             //Broadcast Notification
+            $message = "Demande de déstockage éffectué";
             $role = Role::where('name', Roles::RECOUVREUR)->first();
             $role2 = Role::where('name', Roles::GESTION_FLOTTE)->first();
-            $event = new NotificationsEvent($role->id, ['message' => 'Nouvelle demande de destockage']);
+            $event = new NotificationsEvent($role->id, ['message' => $message]);
             broadcast($event)->toOthers();
 
             //Database Notification
@@ -111,7 +112,7 @@ class Demande_destockage_recouvreurController extends Controller
 
                         $user->notify(new Notif_demande_destockage([
                             'data' => $demande_destockage,
-                            'message' => "Nouvelle demande de Destockage"
+                            'message' => $message
                         ]));
                     }
                 }

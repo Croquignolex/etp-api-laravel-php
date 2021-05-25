@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Notifications\Flottage as Notif_flottage;
 use App\Puce;
 use App\User;
 use App\Role;
@@ -10,6 +11,7 @@ use App\Destockage;
 use App\Enums\Roles;
 use App\Enums\Statut;
 use App\Demande_destockage;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use App\Events\NotificationsEvent;
 use App\Http\Controllers\Controller;
@@ -30,6 +32,120 @@ class ApprovisionnementEtpController extends Controller
         $superviseur = Roles::SUPERVISEUR;
         $ges_flotte = Roles::GESTION_FLOTTE;
         $this->middleware("permission:$recouvreur|$superviseur|$ges_flotte|$agent");
+    }
+
+    /**
+     * ////Effectuer un destockage
+     */
+    public function store(Request $request)
+    {
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [
+            'type' => ['required', 'string', 'max:255'], //BY_AGENT, BY_DIGIT_PARTNER or BY_BANK
+            'id_fournisseur' => ['nullable', 'Numeric'], // si le type est BY_DIGIT_PARTNER ou BY_BANK
+            'id_agent' => ['nullable', 'Numeric'],       // obligatoire si le type est BY_AGENT
+            'id_puce' => ['required', 'Numeric'],
+            'montant' => ['required', 'Numeric'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        $type = $request->type;
+        $fournisseur = $request->id_fournisseur;
+        $id_agent = $request->id_agent;
+        $id_puce = $request->id_puce;
+        $montant = $request->montant;
+
+        $puce_emetrice = Puce::find($id_puce);
+        $type_puce = $puce_emetrice->type_puce->name;
+
+        $connected_user = Auth::user();
+        $user_role = $connected_user->roles->first()->name;
+
+        $statut = (($user_role === Roles::RECOUVREUR) && ($type_puce !== Statut::PUCE_RZ)) ? Statut::EN_COURS : Statut::EFFECTUER;
+
+        //initier le destockage encore appelé approvisionnement de ETP
+        $destockage = new Destockage([
+            'id_recouvreur' => $connected_user->id,
+            'type' => $type,
+            'id_puce' => $id_puce,
+            'id_agent' => isset($request->id_agent) ? $id_agent : null,
+            'id_fournisseur' => isset($request->id_fournisseur) ? $fournisseur : null,
+            'statut' => $statut,
+            'montant' => $montant
+        ]);
+        $destockage->save();
+
+        //Notification
+        if($type === Statut::BY_AGENT && $statut === Statut::EN_COURS) {
+            $message = "Déstockage éffectué par " . $connected_user->name;
+            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
+            $event = new NotificationsEvent($role->id, ['message' => $message]);
+            broadcast($event)->toOthers();
+
+            //Database Notification
+            $users = User::all();
+            foreach ($users as $user) {
+                if ($user->hasRole([$role->name])) {
+
+                    $user->notify(new Notif_destockage([
+                        'data' => $destockage,
+                        'message' => $message
+                    ]));
+                }
+            }
+
+            //Database Notification de l'agent
+            User::find($id_agent)->notify(new Notif_flottage([
+                'message' => $message,
+                'data' => $destockage
+            ]));
+        }
+
+        // Implication d'un déstockage avec effectué directement
+        if($type === Statut::BY_AGENT && $statut === Statut::EFFECTUER) {
+            // Flotte ajouté dans les puce emetrice
+            $puce_emetrice->solde = $puce_emetrice->solde + $montant;
+
+            // Dimuner les especes dans la caisse
+            $connected_caisse = Caisse::where('id_user', $connected_user->id)->first();
+            $connected_caisse->solde = $connected_caisse->solde - $montant;
+
+            if($user_role === Roles::RECOUVREUR && $type_puce === Statut::FLOTTAGE) {
+                // Si RZ et puce GF (reduire la dette)
+                $connected_user->dette = $connected_user->dette - $montant;
+                $connected_user->save();
+            }
+
+            $puce_emetrice->save();
+            $connected_caisse->save();
+        }
+
+        $user = $destockage->id_agent === null ? $destockage->id_agent : User::find($destockage->id_agent);
+        $agent = $user === null ? $user : $user->agent->first();
+
+        return response()->json([
+            'message' => "Déstockage effectué avec succès",
+            'status' => true,
+            'data' => [
+                'id' => $destockage->id,
+                'statut' => $statut,
+                'montant' => $montant,
+                'created_at' => $destockage->created_at,
+                'recouvreur' => $connected_user,
+                'puce' => $puce_emetrice,
+                'fournisseur' => $fournisseur,
+                'agent' => $agent,
+                'user' => $user,
+                'operateur' => $puce_emetrice->flote
+            ]
+        ]);
     }
 
     /**
@@ -200,152 +316,6 @@ class ApprovisionnementEtpController extends Controller
                 );
             }
 
-    }
-
-    /**
-     * ////Effectuer un destockage
-     */
-    public function store(Request $request)
-    {
-        // Valider données envoyées
-        $validator = Validator::make($request->all(), [
-            'type' => ['required', 'string', 'max:255'], //BY_AGENT, BY_DIGIT_PARTNER or BY_BANK
-            'id_fournisseur' => ['nullable', 'Numeric'], // si le type est BY_DIGIT_PARTNER ou BY_BANK
-            'id_agent' => ['nullable', 'Numeric'],       // obligatoire si le type est BY_AGENT
-            'id_puce' => ['required', 'Numeric'],
-            'recu' => ['nullable', 'file', 'max:10000'],
-            'montant' => ['required', 'Numeric'],
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => "Le formulaire contient des champs mal renseignés",
-                'status' => false,
-                'data' => null
-            ]);
-        }
-
-        //au cas ou le type est BY_AGENT, on est sencé recevoir l'id de l'agent. on verifi que l'id recu est bien un Agent
-        if (isset($request->id_agent)) {
-            //on verifi si l'agent existe
-            if (!($agent = User::find($request->id_agent)->agent->first())) {
-                return response()->json([
-                    'message' => "Agent invalide",
-                    'status' => false,
-                    'data' => null
-                ]);
-            }
-        }
-
-        //On recupère les données validés
-        //enregistrer le recu
-        $recu = null;
-        if ($request->hasFile('recu') && $request->file('recu')->isValid()) {
-            $recu = $request->recu->store('recu');
-        }
-        $type = $request->type;
-        $fournisseur = $request->id_fournisseur;
-        $id_agent = $request->id_agent;
-        $id_puce = $request->id_puce;
-        $montant = $request->montant;
-        $user = Auth::user();
-        $user_role = $user->roles->first()->name;
-        $type_puce = Puce::find($id_puce)->type_puce->name;
-
-        $statut = (($user_role === Roles::RECOUVREUR) && ($type_puce !== Statut::PUCE_RZ)) ? Statut::EN_COURS : Statut::EFFECTUER;
-
-        //initier le destockage encore appelé approvisionnement de ETP
-        $destockage = new Destockage([
-            'id_recouvreur' => $user->id,
-            'type' => $type,
-            'id_puce' => $id_puce,
-            'id_agent' => isset($request->id_agent) ? $id_agent : null,
-            'id_fournisseur' => isset($request->id_fournisseur) ? $fournisseur : null,
-            'recu' => $recu,
-            'reference' => null,
-            'statut' => $statut,
-            'note' => null,
-            'montant' => $montant
-        ]);
-
-        if ($destockage->save())
-        {
-            //Notification
-            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
-            $role2 = Role::where('name', Roles::SUPERVISEUR)->first();
-            $event = new NotificationsEvent($role->id, ['message' => 'Nouvel approvisionnement de ETP']);
-            broadcast($event)->toOthers();
-
-            //Database Notification
-            $users = User::all();
-            foreach ($users as $user) {
-                if ($user->hasRole([$role->name]) || $user->hasRole([$role2->name])) {
-
-                    $user->notify(new Notif_destockage([
-                        'data' => $destockage,
-                        'message' => "Nouvel approvisionnement de ETP"
-                    ]));
-                }
-            }
-
-            //la puce de ETP concernée et on credite
-            $puce_etp = Puce::find($request->id_puce);
-            $puce_etp->solde = $puce_etp->solde + $montant;
-            $puce_etp->save();
-
-            if (isset($request->id_agent))
-            {
-                //on notifie l'agent
-                $agent->user->notify(new Notif_destockage([
-                    'data' => $destockage,
-                    'message' => "Nouveau déstockage"
-                ]));
-            }
-
-            $connected_user = Auth::user();
-
-            // on se rassure qu'on est dans une operation de d'stockage et non approvisionnement
-            if($type === Statut::BY_AGENT) {
-                //la caisse de l'utilisateur connecté
-                $connected_caisse = Caisse::where('id_user', $connected_user->id)->first();
-
-                //mise à jour de la caisse de l'utilisateur qui effectue l'oppération
-                if ($connected_user->hasRole([Roles::GESTION_FLOTTE])) {
-                    $connected_caisse->solde = $connected_caisse->solde - $montant;
-                } else if($connected_user->hasRole([Roles::RECOUVREUR])) {
-                    $connected_caisse->solde = $connected_caisse->solde + $montant;
-                }
-                $connected_caisse->save();
-            }
-
-            $agent = $destockage->id_agent === null ? $destockage->id_agent : User::find($destockage->id_agent)->agent->first();
-            $user = $destockage->id_agent === null ? $destockage->id_agent : User::find($destockage->id_agent);
-
-            return response()->json([
-                'message' => "Déstockage effectué avec succès",
-                'status' => true,
-                'data' => [
-                    'id' => $destockage->id,
-                    'recu' => $destockage->recu,
-                    'statut' => $destockage->statut,
-                    'montant' => $destockage->montant,
-                    'created_at' => $destockage->created_at,
-                    'recouvreur' => User::find($destockage->id_recouvreur),
-                    'puce' => $destockage->puce,
-                    'fournisseur' => $destockage->fournisseur,
-                    'agent' => $agent,
-                    'user' => $user,
-                ]
-            ]);
-
-        } else {
-            // Renvoyer une erreur
-            return response()->json([
-                'message' => 'Erreur lors du destockage',
-                'status'=>false,
-                'data' => null
-            ]);
-        }
     }
 
     /**
@@ -535,7 +505,10 @@ class ApprovisionnementEtpController extends Controller
      */
     public function list_all_destockage()
     {
-        $destockages = Destockage::where('type', Statut::BY_AGENT)->orderBy('created_at', 'desc')->paginate(6);
+        $destockages = Destockage::where('type', Statut::BY_AGENT)
+            ->orderBy('statut', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->paginate(6);
 
         return response()->json([
             'message' => "",

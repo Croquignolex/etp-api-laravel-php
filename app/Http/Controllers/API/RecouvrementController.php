@@ -38,8 +38,7 @@ class RecouvrementController extends Controller
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
             'montant' => ['required', 'Numeric'],
-            'id_flottage' => ['required', 'Numeric'],
-            'recu' => ['nullable', 'file', 'max:10000']
+            'id_flottage' => ['required', 'Numeric']
         ]);
 
         if ($validator->fails()) {
@@ -62,16 +61,10 @@ class RecouvrementController extends Controller
         //On verifi que le montant n'est pas supperieur au montant demandé
         if (Approvisionnement::find($request->id_flottage)->reste < $request->montant) {
             return response()->json([
-                'message' => "Vous essayez de recouvrir plus d'argent que prevu",
+                'message' => "Vous essayez de recouvrir plus d'espèces que prevu",
                 'status' => false,
                 'data' => null
             ]);
-        }
-
-        //enregistrer le recu
-        $recu = null;
-        if ($request->hasFile('recu') && $request->file('recu')->isValid()) {
-            $recu = $request->recu->store('recu');
         }
 
         //On recupère le flottage à traiter
@@ -82,7 +75,6 @@ class RecouvrementController extends Controller
 
         //L'agent concerné
         $user = User::find($flottage->demande_flote->id_user);
-        //$agent = Agent::Where('id_user', $user->id)->first();
 
         //la puce de L'agent concerné
         $puce_agent = Puce::find($flottage->demande_flote->id_puce);
@@ -102,7 +94,6 @@ class RecouvrementController extends Controller
             'reference' => null,
             'montant' => $montant,
             'reste' => $montant,
-            'recu' => $recu,
             'id_flottage' => $request->id_flottage,
             'statut' => Statut::EFFECTUER,
             'user_destination' => $recouvreur->id,
@@ -113,9 +104,9 @@ class RecouvrementController extends Controller
         if ($recouvrement->save()) {
 
             //Notification du gestionnaire de flotte
-            $role = Role::where('name', Roles::RECOUVREUR)
-            ->orWhere('name', Roles::GESTION_FLOTTE)->first();
-            $event = new NotificationsEvent($role->id, ['message' => 'Nouveau recouvrement']);
+            $message = "Recouvrement d'espèces éffectué par " . $recouvreur->name;
+            $role = Role::where('name', Roles::SUPERVISEUR)->first();
+            $event = new NotificationsEvent($role->id, ['message' => $message]);
             broadcast($event)->toOthers();
 
             //Database Notification
@@ -126,7 +117,7 @@ class RecouvrementController extends Controller
 
                     $user->notify(new Notif_recouvrement([
                         'data' => $recouvrement,
-                        'message' => "Nouveau recouvrement"
+                        'message' => $message
                     ]));
                 }
             }

@@ -24,11 +24,15 @@ class User extends Authenticatable
      * @var array
      */
     protected $fillable = [
-        'name','avatar', 'email','add_by', 'id_zone', 'poste', 'statut', 'password', 'phone', 'adresse', 'description',
+        'name','avatar', 'email','add_by', 'id_zone', 'poste', 'statut',
+        'password', 'phone', 'adresse', 'description', 'dette'
     ];
 
 	protected $dates = ['deleted_at'];
-    protected $visible = array('id','name','add_by','id_zone', 'created_at', 'poste', 'statut','avatar', 'password', 'phone', 'adresse', 'description', 'email');
+    protected $visible = array(
+        'id','name','add_by','id_zone', 'created_at', 'poste',
+        'statut','avatar', 'password', 'phone', 'adresse', 'description', 'email', 'dette'
+    );
 
     /**
      * The attributes that should be hidden for arrays.

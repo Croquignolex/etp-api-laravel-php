@@ -7,6 +7,7 @@ use App\Role;
 use App\Puce;
 use App\Agent;
 use App\Enums\Roles;
+use App\Enums\Statut;
 use App\Demande_flote;
 use Illuminate\Http\Request;
 use App\Events\NotificationsEvent;
@@ -68,7 +69,6 @@ class Demande_flote_recouvreurController extends Controller
 
         //recuperer l'agent concerné
         $user = User::find($request->id_agent);
-        $agent = $user->agent->first();
 
         // Récupérer les données validées
 
@@ -76,7 +76,7 @@ class Demande_flote_recouvreurController extends Controller
         $add_by = $add_by->id;
         $reference = null;
         $montant = $request->montant;
-        $statut = \App\Enums\Statut::EN_ATTENTE;
+        $statut = Statut::EN_ATTENTE;
         $source = null;
         //recuperer l'id de puce de l'agent
         $id_puce = $request->id_puce;
@@ -97,8 +97,9 @@ class Demande_flote_recouvreurController extends Controller
         if ($demande_flote->save()) {
 
             //Notification
+            $message = "Demande de Flotte éffectué par " . $add_by->name;
             $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
-            $event = new NotificationsEvent($role->id, ['message' => 'Nouvelle demande de Flottage']);
+            $event = new NotificationsEvent($role->id, ['message' => $message]);
             broadcast($event)->toOthers();
 
             //Database Notification
@@ -109,7 +110,7 @@ class Demande_flote_recouvreurController extends Controller
 
                     $user->notify(new Notif_demande_flotte([
                         'data' => $demande_flote,
-                        'message' => "Nouvelle demande de flotte"
+                        'message' => $message
                     ]));
                 }
             }

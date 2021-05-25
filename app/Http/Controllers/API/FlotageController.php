@@ -198,6 +198,7 @@ class FlotageController extends Controller
     /**
      * @param Request $request
      * @return JsonResponse
+     * GESTIONNAIRE DE FOTTE
      */
     Public function flottage_express(Request $request)
     {
@@ -208,6 +209,7 @@ class FlotageController extends Controller
             'id_puce_agent' => ['required', 'Numeric'],
             'id_puce_flottage' => ['required', 'Numeric']
         ]);
+
         if ($validator->fails()) {
             return response()->json([
                 'message' => "Le formulaire contient des champs mal renseignés",
@@ -243,16 +245,37 @@ class FlotageController extends Controller
             ]);
         }
 
+        //On recupère la puce de l'Agent qui va etre approvisionné
+        $puce_agent = Puce::find($request->id_puce_agent);
+        //On recupère la puce ETP qui va faire le depot
+        $puce_etp = Puce::find($request->id_puce_flottage);
+        $montant = $request->montant;
+
+        if($puce_etp->solde < $montant) {
+            return response()->json([
+                'message' => "Solde insuffisant dans la puce de flottage",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        //On se rassure que la puce passée en paramettre est reelement l'une des puces de flottage sollicités
+        if ($puce_etp->id_flotte != $puce_agent->id_flotte) {
+            return response()->json([
+                'message' => "Les deux puces ne sont pas du même opérateur",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
         //recuperer l'agent concerné
         $user = User::find($request->id_agent);
-        $agent = $user->agent->first();
         $connected_user = Auth::user();
 
         // Récupérer les données pour la création d'une demande fictive de flotte
         $id_user = $user->id;
-        $add_by = ($connected_user->roles->first()->name === Roles::RECOUVREUR) ? $connected_user->id : $user->id;
+        $add_by = $connected_user->id;
         $reference = null;
-        $montant = $request->montant;
         $statut = Statut::EFFECTUER;
         $source = $request->id_puce_flottage;
         //recuperer l'id de puce de l'agent
@@ -270,38 +293,8 @@ class FlotageController extends Controller
             'source' => $source
         ]);
 
-        // On verifi que la puce passée en paramettre existe
-        if (Puce::find($request->id_puce_flottage)) {
-            //On recupère la puce de l'Agent qui va etre approvisionné
-            $puce_agent = Puce::find($request->id_puce_agent);
-
-            //On recupère la puce ETP qui va faire le depot
-            $puce_etp = Puce::find($request->id_puce_flottage);
-
-            //on recupère le typ de la puce
-            $type_puce = Type_puce::find($puce_etp->type)->name;
-
-            //On se rassure que la puce passée en paramettre est reelement l'une des puces de flottage sollicités
-            if ($type_puce == Statut::CORPORATE || $type_puce == Statut::AGENT || $type_puce == Statut::RESOURCE || $puce_etp->id_flotte != $puce_agent->id_flotte) {
-                return response()->json([
-                    'message' => "Cette puce n'est pas capable d'effectuer un flottagage",
-                    'status' => false,
-                    'data' => null
-                ]);
-            }
-        }
-
         // creation de La demande fictive de flotte
         if ($demande_flotte->save()) {
-
-            //Montant du depot
-            $montant = $request->montant;
-
-            //Caisse de l'agent concerné
-            $caisse = Caisse::where('id_user', $demande_flotte->id_user)->first();
-
-            //La gestionnaire concernée
-            //$gestionnaire = Auth::user();
 
             // Nouveau flottage
             $flottage = new Approvisionnement([
@@ -319,37 +312,30 @@ class FlotageController extends Controller
             if ($flottage->save()) {
 
                 //Broadcast Notification des responsables de zone
+                $message = "Flottage éffectué par " . $connected_user->name;
                 $role = Role::where('name', Roles::RECOUVREUR)->first();
-                $event = new NotificationsEvent($role->id, ['message' => 'Nouveau flottage']);
+                $event = new NotificationsEvent($role->id, ['message' => $message]);
                 broadcast($event)->toOthers();
 
                 //Database Notification
+                //noifier l'agent concerné
+                $user->notify(new Notif_flottage([
+                    'data' => $flottage,
+                    'message' => $message
+                ]));
 
-                    //noifier l'agent concerné
-                    $user->notify(new Notif_flottage([
-                        'data' => $flottage,
-                        'message' => "Nouveau flottage"
-                    ]));
+                //noifier les responsables de zonne
+                $users = User::all();
+                foreach ($users as $_user) {
 
+                    if ($_user->hasRole([$role->name])) {
 
-                    //noifier les responsables de zonne
-                    $users = User::all();
-                    foreach ($users as $_user) {
-
-                        if ($_user->hasRole([$role->name])) {
-
-                            $_user->notify(new Notif_flottage([
-                                'data' => $flottage,
-                                'message' => "Nouveau flottage"
-                            ]));
-                        }
-                    }
-
-                    //notification de l'agent flotté
-                        $user->notify(new Notif_flottage([
+                        $_user->notify(new Notif_flottage([
                             'data' => $flottage,
-                            'message' => "Nouveau flottage"
+                            'message' => $message
                         ]));
+                    }
+                }
 
                 ////ce que le flottage implique
 
@@ -361,38 +347,17 @@ class FlotageController extends Controller
                 $puce_agent->solde = $puce_agent->solde + $montant;
                 $puce_agent->save();
 
-                //On debite la caisse de l'Agent pour le paiement de la flotte envoyée, ce qui implique qu'il doit à ETP
-                $caisse->solde = $caisse->solde - $montant;
-                $caisse->save();
-
-                //recuperer la demande correspondante
-                $demande = $flottage->demande_flote;
-
-                //recuperer l'agent concerné
-                $user = $demande->user;
-
-                //recuperer l'agent concerné
-                $agent = Agent::where('id_user', $user->id)->first();
-
-                // recuperer celui qui a effectué le flottage
-                $gestionnaire = User::find($flottage->id_user);
-
-                //recuperer la puce de l'agent
-                $puce_receptrice = Puce::find($demande->id_puce);
-
-                //recuperer la puce de ETP
-                $puce_emetrice = Puce::find($flottage->from);
-
                 return response()->json([
                     'message' => 'Flottage effectué avec succès',
                     'status' => true,
                     'data' => [
                         'approvisionnement' => $flottage,
                         'user' => $user,
-                        'agent' => $agent,
-                        'gestionnaire' => $gestionnaire,
-                        'puce_emetrice' => $puce_emetrice,
-                        'puce_receptrice' => $puce_receptrice,
+                        'agent' => $request->id_agent,
+                        'gestionnaire' => $connected_user,
+                        'puce_emetrice' => $puce_etp,
+                        'puce_receptrice' => $puce_agent,
+                        'operateur' => $puce_etp->flote,
                     ]
                 ]);
             } else {
@@ -407,7 +372,7 @@ class FlotageController extends Controller
             // Renvoyer une erreur
             return response()->json(
                 [
-                    'message' => 'erreur lors de la demande de flotte',
+                    'message' => 'Erreur lors de la demande de flotte',
                     'status' => false,
                     'data' => null
                 ]
@@ -416,11 +381,234 @@ class FlotageController extends Controller
     }
 
     /**
+     * @param Request $request
+     * @return JsonResponse
+     * GESTIONNAIRE DE FOTTE
+     */
+    public function flottage_anonyme(Request $request)
+    {
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [
+            'montant' => ['required', 'numeric'],
+            'nom_agent' => ['required', 'string'], //le nom de celui qui recoit la flotte
+            'id_puce_from' => ['required', 'numeric'],
+            'nro_puce_to' => ['required', 'numeric'], //le numéro de la puce qui recoit la flotte
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        //On verifi si la puce de  flottage passée existe réellement
+        if (!Puce::find($request->id_puce_from)) {
+            return response()->json([
+                'message' => "Le puce émetrice n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        $puce_from = Puce::find($request->id_puce_from);
+        $montant = $request->montant;
+
+        //On se rassure que le solde est suffisant
+        if ($puce_from->solde < $montant) {
+            return response()->json([
+                'message' => "Solde insuffisant dans la puce émetrice",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        //L'utilisateur qui envoie
+        $connected_user = Auth::user();
+        $numero_agent = $request->nro_puce_to;
+
+        // On verrifie si la puce anonyme existe dans la list des puces agents connus
+        $agent_sim_type_id = Type_puce::where('name', Statut::AGENT)->get()->first()->id;
+        $resource_sim_type_id = Type_puce::where('name', Statut::RESOURCE)->get()->first()->id;
+
+        $needle_sim = Puce::where('numero', $numero_agent)->get()->first();
+
+        if(
+            ($needle_sim !== null) && (
+                ($needle_sim->type == $agent_sim_type_id) ||
+                ($needle_sim->type == $resource_sim_type_id)
+            )
+        ) {
+            //======================================================================
+            // Detection
+            return response()->json([
+                'message' => "Cette puce à été reconnu comme une puce agent/ressource. vous devez plutôt éffectuer un flottage",
+                'status' => false,
+                'data' => null
+            ]);
+        } else {
+            //======================================================================
+            $needle_user = User::where('phone', $numero_agent)->get()->first();
+
+            // Check de l'existence de la puce
+            if($needle_sim !== null) {
+                return response()->json([
+                    'message' => "Cette puce existe déjà dans le système et ne peut être attribuée à un agent/ressource",
+                    'status' => false,
+                    'data' => null
+                ]);
+            }
+
+            // Check l'existence de l'utilisateur
+            if($needle_user !== null) {
+                return response()->json([
+                    'message' => "Ce numéro de téléphone est déjà utilisé par un utilisateur comme identifiant",
+                    'status' => false,
+                    'data' => null
+                ]);
+            }
+
+            $nom_agent = $request->nom_agent;
+
+            // Creation de l'utilisateur lié à l'agent
+            $user = new User([
+                'add_by' => $connected_user->id,
+                'name' => $nom_agent,
+                'password' => bcrypt(000000),
+                'phone' => $numero_agent,
+                'statut' => Statut::APPROUVE,
+            ]);
+            $user->save();
+
+            // Creation de la caisse
+            $caisse = new Caisse([
+                'nom' => 'Caisse ' . $nom_agent,
+                'id_user' => $user->id,
+                'solde' => 0
+            ]);
+            $caisse->save();
+
+            // Assigner le role à l'utilisateur
+            $role = Role::where('name', Roles::AGENT)->first();
+            $user->assignRole($role);
+
+            // Création des paramettres de l'utilisateur
+            $user->setting()->create([
+                'bars' => '[0,1,2,3,4,5,6,7,8,9]',
+                'charts' => '[0,1,2,3,4,5,6,7,8,9]',
+                'cards' => '[0,1,2,3,4,5,6,7,8,9]',
+            ]);
+
+            // Creation de agent
+            $agent = new Agent([
+                'id_creator' => $connected_user->id,
+                'id_user' => $user->id,
+                'reference' => Roles::AGENT
+            ]);
+            $agent->save();
+
+            // Création de la puce agent
+            $puce = new Puce([
+                'nom' => $nom_agent,
+                'type' => $agent_sim_type_id,
+                'numero' => $numero_agent,
+                'id_agent' => $agent->id,
+                'reference' => Roles::AGENT,
+                'id_flotte' => $puce_from->flote->id,
+                'solde' => 0
+            ]);
+            $puce->save();
+
+            // Récupérer les données pour la création d'une demande fictive de flotte
+            $id_user = $user->id;
+            $add_by = $user->id;
+            $statut = Statut::EFFECTUER;
+            $source = $puce_from->id;
+            $id_puce = $puce->id;
+
+            // Nouvelle demande fictive de flotte
+            $demande_flotte = new Demande_flote([
+                'id_user' => $id_user,
+                'add_by' => $add_by,
+                'montant' => $montant,
+                'reste' => 0,
+                'statut' => $statut,
+                'id_puce' => $id_puce,
+                'source' => $source
+            ]);
+            $demande_flotte->save();
+
+            // Nouveau flottage
+            $flottage = new Approvisionnement([
+                'id_demande_flote' => $demande_flotte->id,
+                'id_user' => $connected_user->id,
+                'statut' => Statut::EN_ATTENTE,
+                'from' => $puce_from->id,
+                'montant' => $montant,
+                'reste' => $montant
+            ]);
+            $flottage->save();
+
+            //Broadcast Notification des responsables de zone
+            $message = "Flottage éffectué par " . $connected_user->name;
+            $role = Role::where('name', Roles::RECOUVREUR)->first();
+            $event = new NotificationsEvent($role->id, ['message' => $message]);
+            broadcast($event)->toOthers();
+
+            //Database Notification
+            //noifier l'agent concerné
+            $user->notify(new Notif_flottage([
+                'data' => $flottage,
+                'message' => $message
+            ]));
+
+            //noifier les responsables de zonne
+            $users = User::all();
+            foreach ($users as $_user) {
+
+                if ($_user->hasRole([$role->name])) {
+
+                    $_user->notify(new Notif_flottage([
+                        'data' => $flottage,
+                        'message' => $message
+                    ]));
+                }
+            }
+
+            ////ce que le flottage implique
+
+            //On credite la puce de l'Agent
+            $puce->solde = $puce->solde + $montant;
+            $puce->save();
+
+            $puce_from->solde = $puce_from->solde - $montant;
+            $puce_from->save();
+
+            return response()->json([
+                'message' => 'Flottage éffectué avec succès. Nouvel agent détecté et enreistré avec succès',
+                'status' => true,
+                'data' => [
+                    'approvisionnement' => $flottage,
+                    'user' => $user,
+                    'agent' => $agent,
+                    'gestionnaire' => $connected_user,
+                    'puce_emetrice' => $puce_from,
+                    'puce_receptrice' => $puce,
+                    'operateur' => $puce->flote,
+                ]
+            ]);
+        }
+    }
+
+    /**
      * ////lister tous les flottages
      */
     public function list_all()
     {
-        $demandes_flote = Approvisionnement::orderBy('created_at', 'desc')->paginate(6);
+        $demandes_flote = Approvisionnement::orderBy('statut', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->paginate(6);
 
         $demandes_flotes =  $this->fleetsResponse($demandes_flote->items());
 
@@ -577,247 +765,6 @@ class FlotageController extends Controller
             ]
         );
 
-    }
-
-    /**
-     * @param Request $request
-     * @return JsonResponse
-     * Creer un Flottage pour un anonyme
-     */
-    public function flottage_anonyme(Request $request)
-    {
-        // Valider données envoyées
-        $validator = Validator::make($request->all(), [
-            'montant' => ['required', 'numeric'],
-            'nom_agent' => ['nullable', 'string'], //le nom de celui qui recoit la flotte
-            'id_puce_from' => ['required', 'numeric'],
-            'nro_puce_to' => ['required', 'numeric'], //le numéro de la puce qui recoit la flotte
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => "Le formulaire contient des champs mal renseignés",
-                'status' => false,
-                'data' => null
-            ]);
-        }
-
-        // On verifi que la puce d'envoie passée en paramettre existe
-        if (Puce::find($request->id_puce_from)) {
-
-            //On recupère la puce qui envoie
-            $puce_from = Puce::find($request->id_puce_from);
-
-        } else {
-            return response()->json([
-                'message' => "Une ou plusieurs puces entrées n'existe pas",
-                'status' => false,
-                'data' => null
-            ]);
-        }
-
-        //On se rassure que le solde est suffisant
-        if ($puce_from->solde < $request->montant) {
-            return response()->json([
-                'message' => "Le solde de la puce émetrice est insuffisant",
-                'status' => false,
-                'data' => null
-            ]);
-        }
-
-        //on debite le solde de celui qui envoie
-        $puce_from->solde = $puce_from->solde - $request->montant;
-        $puce_from->save();
-
-        //L'utilisateur qui envoie
-        $user = Auth::user();
-
-        //On credite la caisse de celui qui envoie
-        $caisse = $user->caisse()->first();
-        $caisse->solde = $caisse->solde + $request->montant;
-        $caisse->save();
-
-
-        // On verrifie si la puce anonyme existe dans la list des puces agents connus
-       $agent_sim_type_id = Type_puce::where('name', Statut::AGENT)->get()->first()->id;
-       $resource_sim_type_id = Type_puce::where('name', Statut::RESOURCE)->get()->first()->id;
-
-        $needle_sim = Puce::where('numero', $request->nro_puce_to)->get()->first();
-
-        if(($needle_sim !== null) && (
-            ($needle_sim->type == $agent_sim_type_id) ||
-            ($needle_sim->type == $resource_sim_type_id)
-        )) {
-            //======================================================================
-            // Enregistrement du flottage agent
-
-            //recuperer l'agent concerné
-            $user = $needle_sim->agent->user;
-            $connected_user = Auth::user();
-
-            // Récupérer les données pour la création d'une demande fictive de flotte
-            $id_user = $user->id;
-            $add_by = $user->id;
-            $reference = null;
-            $montant = $request->montant;
-            $statut = Statut::EFFECTUER;
-            $source = $puce_from->id;
-            $id_puce = $needle_sim->id;
-
-            // Nouvelle demande fictive de flotte
-            $demande_flotte = new Demande_flote([
-                'id_user' => $id_user,
-                'add_by' => $add_by,
-                'reference' => $reference,
-                'montant' => $montant,
-                'reste' => 0,
-                'statut' => $statut,
-                'id_puce' => $id_puce,
-                'source' => $source
-            ]);
-
-            // creation de La demande fictive de flotte
-            if ($demande_flotte->save()) {
-
-                //Montant du depot
-                $montant = $request->montant;
-
-                //Caisse de l'agent concerné
-                $caisse0 = Caisse::where('id_user', $demande_flotte->id_user)->first();
-
-                // Nouveau flottage
-                $flottage = new Approvisionnement([
-                    'id_demande_flote' => $demande_flotte->id,
-                    'id_user' => $connected_user->id,
-                    'reference' => null,
-                    'statut' => Statut::EN_ATTENTE,
-                    'note' => null,
-                    'from' => $puce_from->id,
-                    'montant' => $montant,
-                    'reste' => $montant
-                ]);
-
-                //si l'enregistrement du flottage a lieu
-                if ($flottage->save()) {
-
-                    //Broadcast Notification des responsables de zone
-                    $role = Role::where('name', Roles::RECOUVREUR)->first();
-                    $event = new NotificationsEvent($role->id, ['message' => 'Nouveau flottage']);
-                    broadcast($event)->toOthers();
-
-                    //Database Notification
-
-                    //noifier l'agent concerné
-                    $user->notify(new Notif_flottage([
-                        'data' => $flottage,
-                        'message' => "Nouveau flottage"
-                    ]));
-
-                    //noifier les responsables de zonne
-                    $users = User::all();
-                    foreach ($users as $_user) {
-
-                        if ($_user->hasRole([$role->name])) {
-
-                            $_user->notify(new Notif_flottage([
-                                'data' => $flottage,
-                                'message' => "Nouveau flottage"
-                            ]));
-                        }
-                    }
-
-                    //notification de l'agent flotté
-                    $user->notify(new Notif_flottage([
-                        'data' => $flottage,
-                        'message' => "Nouveau flottage"
-                    ]));
-
-                    ////ce que le flottage implique
-
-                    //On credite la puce de l'Agent
-                    $needle_sim->solde = $needle_sim->solde + $montant;
-                    $needle_sim->save();
-
-                    //On debite la caisse de l'Agent pour le paiement de la flotte envoyée, ce qui implique qu'il doit à ETP
-                    $caisse0->solde = $caisse0->solde - $montant;
-                    $caisse0->save();
-
-                    return response()->json([
-                        'message' => "Numéro réconnu par le system. Flottage agent éffectué à la place.",
-                        'status' => true,
-                        'data' => null
-                    ]);
-                } else {
-                    // Renvoyer une erreur
-                    return response()->json([
-                        'message' => 'Erreur lors du flottage',
-                        'status' => false,
-                        'data' => null
-                    ]);
-                }
-            } else {
-                // Renvoyer une erreur
-                return response()->json([
-                        'message' => 'Erreur lors de la demande de flotte',
-                        'status' => false,
-                        'data' => null
-                    ]
-                );
-            }
-        } else {
-            //=================================================================================
-            // Nouveau flottage
-            $flottage_anonyme = new FlotageAnonyme([
-                'id_user' => $user->id,
-                'id_sim_from' => $puce_from->id,
-                'nro_sim_to' => $request->nro_puce_to,
-                'reference' => Statut::FLOTTAGE_ANONYME_GESTIONNAIRE,
-                'statut' => Statut::EFFECTUER,
-                'nom_agent' => $request->nom_agent,
-                'montant' => $request->montant
-            ]);
-
-            //si l'enregistrement du flottage a lieu
-            if ($flottage_anonyme->save()) {
-
-                $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
-                $role2 = Role::where('name', Roles::SUPERVISEUR)->first();
-
-                //Database Notification
-                $users = User::all();
-                foreach ($users as $user) {
-                    if($user->roles->first()->name !== Roles::RECOUVREUR) {
-                        if ($user->hasRole([$role->name]) || $user->hasRole([$role2->name])) {
-
-                            $user->notify(new Notif_flottage([
-                                'data' => $flottage_anonyme,
-                                'message' => "Nouveau flottage anonyme"
-                            ]));
-                        }
-                    }
-                }
-
-                $puce_envoie = Puce::find($flottage_anonyme->id_sim_from);
-
-                // Renvoyer un message de succès
-                return response()->json([
-                    'message' => "Flottage anonyme effectué avec succès",
-                    'status' => true,
-                    'data' => [
-                        'puce_emetrice' => $puce_envoie,
-                        'user' => User::find($flottage_anonyme->id_user),
-                        'flottage' => $flottage_anonyme
-                    ]
-                ]);
-            } else {
-                // Renvoyer une erreur
-                return response()->json([
-                    'message' => 'Erreur perdant le processus de flottage',
-                    'status' => false,
-                    'data' => null
-                ]);
-            }
-        }
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Enums\Statut;
 use App\User;
 use App\Role;
 use App\Puce;
@@ -68,7 +69,7 @@ class DemandeflotteController extends Controller
         $add_by = $id;
         $reference = null;
         $montant = $request->montant;
-        $statut = \App\Enums\Statut::EN_ATTENTE;
+        $statut = Statut::EN_ATTENTE;
         $id_puce = $request->id_puce;
 
         // Nouvelle demande de flotte
@@ -87,8 +88,9 @@ class DemandeflotteController extends Controller
         if ($demande_flote->save()) {
 
             ////Broadcast Notification
+            $message = "Demande de flotte éffectué";
             $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
-            $event = new NotificationsEvent($role->id, ['message' => 'Nouvelle demande flotte']);
+            $event = new NotificationsEvent($role->id, ['message' => $message]);
             broadcast($event)->toOthers();
 
             //Database Notification
@@ -99,7 +101,7 @@ class DemandeflotteController extends Controller
 
                     $user->notify(new Notif_demande_flotte([
                         'data' => $demande_flote,
-                        'message' => "Nouvelle demande de flotte"
+                        'message' => $message
                     ]));
                 }
             }
