@@ -14,12 +14,21 @@ class Versement extends Model
     use SoftDeletes;
 
     protected $dates = ['deleted_at'];
-    protected $fillable = array('id_caisse', 'correspondant', 'add_by', 'montant', 'note', 'recu');
-    protected $visible = array('id', 'id_caisse', 'correspondant', 'add_by', 'montant', 'note', 'recu', 'created_at');
+    protected $fillable = array('id_caisse', 'correspondant', 'add_by', 'montant', 'note', 'recu', 'statut');
+    protected $visible = array('id', 'id_caisse', 'correspondant', 'add_by', 'montant', 'note', 'recu', 'statut', 'created_at');
 
     public function caisse()
     {
         return $this->belongsTo('App\Caisse', 'id_caisse');
     }
 
+    public function manager()
+    {
+        return $this->belongsTo('App\User', 'add_by');
+    }
+
+    public function collector()
+    {
+        return $this->belongsTo('App\User', 'correspondant');
+    }
 }

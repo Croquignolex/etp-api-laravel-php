@@ -127,15 +127,15 @@ class CaisseController extends Controller
     }
 
     /**
-     * //Creer un Decaissement
+     * Creer un Decaissement
      */
+    // GESTIONNAIRE DE FLOTTE
     public function decaissement(Request $request)
     {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
             'id_receveur' => ['required', 'Numeric'], //id de l'utilisateur qui recoit l'argent
             'montant' => ['required', 'Numeric'],
-            'recu' => ['nullable', 'file', 'max:10000']
         ]);
 
         if ($validator->fails()) {
@@ -147,9 +147,23 @@ class CaisseController extends Controller
         }
 
         //On verifi si le receveur est vraiment utilisateur
-        if (!($receveur = User::find($request->id_receveur))) {
+        $receveur = User::find($request->id_receveur);
+        if (is_null($receveur)) {
             return response()->json([
-                'message' => "L'utilisateur en paramettre n'existe pas en BD",
+                'message' => "Responsable de zone non reconnu",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        //recuperer la caisse de l'utilisateur connecté
+        $montant = $request->montant;
+        $connected_user = Auth::user();
+        $caisse_emetteur = $connected_user->caisse->first();
+
+        if ($caisse_emetteur->solde < $montant) {
+            return response()->json([
+                'message' => "Solde caisse insuffisant pour éffectuer cette opération",
                 'status' => false,
                 'data' => null
             ]);
@@ -157,81 +171,37 @@ class CaisseController extends Controller
 
         //recuperer la caisse de l'utilisateur qui recoit le verssement
         $caisse_receveur = $receveur->caisse->first();
-
-        //recuperer la caisse de l'utilisateur connecté
-        $user = Auth::user();
-        $caisse = $user->caisse->first();
-
-        //On verifi si le compte du payeur est suffisant
-        if ($caisse->solde < $request->montant) {
-            return response()->json([
-                'message' => "Le solde du payeur est insuffisant",
-                'status' => false,
-                'data' => null
-            ]);
-        }
-
-        // Récupérer les données validées
-        $recu = null;
-        if ($request->hasFile('recu') && $request->file('recu')->isValid()) {
-            $recu = $request->recu->store('files/recu/versement');
-        }
-        $receveur = $request->id_receveur;
-        $montant = $request->montant;
-        $id_caisse = $caisse_receveur->id;
-        $add_by = $user->id;
+        $add_by = $connected_user->id;
         $note = "pour un Decaissement";
 
         // Nouveau decaissement
         $decaissement = new Versement ([
-            'recu' => $recu,
-            'correspondant' => $receveur,
+            'correspondant' => $receveur->id,
             'montant' => $montant,
-            'id_caisse' => $id_caisse,
+            'id_caisse' => $caisse_receveur->id,
             'add_by' => $add_by,
-            'note' => $note
+            'note' => $note,
+            'statut' => Statut::EN_COURS
         ]);
+        $decaissement->save();
 
-        // creation du decaissement
-        if ($decaissement->save())
-        {
-            //notification du receveur
-            $receveur = User::find($receveur);
-            $receveur->notify(new Notif_recouvrement([
-                'data' => $decaissement,
-                'message' => "Nouveau decaissement de votre part"
-            ]));
+        //notification du receveur
+        $message = "Décaissement éffectué par " . $connected_user->name;
+        $receveur->notify(new Notif_recouvrement([
+            'data' => $decaissement,
+            'message' => $message
+        ]));
 
-            //on debite le compte du receveur
-            $caisse_receveur->solde = $caisse_receveur->solde - $montant;
-            $caisse_receveur->save();
-
-            //on debite le compte de la gestionnaire de flotte
-            $caisse->solde = $caisse->solde - $montant;
-            $caisse->save();
-
-            // Renvoyer un message de succès
-            return response()->json(
-                [
-                    'message' => "Décaissement effectué avec succès",
-                    'status' => true,
-                    'data' => [
-                        'versement' => $decaissement,
-                        'gestionnaire' => User::find($decaissement->add_by),
-                        'recouvreur' => User::find($decaissement->correspondant),
-                    ]
-                ]
-            );
-        } else {
-            // Renvoyer une erreur
-            return response()->json(
-                [
-                    'message' => 'Erreur lors de la Creation',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
-        }
+        // Renvoyer un message de succès
+        return response()->json([
+            'message' => "Décaissement effectué avec succès",
+            'status' => true,
+            'data' => [
+                'versement' => $decaissement,
+                'gestionnaire' => $decaissement->manager,
+                'recouvreur' => $decaissement->collector,
+            ]
+        ]);
     }
 
     /**
@@ -344,8 +314,9 @@ class CaisseController extends Controller
     }
 
     /**
-     * ////lister les Encaissements
+     * Lister les Encaissements
      */
+    // GESTIONNAIRE DE FLOTTE
     public function encaissement_list()
     {
         $user = Auth::user();
@@ -354,9 +325,13 @@ class CaisseController extends Controller
         if ($connected_user_role === Roles::RECOUVREUR) {
             $versements = Versement::where('correspondant', $user->id)->where('note', "pour un versement")->orderBy('created_at', 'desc')->paginate(9);
         } elseif($connected_user_role === Roles::GESTION_FLOTTE) {
-            $versements = Versement::where('add_by', $user->id)->where('note', "pour un versement")->orderBy('created_at', 'desc')->paginate(6);
+            $versements = Versement::where('add_by', $user->id)
+                ->where('note', "pour un versement")
+                ->orderBy('statut', 'desc')
+                ->orderBy('created_at', 'desc')
+                ->paginate(9);
         } else {
-            $versements = Versement::where('note', "pour un versement")->orderBy('created_at', 'desc')->paginate(6);
+            $versements = Versement::where('note', "pour un versement")->orderBy('created_at', 'desc')->paginate(9);
         }
 
         $versements_response =  $this->paymentsResponse($versements->items());
@@ -368,6 +343,53 @@ class CaisseController extends Controller
                 'versements' => $versements_response,
                 'hasMoreData' => $versements->hasMorePages(),
             ]
+        ]);
+    }
+
+    /**
+     * Confirmer encaissement
+     */
+    // GESTIONNAIRE DE FLOTTE
+    public function approuve_encaissement($id)
+    {
+        $versement = Versement::find($id);
+        //si le destockage n'existe pas
+        if (is_null($versement)) {
+            return response()->json([
+                'message' => "Le versement n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        //on approuve le destockage
+        $versement->statut = Statut::EFFECTUER;
+        $versement->save();
+        $connected_user = Auth::user();
+
+        // Notifier le RZ
+        $message = "Encaissement confirmé par " . $connected_user->name;
+        $versement->collector->notify(new Notif_recouvrement([
+            'data' => $versement,
+            'message' => $message
+        ]));
+
+        $caisse_donneur = $versement->collector->caisse->first();
+        $caisse_recepteur = $connected_user->caisse->first();
+        $montant = $versement->montant;
+
+        //on credite le compte du donneur
+        $caisse_donneur->solde = $caisse_donneur->solde - $montant;
+        $caisse_donneur->save();
+
+        //on credite le compte de la gestionnaire de flotte
+        $caisse_recepteur->solde = $caisse_recepteur->solde + $montant;
+        $caisse_recepteur->save();
+
+        return response()->json([
+            'message' => "Encaissement confirmé avec succès",
+            'status' => true,
+            'data' => null
         ]);
     }
 
@@ -397,8 +419,9 @@ class CaisseController extends Controller
     }
 
     /**
-     * ////lister les Decaissements
+     * Lister les Decaissements
      */
+    // GESTIONNAIRE DE FLOTTE
     public function decaissement_list()
     {
         $user = Auth::user();
@@ -407,9 +430,13 @@ class CaisseController extends Controller
         if ($connected_user_role === Roles::RECOUVREUR) {
             $versements = Versement::where('correspondant', $user->id)->where('note', "pour un Decaissement")->orderBy('created_at', 'desc')->paginate(9);
         } elseif($connected_user_role === Roles::GESTION_FLOTTE) {
-            $versements = Versement::where('add_by', $user->id)->where('note', "pour un Decaissement")->orderBy('created_at', 'desc')->paginate(6);
+            $versements = Versement::where('add_by', $user->id)
+                ->where('note', "pour un Decaissement")
+                ->orderBy('statut', 'desc')
+                ->orderBy('created_at', 'desc')
+                ->paginate(9);
         } else {
-            $versements = Versement::where('note', "pour un Decaissement")->orderBy('created_at', 'desc')->paginate(6);
+            $versements = Versement::where('note', "pour un Decaissement")->orderBy('created_at', 'desc')->paginate(9);
         }
 
         $versements_response =  $this->paymentsResponse($versements->items());
@@ -514,7 +541,6 @@ class CaisseController extends Controller
             ]
         );
     }
-
 
     /**
      * //Creer une depence.
@@ -798,23 +824,6 @@ class CaisseController extends Controller
         );
     }
 
-    // Build payments return data
-    private function paymentsResponse($payments)
-    {
-        $returnedPayments = [];
-
-        foreach($payments as $versement)
-        {
-            $returnedPayments[] = [
-                'versement' => $versement,
-                'gestionnaire' => User::find($versement->add_by),
-                'recouvreur' => User::find($versement->correspondant),
-            ];
-        }
-
-        return $returnedPayments;
-    }
-
     // Build handovers return data
     private function handoverResponse($handovers)
     {
@@ -1009,5 +1018,22 @@ class CaisseController extends Controller
         }
 
         return $returnedLiquidates;
+    }
+
+    // Build payments return data
+    private function paymentsResponse($payments)
+    {
+        $returnedPayments = [];
+
+        foreach($payments as $versement)
+        {
+            $returnedPayments[] = [
+                'versement' => $versement,
+                'gestionnaire' => $versement->manager,
+                'recouvreur' => $versement->collector,
+            ];
+        }
+
+        return $returnedPayments;
     }
 }

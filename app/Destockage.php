@@ -26,9 +26,9 @@ class Destockage extends Model
         return $this->belongsTo('App\Vendor', 'id_fournisseur');
     }
 
-    public function agent()
+    public function agent_user()
     {
-        return $this->belongsTo('App\Agent', 'id_agent');
+        return $this->belongsTo('App\User', 'id_agent');
     }
 
     public function puce()

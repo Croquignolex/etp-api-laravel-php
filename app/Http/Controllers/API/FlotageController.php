@@ -363,7 +363,7 @@ class FlotageController extends Controller
 
         $puce_from = Puce::find($request->id_puce_from);
         //On verifi si la puce de  flottage passée existe réellement
-        if ($puce_from) {
+        if (is_null($puce_from)) {
             return response()->json([
                 'message' => "La puce émetrice n'existe pas",
                 'status' => false,
@@ -461,7 +461,9 @@ class FlotageController extends Controller
             $agent = new Agent([
                 'id_creator' => $connected_user->id,
                 'id_user' => $user->id,
-                'reference' => Roles::AGENT
+                'reference' => Roles::AGENT,
+                'ville' => 'Douala',
+                'pays' => 'CAMEROUN'
             ]);
             $agent->save();
 

@@ -84,7 +84,7 @@ class RecouvrementController extends Controller
             'type_transaction' => Statut::RECOUVREMENT,
             'montant' => $montant,
             'reste' => $montant,
-            'id_flottage' => $flottage->ID,
+            'id_flottage' => $flottage->id,
             'statut' => Statut::EFFECTUER,
             'user_destination' => $connected_user->id,
             'user_source' => $user->id
@@ -167,8 +167,9 @@ class RecouvrementController extends Controller
     }
 
     /**
-     * ////lister les recouvrement
+     * Lister les recouvrement
      */
+    // GESTIONNAIRE DE FLOTTE
     public function list_all()
     {
         $recoveries = Recouvrement::orderBy('created_at', 'desc')->paginate(9);

@@ -556,6 +556,7 @@ Route::group(['middleware' => 'auth:api'], function(){
             ->where('id', '[0-9]+');
         Route::get('list_destockage_agent', 'API\ApprovisionnementEtpController@list_all_destockage_agent')
             ->where('id', '[0-9]+');
+        Route::post('destockage_anonyme', 'API\ApprovisionnementEtpController@destockage_anonyme');
         /*
     //////////////////////Recouvrement/////////////////////
     */
@@ -762,10 +763,14 @@ Route::group(['middleware' => 'auth:api'], function(){
 
         //Détails d'un encaissement precis
         Route::get('encaissement_details/{id}', 'API\CaisseController@versement_details')
-        ->where('id', '[0-9]+');
+            ->where('id', '[0-9]+');
 
         //lister les Encaissements
         Route::get('encaissement_list', 'API\CaisseController@encaissement_list');
+
+        //confirmer l'encaissement RZ par GF
+        Route::post('approuve_encaissement/{id}', 'API\CaisseController@approuve_encaissement')
+            ->where('id', '[0-9]+');
 
         //lister toutes les Encaissements
         Route::get('encaissement_list_all', 'API\CaisseController@encaissement_list_all');

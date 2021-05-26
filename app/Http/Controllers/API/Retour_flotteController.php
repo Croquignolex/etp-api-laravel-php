@@ -205,11 +205,14 @@ class Retour_flotteController extends Controller
     }
 
     /**
-     * ////lister les retour flotte
+     * Lister les retour flotte
      */
+    // GESTIONNAIRE DE FLOTTE
     public function list_all()
     {
-        $recoveries = Retour_flote::orderBy('created_at', 'desc')->paginate(6);
+        $recoveries = Retour_flote::orderBy('statut', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->paginate(9);
 
         $recoveries_response =  $this->recoveriesResponse($recoveries->items());
 
@@ -357,58 +360,55 @@ class Retour_flotteController extends Controller
     }
 
     /**
-     * ////approuver un retour flotte
+     * Approuver un retour flotte
      */
+    // GESTIONNAIRE DE FLOTTE
     public function approuve($id)
     {
         //si le recouvrement n'existe pas
-        if (!($retour_flotte = Retour_flote::find($id))) {
-            return response()->json(
-                [
-                    'message' => "Le retour flotte n'existe pas",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+        $retour_flotte = Retour_flote::find($id);
+        if (is_null($retour_flotte)) {
+            return response()->json([
+                'message' => "Le retour flotte n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         //on approuve le retour flotte
         $retour_flotte->statut = Statut::EFFECTUER;
 
-        //message de reussite
-        if ($retour_flotte->save())
-        {
-            //Notification du gestionnaire de flotte
-            $role = Role::where('name', Roles::RECOUVREUR)->first();
-            $event = new NotificationsEvent($role->id, ['message' => 'Un retour de flote approuvé']);
-            broadcast($event)->toOthers();
+        $connected_user = Auth::user();
+        $collector = $retour_flotte->user;
+        $is_collector = $collector->roles->first()->name === Roles::RECOUVREUR;
 
-            //Database Notification
-            $users = User::all();
-            foreach ($users as $user) {
-
-                if ($user->hasRole([$role->name])) {
-
-                    $user->notify(new Notif_retour_flotte([
-                        'data' => $retour_flotte,
-                        'message' => "Un retour de flote approuvé"
-                    ]));
-                }
-            }
-
-            return response()->json([
-                'message' => 'Retour flotte apprové avec succès',
-                'status' => true,
-                'data' => null
-            ]);
-        } else {
-            // Renvoyer une erreur
-            return response()->json([
-                'message' => 'Erreur lors de la confirmation',
-                'status'=>false,
-                'data' => null
-            ]);
+        if($is_collector) {
+            // On notifie si on est en presence d'un RZ
+            $message = "Retour flotte à été apprové par " . $connected_user->name;
+            $collector->notify(new Notif_retour_flotte([
+                'data' => $retour_flotte,
+                'message' => $message
+            ]));
         }
+
+        //On recupère la puce de l'agent concerné et on debite
+        $montant = $retour_flotte->montant;
+        $puce_agent = $retour_flotte->puce_source;
+        $puce_agent->solde = $puce_agent->solde - $montant;
+
+        //on credite la puce de ETP concernée
+        $puce_flottage = $retour_flotte->puce_destination;
+        $puce_flottage->solde = $puce_flottage->solde + $montant;
+
+        $puce_agent->save();
+        $puce_flottage->save();
+        $retour_flotte->save();
+
+        return response()->json([
+            'message' => 'Retour flotte apprové avec succès',
+            'status' => true,
+            'data' => null
+        ]);
     }
 
     // Build recoveries return data

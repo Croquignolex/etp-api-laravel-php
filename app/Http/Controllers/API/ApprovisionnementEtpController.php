@@ -5,7 +5,9 @@ namespace App\Http\Controllers\API;
 use App\Puce;
 use App\User;
 use App\Role;
+use App\Agent;
 use App\Caisse;
+use App\Type_puce;
 use App\Destockage;
 use App\Enums\Roles;
 use App\Enums\Statut;
@@ -103,7 +105,7 @@ class ApprovisionnementEtpController extends Controller
             }
 
             //Database Notification de l'agent
-            User::find($id_agent)->notify(new Notif_flottage([
+            $destockage->agent_user->notify(new Notif_flottage([
                 'message' => $message,
                 'data' => $destockage
             ]));
@@ -128,7 +130,7 @@ class ApprovisionnementEtpController extends Controller
             $connected_caisse->save();
         }
 
-        $user = $destockage->id_agent === null ? $destockage->id_agent : User::find($destockage->id_agent);
+        $user = $destockage->id_agent === null ? $destockage->id_agent : $destockage->agent_user;
         $agent = $user === null ? $user : $user->agent->first();
 
         return response()->json([
@@ -456,13 +458,16 @@ class ApprovisionnementEtpController extends Controller
     }
 
     /**
-     * ////lister les approvisionnements
+     * Lister les approvisionnements
      */
+    // GESTIONNAIRE DE FLOTTE
     public function list_all()
     {
         $destockages = Destockage::where('type', Statut::BY_DIGIT_PARTNER)
             ->orWhere('type', Statut::BY_BANK)
-            ->orderBy('created_at', 'desc')->paginate(6);
+            ->orderBy('statut', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->paginate(9);
 
         return response()->json([
             'message' => "",
@@ -530,6 +535,218 @@ class ApprovisionnementEtpController extends Controller
     }
 
     /**
+     * Effectuer un destockage anonyme
+     */
+    // GESTIONNAIRE DE FLOTTE
+    public function destockage_anonyme(Request $request)
+    {
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [
+            'nom_agent' => ['nullable', 'string'],
+            'id_puce_to' => ['required', 'Numeric'],
+            'montant' => ['required', 'Numeric'],
+            'nro_puce_from' => ['required', 'Numeric'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        $puce_receptrice = Puce::find($request->id_puce_to);
+        //On verifi si la puce de  flottage passée existe réellement
+        if (is_null($puce_receptrice)) {
+            return response()->json([
+                'message' => "La puce réceptrice n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        $montant = $request->montant;
+        $connected_user = Auth::user();
+        $numero_agent = $request->nro_puce_from;
+
+        // On verrifie si la puce anonyme existe dans la list des puces agents connus
+        $agent_sim_type_id = Type_puce::where('name', Statut::AGENT)->get()->first()->id;
+        $resource_sim_type_id = Type_puce::where('name', Statut::RESOURCE)->get()->first()->id;
+
+        $needle_sim = Puce::where('numero', $numero_agent)->get()->first();
+
+        if(
+            ($needle_sim !== null) && (
+                ($needle_sim->type == $agent_sim_type_id) ||
+                ($needle_sim->type == $resource_sim_type_id)
+            )
+        ) {
+            //======================================================================
+            // Detection
+            return response()->json([
+                'message' => "Cette puce à été reconnu comme une puce agent/ressource. vous devez plutôt éffectuer un déstockage",
+                'status' => false,
+                'data' => null
+            ]);
+        } else {
+            //======================================================================
+            $needle_user = User::where('phone', $numero_agent)->get()->first();
+
+            // Check de l'existence de la puce
+            if($needle_sim !== null) {
+                return response()->json([
+                    'message' => "Cette puce existe déjà dans le système et ne peut être attribuée à un agent/ressource",
+                    'status' => false,
+                    'data' => null
+                ]);
+            }
+
+            // Check l'existence de l'utilisateur
+            if($needle_user !== null) {
+                return response()->json([
+                    'message' => "Ce numéro de téléphone est déjà utilisé par un utilisateur comme identifiant",
+                    'status' => false,
+                    'data' => null
+                ]);
+            }
+
+            $nom_agent = $request->nom_agent;
+
+            // Creation de l'utilisateur lié à l'agent
+            $user = new User([
+                'add_by' => $connected_user->id,
+                'name' => $nom_agent,
+                'password' => bcrypt(000000),
+                'phone' => $numero_agent,
+                'statut' => Statut::APPROUVE,
+            ]);
+            $user->save();
+
+            // Creation de la caisse
+            $caisse = new Caisse([
+                'nom' => 'Caisse ' . $nom_agent,
+                'id_user' => $user->id,
+                'solde' => 0
+            ]);
+            $caisse->save();
+
+            // Assigner le role à l'utilisateur
+            $role = Role::where('name', Roles::AGENT)->first();
+            $user->assignRole($role);
+
+            // Création des paramettres de l'utilisateur
+            $user->setting()->create([
+                'bars' => '[0,1,2,3,4,5,6,7,8,9]',
+                'charts' => '[0,1,2,3,4,5,6,7,8,9]',
+                'cards' => '[0,1,2,3,4,5,6,7,8,9]',
+            ]);
+
+            // Creation de agent
+            $agent = new Agent([
+                'id_creator' => $connected_user->id,
+                'id_user' => $user->id,
+                'reference' => Roles::AGENT,
+                'ville' => 'Douala',
+                'pays' => 'CAMEROUN'
+            ]);
+            $agent->save();
+
+            // Création de la puce agent
+            $puce = new Puce([
+                'nom' => $nom_agent,
+                'type' => $agent_sim_type_id,
+                'numero' => $numero_agent,
+                'id_agent' => $agent->id,
+                'reference' => Roles::AGENT,
+                'id_flotte' => $puce_receptrice->flote->id,
+                'solde' => 0
+            ]);
+            $puce->save();
+
+            $type = Statut::BY_AGENT;
+            $type_puce = $puce_receptrice->type_puce->name;
+
+            $user_role = $connected_user->roles->first()->name;
+            $is_collector = $user_role === Roles::RECOUVREUR;
+
+            $status = ($is_collector && ($type_puce !== Statut::PUCE_RZ)) ? Statut::EN_COURS : Statut::EFFECTUER;
+
+            //initier le destockage encore appelé approvisionnement de ETP
+            $destockage = new Destockage([
+                'id_recouvreur' => $connected_user->id,
+                'type' => $type,
+                'id_puce' => $puce_receptrice->id,
+                'id_agent' => $user->id,
+                'statut' => $status,
+                'montant' => $montant
+            ]);
+            $destockage->save();
+
+            //Notification
+            if($status === Statut::EN_COURS) {
+                $message = "Déstockage éffectué par " . $connected_user->name;
+                $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
+                $event = new NotificationsEvent($role->id, ['message' => $message]);
+                broadcast($event)->toOthers();
+
+                //Database Notification
+                $users = User::all();
+                foreach ($users as $user) {
+                    if ($user->hasRole([$role->name])) {
+
+                        $user->notify(new Notif_destockage([
+                            'data' => $destockage,
+                            'message' => $message
+                        ]));
+                    }
+                }
+
+                //Database Notification de l'agent
+                $user->notify(new Notif_flottage([
+                    'message' => $message,
+                    'data' => $destockage
+                ]));
+            }
+
+            // Implication d'un déstockage avec effectué directement
+            if($status === Statut::EFFECTUER) {
+                // Flotte ajouté dans les puce emetrice
+                $puce_receptrice->solde = $puce_receptrice->solde + $montant;
+
+                // Dimuner les especes dans la caisse
+                $connected_caisse = $connected_user->caisse->first();
+                $connected_caisse->solde = $connected_caisse->solde - $montant;
+
+                if($is_collector && $type_puce === Statut::FLOTTAGE) {
+                    // Si RZ et puce GF (reduire la dette)
+                    $connected_user->dette = $connected_user->dette - $montant;
+                    $connected_user->save();
+                }
+
+                $puce_receptrice->save();
+                $connected_caisse->save();
+            }
+
+            return response()->json([
+                'message' => "Déstockage effectué avec succès",
+                'status' => true,
+                'data' => [
+                    'id' => $destockage->id,
+                    'statut' => $status,
+                    'montant' => $montant,
+                    'created_at' => $destockage->created_at,
+                    'recouvreur' => $connected_user,
+                    'puce' => $puce_receptrice,
+                    'agent' => $agent,
+                    'user' => $user,
+                    'operateur' => $puce_receptrice->flote
+                ]
+            ]);
+        }
+    }
+
+    /**
      * ////lister les destockages par un responsable de zone
      */
     public function list_all_destockage_collector()
@@ -586,5 +803,4 @@ class ApprovisionnementEtpController extends Controller
             ]);
         }
     }
-
 }
