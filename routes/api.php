@@ -732,7 +732,6 @@ Route::group(['middleware' => 'auth:api'], function(){
         //Creer un Flottage d'un responsable de zone vers un gestionnaire de flotte
         Route::post('flottage_interne_rz_gf', 'API\Flottage_interneController@flottage_interne_rz_gf');
 
-//todo: new code
         //Creer un Flottage d'un Agent ETP vers un gestionnaire de flotte
         Route::post('flottage_interne_ae_gf', 'API\Flottage_interneController@flottage_interne_ae_gf');
 
@@ -803,7 +802,11 @@ Route::group(['middleware' => 'auth:api'], function(){
 
         //lister toutes les passation de service
         Route::get('passations_list_all', 'API\CaisseController@passations_list_all');
-/*
+
+        //lister toutes les passation de service
+        Route::post('approuve_passation/{id}', 'API\CaisseController@approuve_passation')
+        ->where('id', '[0-9]+');
+    /*
     //////////////////////Attribuer une puce à un responsable de zonne/////////////////////
     */
         // ajouter une puce à un responsable de zonne

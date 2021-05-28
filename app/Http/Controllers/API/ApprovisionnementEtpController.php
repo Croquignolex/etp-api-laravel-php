@@ -58,11 +58,20 @@ class ApprovisionnementEtpController extends Controller
             ]);
         }
 
+        //Coherence du montant de la transaction
+        $montant = $request->montant;
+        if ($montant <= 0) {
+            return response()->json([
+                'message' => "Montant de la transaction incohérent",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
         $type = $request->type;
         $fournisseur = $request->id_fournisseur;
         $id_agent = $request->id_agent;
         $id_puce = $request->id_puce;
-        $montant = $request->montant;
 
         $puce_receptrice = Puce::find($id_puce);
         $type_puce = $puce_receptrice->type_puce->name;
@@ -85,49 +94,46 @@ class ApprovisionnementEtpController extends Controller
         ]);
         $destockage->save();
 
-        //Notification
-        if($type === Statut::BY_AGENT && $status === Statut::EN_COURS) {
-            $message = "Déstockage éffectué par " . $connected_user->name;
-            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
-            $event = new NotificationsEvent($role->id, ['message' => $message]);
-            broadcast($event)->toOthers();
-
-            //Database Notification
-            $users = User::all();
-            foreach ($users as $user) {
-                if ($user->hasRole([$role->name])) {
-
-                    $user->notify(new Notif_destockage([
-                        'data' => $destockage,
-                        'message' => $message
-                    ]));
-                }
-            }
-
-            //Database Notification de l'agent
-            $destockage->agent_user->notify(new Notif_flottage([
-                'message' => $message,
-                'data' => $destockage
-            ]));
-        }
-
-        // Implication d'un déstockage avec effectué directement
-        if($type === Statut::BY_AGENT && $status === Statut::EFFECTUER) {
-            // Flotte ajouté dans les puce emetrice
-            $puce_receptrice->solde = $puce_receptrice->solde + $montant;
-
+        if($type === Statut::BY_AGENT) {
             // Dimuner les especes dans la caisse
             $connected_caisse = $connected_user->caisse->first();
             $connected_caisse->solde = $connected_caisse->solde - $montant;
-
-            if($is_collector && $type_puce === Statut::FLOTTAGE) {
-                // Si RZ et puce GF (reduire la dette)
-                $connected_user->dette = $connected_user->dette - $montant;
-                $connected_user->save();
-            }
-
-            $puce_receptrice->save();
             $connected_caisse->save();
+
+            if($status === Statut::EN_COURS) {
+                $message = "Déstockage éffectué par " . $connected_user->name;
+                $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
+                $event = new NotificationsEvent($role->id, ['message' => $message]);
+                broadcast($event)->toOthers();
+
+                //Database Notification
+                $users = User::all();
+                foreach ($users as $user) {
+                    if ($user->hasRole([$role->name])) {
+
+                        $user->notify(new Notif_destockage([
+                            'data' => $destockage,
+                            'message' => $message
+                        ]));
+                    }
+                }
+
+                //Database Notification de l'agent
+                $destockage->agent_user->notify(new Notif_flottage([
+                    'message' => $message,
+                    'data' => $destockage
+                ]));
+
+                if($is_collector && $type_puce === Statut::FLOTTAGE) {
+                    // Si RZ et puce GF (reduire la dette)
+                    $connected_user->dette = $connected_user->dette - $montant;
+                    $connected_user->save();
+                }
+            } else if ($status === Statut::EFFECTUER) {
+                // Flotte ajouté dans les puce emetrice
+                $puce_receptrice->solde = $puce_receptrice->solde + $montant;
+                $puce_receptrice->save();
+            }
         }
 
         $user = $destockage->id_agent === null ? $destockage->id_agent : $destockage->agent_user;
@@ -348,20 +354,14 @@ class ApprovisionnementEtpController extends Controller
         $puce_receptrice = $destockage->puce;
         $montant = $destockage->montant;
 
+        // Flotte ajouté dans les puce emetrice
+        $puce_receptrice->solde = $puce_receptrice->solde + $montant;
+        $puce_receptrice->save();
+
         $connected_user = Auth::user();
         $message = "Déstockage apprové par " . $connected_user->name;
 
         if($is_collector) {
-            // Flotte ajouté dans les puce emetrice
-            $puce_receptrice->solde = $puce_receptrice->solde + $montant;
-
-            // Dimuner les especes dans la caisse
-            $connected_caisse = $connected_user->caisse->first();
-            $connected_caisse->solde = $connected_caisse->solde - $montant;
-
-            $puce_receptrice->save();
-            $connected_caisse->save();
-
             //Database Notification du déstockeur RZ
             $destokeur->notify(new Notif_flottage([
                 'message' => $message,
@@ -556,6 +556,16 @@ class ApprovisionnementEtpController extends Controller
             ]);
         }
 
+        //Coherence du montant de la transaction
+        $montant = $request->montant;
+        if ($montant <= 0) {
+            return response()->json([
+                'message' => "Montant de la transaction incohérent",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
         $puce_receptrice = Puce::find($request->id_puce_to);
         //On verifi si la puce de  flottage passée existe réellement
         if (is_null($puce_receptrice)) {
@@ -566,7 +576,6 @@ class ApprovisionnementEtpController extends Controller
             ]);
         }
 
-        $montant = $request->montant;
         $connected_user = Auth::user();
         $numero_agent = $request->nro_puce_from;
 
@@ -683,6 +692,11 @@ class ApprovisionnementEtpController extends Controller
             ]);
             $destockage->save();
 
+            // Dimuner les especes dans la caisse
+            $connected_caisse = $connected_user->caisse->first();
+            $connected_caisse->solde = $connected_caisse->solde - $montant;
+            $connected_caisse->save();
+
             //Notification
             if($status === Statut::EN_COURS) {
                 $message = "Déstockage éffectué par " . $connected_user->name;
@@ -707,16 +721,9 @@ class ApprovisionnementEtpController extends Controller
                     'message' => $message,
                     'data' => $destockage
                 ]));
-            }
-
-            // Implication d'un déstockage avec effectué directement
-            if($status === Statut::EFFECTUER) {
+            } else if($status === Statut::EFFECTUER) {
                 // Flotte ajouté dans les puce emetrice
                 $puce_receptrice->solde = $puce_receptrice->solde + $montant;
-
-                // Dimuner les especes dans la caisse
-                $connected_caisse = $connected_user->caisse->first();
-                $connected_caisse->solde = $connected_caisse->solde - $montant;
 
                 if($is_collector && $type_puce === Statut::FLOTTAGE) {
                     // Si RZ et puce GF (reduire la dette)
@@ -725,7 +732,6 @@ class ApprovisionnementEtpController extends Controller
                 }
 
                 $puce_receptrice->save();
-                $connected_caisse->save();
             }
 
             return response()->json([

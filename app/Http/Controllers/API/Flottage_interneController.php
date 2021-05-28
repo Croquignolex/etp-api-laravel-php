@@ -210,29 +210,21 @@ class Flottage_interneController extends Controller
         }
 
         $montant = $transfert_flotte->montant;
-        $puce_emetrice = Puce::find($transfert_flotte->id_sim_from);
-        $puce_receptrice = Puce::find($transfert_flotte->id_sim_to);
-
-        if($puce_emetrice->solde < $montant) {
-            return response()->json([
-                'message' => "Le Solde de la puce émetrice est insuffisant",
-                'status' => false,
-                'data' => null
-            ]);
-        }
+        $puce_emetrice = $transfert_flotte->puce_emetrice;
+        $puce_receptrice = $transfert_flotte->puce_receptrice;
 
         //on approuve le destockage
         $transfert_flotte->statut = Statut::EFFECTUER;
-        $transfert_flotte->save();
 
         // Traitement des flottes
-        $puce_emetrice->solde = $puce_emetrice->solde - $montant;
         $puce_receptrice->solde = $puce_receptrice->solde + $montant;
-        $puce_emetrice->save();
         $puce_receptrice->save();
 
+        $type_puce_receptrice = $puce_receptrice->type_puce->name;
+        $type_puce_emetrice = $puce_emetrice->type_puce->name;
+
         // Augmenter la dette si nous somme en presence d'un RZ en puce receptrice
-        if ($puce_receptrice->type_puce->name === Statut::PUCE_RZ) {
+        if ($type_puce_receptrice === Statut::PUCE_RZ) {
             $rz = $puce_receptrice->rz;
             if(!is_null($rz)) {
                 $rz->dette = $rz->dette + $montant;
@@ -241,13 +233,15 @@ class Flottage_interneController extends Controller
         }
 
         // Dimunuer la dette si nous somme en presence d'un RZ en puce emetrice
-        if ($puce_emetrice->type_puce->name === Statut::PUCE_RZ) {
+        if ($type_puce_emetrice === Statut::PUCE_RZ) {
             $rz = $puce_emetrice->rz;
             if(!is_null($rz)) {
                 $rz->dette = $rz->dette - $montant;
                 $rz->save();
             }
         }
+
+        $transfert_flotte->save();
 
         $connected_user = Auth::user();
         $users = User::all();

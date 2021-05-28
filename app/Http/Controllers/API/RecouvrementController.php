@@ -52,9 +52,18 @@ class RecouvrementController extends Controller
             ]);
         }
 
-        $flottage = Approvisionnement::find($request->id_flottage);
+        //Coherence du montant de la transaction
         $montant = $request->montant;
+        if ($montant <= 0) {
+            return response()->json([
+                'message' => "Montant de la transaction incohérent",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
         //On verifi si le flottage passée existe réellement
+        $flottage = Approvisionnement::find($request->id_flottage);
         if (is_null($flottage)) {
             return response()->json([
                 'message' => "Le flottage n'existe pas",

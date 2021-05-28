@@ -57,8 +57,16 @@ class FlotageController extends Controller
             ]);
         }
 
-        //Montant du depot
+        //Coherence du montant de la transaction
         $montant = $request->montant;
+        if ($montant <= 0) {
+            return response()->json([
+                'message' => "Montant de la transaction incohérent",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
         $demande_flotte = Demande_flote::find($request->id_demande_flotte);
 
         //On verifi si la demande passée existe réellement
@@ -206,6 +214,16 @@ class FlotageController extends Controller
             ]);
         }
 
+        //Coherence du montant de la transaction
+        $montant = $request->montant;
+        if ($montant <= 0) {
+            return response()->json([
+                'message' => "Montant de la transaction incohérent",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
         $user = User::find($request->id_agent);
         //On verifi si l'agent passé existe réellement
         if (is_null($user)) {
@@ -236,7 +254,6 @@ class FlotageController extends Controller
             ]);
         }
 
-        $montant = $request->montant;
         $connected_user = Auth::user();
         // Verification du solde
         if($puce_etp->solde < $montant) {
@@ -259,7 +276,6 @@ class FlotageController extends Controller
         // Récupérer les données pour la création d'une demande fictive de flotte
         $id_user = $user->id;
         $add_by = $connected_user->id;
-        $reference = null;
         $statut = Statut::EFFECTUER;
         $source = $request->id_puce_flottage;
         $id_puce = $request->id_puce_agent;
@@ -268,7 +284,6 @@ class FlotageController extends Controller
         $demande_flotte = new Demande_flote([
             'id_user' => $id_user,
             'add_by' => $add_by,
-            'reference' => $reference,
             'montant' => $montant,
             'reste' => 0,
             'statut' => $statut,
@@ -282,7 +297,7 @@ class FlotageController extends Controller
             'id_demande_flote' => $demande_flotte->id,
             'id_user' => $connected_user->id,
             'statut' => Statut::EN_ATTENTE,
-            'from' => $request->id_puce_flottage,
+            'from' => $source,
             'montant' => $montant,
             'reste' => $montant
         ]);
@@ -361,6 +376,16 @@ class FlotageController extends Controller
             ]);
         }
 
+        //Coherence du montant de la transaction
+        $montant = $request->montant;
+        if ($montant <= 0) {
+            return response()->json([
+                'message' => "Montant de la transaction incohérent",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
         $puce_from = Puce::find($request->id_puce_from);
         //On verifi si la puce de  flottage passée existe réellement
         if (is_null($puce_from)) {
@@ -371,7 +396,6 @@ class FlotageController extends Controller
             ]);
         }
 
-        $montant = $request->montant;
         //On se rassure que le solde est suffisant
         if ($puce_from->solde < $montant) {
             return response()->json([

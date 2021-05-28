@@ -9,7 +9,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
-use App\Notifications\Recouvrement as Notif_recouvrement;
 
 class TreasuryController extends Controller
 {
@@ -25,8 +24,9 @@ class TreasuryController extends Controller
     }
 
     /**
-     * //Creer un Encaissement
+     * Creer un Encaissement
      */
+    // GESTIONNAIRE DE FLOTTE
     public function treasury_in(Request $request)
     {
         // Valider données envoyées
@@ -35,7 +35,6 @@ class TreasuryController extends Controller
             'nom' => ['required', 'string'],
             'raison' => ['required', 'string'],
             'description' => ['nullable', 'string'],
-            'recu' => ['nullable', 'file', 'max:10000']
         ]);
 
         if ($validator->fails()) {
@@ -46,91 +45,61 @@ class TreasuryController extends Controller
             ]);
         }
 
-        //recuperer la caisse de l'utilisateur connecté
-        $user = Auth::user();
-
-        // Récupérer les données validées
-        $recu = null;
-        if ($request->hasFile('recu') && $request->file('recu')->isValid()) {
-            $recu = $request->recu->store('files/recu/versement');
-        }
-
-        $nom = $request->nom;
-        $raison = $request->raison;
+        //Coherence du montant de la transaction
         $montant = $request->montant;
-        $description = $request->description;
-
-        $userRole = $user->roles->first()->name;
-        if($userRole === Roles::GESTION_FLOTTE) {
-            // Gestionnaire de flotte
-            // Nouveau versement
-            $versement = new Treasury([
-                'receipt' => $recu,
-                'name' => $nom,
-                'amount' => $montant,
-                'reason' => $raison,
-                'type' => Transations::TREASURY_GF_IN,
-                'id_manager' => $user->id,
-                'description' => $description,
-            ]);
-        } else {
-            // responsable de zone
-            // Nouveau versement
-            $versement = new Treasury([
-                'receipt' => $recu,
-                'name' => $nom,
-                'amount' => $montant,
-                'reason' => $raison,
-                'type' => Transations::TREASURY_RZ_IN,
-                'id_manager' => $user->id,
-                'description' => $description,
-            ]);
-        }
-
-        // creation du versement
-        if ($versement->save())
-        {
-            //notification du donneur
-            $user->notify(new Notif_recouvrement([
-                'data' => $versement,
-                'message' => "Nouvel encaissement de votre part"
-            ]));
-
-            //on credite le compte du donneur
-            $caisse = $user->caisse->first();
-
-            if($userRole === Roles::GESTION_FLOTTE) {
-                // Gestionnaire de flotte
-                $caisse->solde = $caisse->solde + $montant;
-            } else {
-                // responsable de zone
-                $caisse->solde = $caisse->solde - $montant;
-            }
-
-            $caisse->save();
-
-            // Renvoyer un message de succès
+        if ($montant <= 0) {
             return response()->json([
-                'message' => 'Encaissement effectué avec succès',
-                'status' => true,
-                'data' => [
-                    'treasury' => $versement,
-                    'manager' => $versement->manager,
-                ]
-            ]);
-        } else {
-            // Renvoyer une erreur
-            return response()->json([
-                'message' => 'Erreur lors de la Creation',
+                'message' => "Montant de la transaction incohérent",
                 'status' => false,
                 'data' => null
             ]);
         }
+
+        $connected_user = Auth::user();
+        $nom = $request->nom;
+        $raison = $request->raison;
+        $description = $request->description;
+
+        $is_collector = $connected_user->roles->first()->name === Roles::RECOUVREUR;
+        $type = $is_collector ? Transations::TREASURY_RZ_IN : Transations::TREASURY_GF_IN;
+
+        // Nouveau versement
+        $versement = new Treasury([
+            'name' => $nom,
+            'amount' => $montant,
+            'reason' => $raison,
+            'type' => $type,
+            'id_manager' => $connected_user->id,
+            'description' => $description,
+        ]);
+        $versement->save();
+
+        //on credite le compte du donneur
+        $caisse = $connected_user->caisse->first();
+        $caisse->solde = $caisse->solde + $montant;
+        $caisse->save();
+
+        if($is_collector) {
+            // Augmenter la dette si l'opération est éffectué par un RZ
+            $connected_user->dette = $connected_user->dette + $montant;
+            $connected_user->save();
+        }
+
+        // Renvoyer un message de succès
+        return response()->json([
+            'message' => 'Encaissement effectué avec succès',
+            'status' => true,
+            'data' => [
+                'treasury' => $versement,
+                'manager' => $versement->manager,
+            ]
+        ]);
     }
 
     /**
-     * //Creer un Decaissement
+     * Creer un Decaissement
      */
+    // GESTIONNAIRE DE FLOTTE
     public function treasury_out(Request $request)
     {
         // Valider données envoyées
@@ -139,7 +108,6 @@ class TreasuryController extends Controller
             'nom' => ['required', 'string'],
             'raison' => ['required', 'string'],
             'description' => ['nullable', 'string'],
-            'recu' => ['nullable', 'file', 'max:10000']
         ]);
 
         if ($validator->fails()) {
@@ -150,115 +118,90 @@ class TreasuryController extends Controller
             ]);
         }
 
-        //recuperer la caisse de l'utilisateur connecté
-        $user = Auth::user();
-
-        // Récupérer les données validées
-        $recu = null;
-        if ($request->hasFile('recu') && $request->file('recu')->isValid()) {
-            $recu = $request->recu->store('files/recu/versement');
-        }
-
-        $nom = $request->nom;
-        $raison = $request->raison;
+        //Coherence du montant de la transaction
         $montant = $request->montant;
-        $description = $request->description;
-
-        $userRole = $user->roles->first()->name;
-        if($userRole === Roles::GESTION_FLOTTE) {
-            // Gestionnaire de flotte
-            // Nouveau versement
-            $versement = new Treasury([
-                'receipt' => $recu,
-                'name' => $nom,
-                'amount' => $montant,
-                'reason' => $raison,
-                'type' => Transations::TREASURY_GF_OUT,
-                'id_manager' => $user->id,
-                'description' => $description,
-            ]);
-        } else {
-            // responsable de zone
-            // Nouveau versement
-            $versement = new Treasury([
-                'receipt' => $recu,
-                'name' => $nom,
-                'amount' => $montant,
-                'reason' => $raison,
-                'type' => Transations::TREASURY_RZ_OUT,
-                'id_manager' => $user->id,
-                'description' => $description,
-            ]);
-        }
-
-        $caisse = $user->caisse->first();
-
-        $threshold = ($userRole === Roles::GESTION_FLOTTE) ? $caisse->solde : -1 * $caisse->solde;
-
-        if($threshold >= $montant) {
-            // creation du versement
-            if ($versement->save())
-            {
-                //notification du donneur
-                $user->notify(new Notif_recouvrement([
-                    'data' => $versement,
-                    'message' => "Nouveau décaissement de votre part"
-                ]));
-
-                //on credite le compte du donneur
-                if($userRole === Roles::GESTION_FLOTTE) {
-                    // Gestionnaire de flotte
-                    $caisse->solde = $caisse->solde - $montant;
-                } else {
-                    // responsable de zone
-                    $caisse->solde = $caisse->solde + $montant;
-                }
-
-                $caisse->save();
-
-                // Renvoyer un message de succès
-                return response()->json([
-                    'message' => 'Décaissement effectué avec succès',
-                    'status' => true,
-                    'data' => [
-                        'treasury' => $versement,
-                        'manager' => $versement->manager,
-                    ]
-                ]);
-            } else {
-                // Renvoyer une erreur
-                return response()->json([
-                    'message' => 'Erreur lors de la Creation',
-                    'status' => false,
-                    'data' => null
-                ]);
-            }
-        } else {
-            // Solde insuffisant
+        if ($montant <= 0) {
             return response()->json([
-                'message' => 'Solde insufisant',
+                'message' => "Montant de la transaction incohérent",
                 'status' => false,
                 'data' => null
             ]);
         }
+
+        $connected_user = Auth::user();
+        $nom = $request->nom;
+        $raison = $request->raison;
+        $description = $request->description;
+
+        $is_collector = $connected_user->roles->first()->name === Roles::RECOUVREUR;
+        $type = $is_collector ? Transations::TREASURY_RZ_OUT : Transations::TREASURY_GF_OUT;
+
+        $caisse = $connected_user->caisse->first();
+
+        if($caisse->solde < $montant) {
+            return response()->json([
+                'message' => 'Solde caisse insuffisant pour cet opération',
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        // Nouveau versement
+        $versement = new Treasury([
+            'name' => $nom,
+            'amount' => $montant,
+            'reason' => $raison,
+            'type' => $type,
+            'id_manager' => $connected_user->id,
+            'description' => $description,
+        ]);
+        $versement->save();
+
+        //on credite le compte du donneur
+        $caisse->solde = $caisse->solde - $montant;
+        $caisse->save();
+
+        if($is_collector) {
+            // Augmenter la dette si l'opération est éffectué par un RZ
+            $connected_user->dette = $connected_user->dette - $montant;
+            $connected_user->save();
+        }
+
+        // Renvoyer un message de succès
+        return response()->json([
+            'message' => 'Décaissement effectué avec succès',
+            'status' => true,
+            'data' => [
+                'treasury' => $versement,
+                'manager' => $versement->manager,
+            ]
+        ]);
     }
 
     /**
-     * ////lister les Encaissements
+     * Lister les Encaissements
      */
+    // GESTIONNAIRE DE FLOTTE
     public function treasuries_in()
     {
         $user = Auth::user();
         $userRole = $user->roles->first()->name;
 
         if($userRole === Roles::GESTION_FLOTTE) {
-            $versements = Treasury::where('id_manager', $user->id)->where('type', Transations::TREASURY_GF_IN)->orderBy('created_at', 'desc')->paginate(6);
+            $versements = Treasury::where('id_manager', $user->id)
+                ->where('type', Transations::TREASURY_GF_IN)
+                ->orderBy('created_at', 'desc')
+                ->paginate(9);
         } else if($userRole === Roles::RECOUVREUR) {
-            $versements = Treasury::where('id_manager', $user->id)->where('type', Transations::TREASURY_RZ_IN)->orderBy('created_at', 'desc')->paginate(6);
+            $versements = Treasury::where('id_manager', $user->id)
+                ->where('type', Transations::TREASURY_RZ_IN)
+                ->orderBy('created_at', 'desc')
+                ->paginate(9);
         } else {
             $versements = Treasury::where('type', Transations::TREASURY_GF_IN)
                 ->orWhere('type', Transations::TREASURY_RZ_IN)
-                ->orderBy('created_at', 'desc')->paginate(6);
+                ->orderBy('created_at', 'desc')
+                ->paginate(9);
         }
 
         $versements_response =  $this->treasuriesResponse($versements->items());
@@ -274,21 +217,29 @@ class TreasuryController extends Controller
     }
 
     /**
-     * ////lister les Decaissements
+     * Lister les Decaissements
      */
+    // GESTIONNAIRE DE FLOTTE
     public function treasuries_out()
     {
         $user = Auth::user();
         $userRole = $user->roles->first()->name;
 
         if($userRole === Roles::GESTION_FLOTTE) {
-            $versements = Treasury::where('id_manager', $user->id)->where('type', Transations::TREASURY_GF_OUT)->orderBy('created_at', 'desc')->paginate(6);
+            $versements = Treasury::where('id_manager', $user->id)
+                ->where('type', Transations::TREASURY_GF_OUT)
+                ->orderBy('created_at', 'desc')
+                ->paginate(9);
         } else if($userRole === Roles::RECOUVREUR) {
-            $versements = Treasury::where('id_manager', $user->id)->where('type', Transations::TREASURY_RZ_OUT)->orderBy('created_at', 'desc')->paginate(6);
+            $versements = Treasury::where('id_manager', $user->id)
+                ->where('type', Transations::TREASURY_RZ_OUT)
+                ->orderBy('created_at', 'desc')
+                ->paginate(9);
         } else {
             $versements = Treasury::where('type', Transations::TREASURY_GF_OUT)
                 ->orWhere('type', Transations::TREASURY_RZ_OUT)
-                ->orderBy('created_at', 'desc')->paginate(6);
+                ->orderBy('created_at', 'desc')
+                ->paginate(9);
         }
 
         $versements_response =  $this->treasuriesResponse($versements->items());

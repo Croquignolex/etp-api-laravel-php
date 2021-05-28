@@ -53,8 +53,18 @@ class Retour_flotteController extends Controller
             ]);
         }
 
-        $flottage = Approvisionnement::find($request->id_flottage);
+        //Coherence du montant de la transaction
+        $montant = $request->montant;
+        if ($montant <= 0) {
+            return response()->json([
+                'message' => "Montant de la transaction incohérent",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
         //On verifi si le flottage passée existe réellement
+        $flottage = Approvisionnement::find($request->id_flottage);
         if (is_null($flottage)) {
             return response()->json([
                 'message' => "Le flottage n'existe pas",
@@ -62,8 +72,6 @@ class Retour_flotteController extends Controller
                 'data' => null
             ]);
         }
-
-        $montant = $request->montant;
 
         // Vérification du montat à recouvrir
         if ($flottage->reste < $montant) {
@@ -82,7 +90,7 @@ class Retour_flotteController extends Controller
         //On verifi que le montant n'est pas supperieur au montant demandé
         if ($puce_agent == null || $puce_flottage == null) {
             return response()->json([
-                'message' => "L'une des puce n'existe pas",
+                'message' => "L'une des puces n'existe pas",
                 'status' => false,
                 'data' => null
             ]);
@@ -122,6 +130,10 @@ class Retour_flotteController extends Controller
         ]);
         $retour_flotte->save();
 
+        //On recupère la puce de l'agent concerné et on debite
+        $puce_agent->solde = $puce_agent->solde - $montant;
+        $puce_agent->save();
+
         if($status === Statut::EN_COURS) {
             //Notification du gestionnaire de flotte
             $message = 'Retour de flote éffectué par ' . $connected_user->name;
@@ -141,18 +153,7 @@ class Retour_flotteController extends Controller
                     ]));
                 }
             }
-        }
-
-        //notification de l'agent
-        $user->notify(new Notif_retour_flotte([
-            'data' => $retour_flotte,
-            'message' => $message
-        ]));
-
-        if($status === Statut::EFFECTUER) {
-            //On recupère la puce de l'agent concerné et on debite
-            $puce_agent->solde = $puce_agent->solde - $montant;
-
+        } else if($status === Statut::EFFECTUER) {
             //on credite la puce de ETP concernée
             $puce_flottage->solde = $puce_flottage->solde + $montant;
 
@@ -162,9 +163,14 @@ class Retour_flotteController extends Controller
                 $connected_user->save();
             }
 
-            $puce_agent->save();
             $puce_flottage->save();
         }
+
+        //notification de l'agent
+        $user->notify(new Notif_retour_flotte([
+            'data' => $retour_flotte,
+            'message' => $message
+        ]));
 
         //On calcule le reste à recouvrir
         $flottage->reste = $flottage->reste - $montant;
@@ -382,6 +388,16 @@ class Retour_flotteController extends Controller
         $collector = $retour_flotte->user;
         $is_collector = $collector->roles->first()->name === Roles::RECOUVREUR;
 
+        //On recupère la puce de l'agent concerné et on debite
+        $montant = $retour_flotte->montant;
+
+        //on credite la puce de ETP concernée
+        $puce_flottage = $retour_flotte->puce_destination;
+        $puce_flottage->solde = $puce_flottage->solde + $montant;
+
+        $puce_flottage->save();
+        $retour_flotte->save();
+
         if($is_collector) {
             // On notifie si on est en presence d'un RZ
             $message = "Retour flotte à été apprové par " . $connected_user->name;
@@ -390,19 +406,6 @@ class Retour_flotteController extends Controller
                 'message' => $message
             ]));
         }
-
-        //On recupère la puce de l'agent concerné et on debite
-        $montant = $retour_flotte->montant;
-        $puce_agent = $retour_flotte->puce_source;
-        $puce_agent->solde = $puce_agent->solde - $montant;
-
-        //on credite la puce de ETP concernée
-        $puce_flottage = $retour_flotte->puce_destination;
-        $puce_flottage->solde = $puce_flottage->solde + $montant;
-
-        $puce_agent->save();
-        $puce_flottage->save();
-        $retour_flotte->save();
 
         return response()->json([
             'message' => 'Retour flotte apprové avec succès',

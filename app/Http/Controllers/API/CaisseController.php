@@ -146,6 +146,16 @@ class CaisseController extends Controller
             ]);
         }
 
+        //Coherence du montant de la transaction
+        $montant = $request->montant;
+        if ($montant <= 0) {
+            return response()->json([
+                'message' => "Montant de la transaction incohérent",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
         //On verifi si le receveur est vraiment utilisateur
         $receveur = User::find($request->id_receveur);
         if (is_null($receveur)) {
@@ -157,7 +167,6 @@ class CaisseController extends Controller
         }
 
         //recuperer la caisse de l'utilisateur connecté
-        $montant = $request->montant;
         $connected_user = Auth::user();
         $caisse_emetteur = $connected_user->caisse->first();
 
@@ -185,6 +194,9 @@ class CaisseController extends Controller
         ]);
         $decaissement->save();
 
+        $caisse_emetteur->solde = $caisse_emetteur->solde - $montant;
+        $caisse_emetteur->save();
+
         //notification du receveur
         $message = "Décaissement éffectué par " . $connected_user->name;
         $receveur->notify(new Notif_recouvrement([
@@ -205,8 +217,9 @@ class CaisseController extends Controller
     }
 
     /**
-     * //Creer une passation de service
+     * Creer une passation de service
      */
+    // GESTIONNAIRE DE FLOTTE
     public function passation(Request $request)
     {
         // Valider données envoyées
@@ -223,18 +236,30 @@ class CaisseController extends Controller
             ]);
         }
 
-        //On verifi si le receveur est vraiment utilisateur
-        if (!($receveur = User::find($request->id_receveur))) {
+        //Coherence du montant de la transaction
+        $montant = $request->montant;
+        if ($montant <= 0) {
             return response()->json([
-                'message' => "L'utilisateur en paramettre n'existe pas en BD",
+                'message' => "Montant de la transaction incohérent",
                 'status' => false,
                 'data' => null
             ]);
         }
-        $user = Auth::user();
+
+        //On verifi si le receveur est vraiment utilisateur
+        $receveur = User::find($request->id_receveur);
+        if (is_null($receveur)) {
+            return response()->json([
+                'message' => "Gestionnaire de flotte invalide",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        $connected_user = Auth::user();
 
         //On verifi si le receveur est different de l'emetteur
-        if ($receveur->id === $user->id) {
+        if ($receveur->id === $connected_user->id) {
             return response()->json([
                 'message' => "Impossible d'éffectuer une passation de service à soi même",
                 'status' => false,
@@ -242,75 +267,94 @@ class CaisseController extends Controller
             ]);
         }
 
-        //recuperer la caisse de l'utilisateur qui recoit le verssement
-        $caisse_receveur = $receveur->caisse->first();
+        $connected_user_caisse = $connected_user->caisse->first();
 
-        //recuperer la caisse de l'utilisateur connecté
-
-        $caisse = $user->caisse->first();
-
-        //On verifi si le compte du payeur est suffisant
-        /*if ($caisse->solde < $request->montant) {
+        // Vérifier le montant dans la caisse
+        if($connected_user_caisse->solde < $montant) {
             return response()->json([
-                'message' => "Le solde du payeur est insuffisant",
-                'status' => false,
-                'data' => null
-            ]);
-        }*/
-
-        // Récupérer les données validées
-        $receveur = $request->id_receveur;
-        $montant = $request->montant;
-        $id_caisse = $caisse_receveur->id;
-        $add_by = $user->id;
-        $note = "pour une passation de service";
-
-        // Nouveau decaissement
-        $decaissement = new Versement ([
-            'recu' => null,
-            'correspondant' => $receveur,
-            'montant' => $montant,
-            'id_caisse' => $id_caisse,
-            'add_by' => $add_by,
-            'note' => $note
-        ]);
-
-        // creation du decaissement
-        if ($decaissement->save())
-        {
-            //notification du receveur
-            $receveur = User::find($receveur);
-            $receveur->notify(new Notif_recouvrement([
-                'data' => $decaissement,
-                'message' => "Nouvelle passation de service vers votre compte"
-            ]));
-
-            //on credite le compte du receveur
-            $caisse_receveur->solde = $caisse_receveur->solde + $montant;
-            $caisse_receveur->save();
-
-            //on debite le compte de la gestionnaire de flotte
-            $caisse->solde = $caisse->solde - $montant;
-            $caisse->save();
-
-            // Renvoyer un message de succès
-            return response()->json([
-                'message' => 'Passation de service effectuée avec succès',
-                'status' => true,
-                'data' => [
-                    'versement' => $decaissement,
-                    'emetteur' => User::find($decaissement->add_by),
-                    'recepteur' => User::find($decaissement->correspondant),
-                ]
-            ]);
-        } else {
-            // Renvoyer une erreur
-            return response()->json([
-                'message' => 'Erreur lors de la Creation',
+                'message' => "Solde caisse insuffisant pour éffectuer cette opération",
                 'status' => false,
                 'data' => null
             ]);
         }
+
+        // Récupérer les données validées
+        $add_by = $connected_user->id;
+        $note = "pour une passation de service";
+
+        // Nouveau decaissement
+        $decaissement = new Versement ([
+            'correspondant' => $receveur->id,
+            'montant' => $montant,
+            'add_by' => $add_by,
+            'note' => $note,
+            'statut' => Statut::EN_COURS
+        ]);
+        $decaissement->save();
+
+        // Cantonner le montant à passer
+        $connected_user_caisse->solde = $connected_user_caisse->solde - $montant;
+        $connected_user_caisse->save();
+
+        //notification du receveur
+        $message = "Passation de service éffectuée par " . $connected_user->name;
+        $receveur->notify(new Notif_recouvrement([
+            'data' => $decaissement,
+            'message' => $message
+        ]));
+
+        // Renvoyer un message de succès
+        return response()->json([
+            'message' => 'Passation de service effectuée avec succès',
+            'status' => true,
+            'data' => [
+                'versement' => $decaissement,
+                'emetteur' => $decaissement->manager,
+                'recepteur' => $decaissement->collector,
+            ]
+        ]);
+    }
+
+    /**
+     * Confirmer la passation de service
+     */
+    // GESTIONNAIRE DE FLOTTE
+    public function approuve_passation($id)
+    {
+        $versement = Versement::find($id);
+        //si le destockage n'existe pas
+        if (is_null($versement)) {
+            return response()->json([
+                'message' => "La passatioon de service n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        //on approuve le destockage
+        $versement->statut = Statut::EFFECTUER;
+        $versement->save();
+        $connected_user = Auth::user();
+
+        // Notifier la GF qui a initier la passation de service
+        $message = "Passation de service confirmé par " . $connected_user->name;
+        $versement->manager->notify(new Notif_recouvrement([
+            'data' => $versement,
+            'message' => $message
+        ]));
+
+        $caisse_recepteur = $connected_user->caisse->first();
+        $montant = $versement->montant;
+
+        //on credite le compte de la gestionnaire de flotte
+        $caisse_recepteur->solde = $caisse_recepteur->solde + $montant;
+        $caisse_recepteur->save();
+
+        return response()->json([
+            'message' => "Passation de service confirmé avec succès",
+            'status' => true,
+            'data' => null
+        ]);
     }
 
     /**
@@ -374,13 +418,8 @@ class CaisseController extends Controller
             'message' => $message
         ]));
 
-        $caisse_donneur = $versement->collector->caisse->first();
         $caisse_recepteur = $connected_user->caisse->first();
         $montant = $versement->montant;
-
-        //on credite le compte du donneur
-        $caisse_donneur->solde = $caisse_donneur->solde - $montant;
-        $caisse_donneur->save();
 
         //on credite le compte de la gestionnaire de flotte
         $caisse_recepteur->solde = $caisse_recepteur->solde + $montant;
@@ -477,8 +516,9 @@ class CaisseController extends Controller
     }
 
     /**
-     * ////lister les passations de service
+     * Lister les passations de service
      */
+    // GESTIONNAIRE DE FLOTTE
     public function passations_list()
     {
         $getionnaire_id = Auth::user()->id;
@@ -488,7 +528,9 @@ class CaisseController extends Controller
                 $query->where('add_by', $getionnaire_id);
                 $query->orWhere('correspondant', $getionnaire_id);
             })
-            ->orderBy('created_at', 'desc')->paginate(6);
+            ->orderBy('statut', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->paginate(9);
 
         $versements_response =  $this->handoverResponse($versements->items());
 
@@ -833,8 +875,8 @@ class CaisseController extends Controller
         {
             $returnedHandovers[] = [
                 'versement' => $versement,
-                'emetteur' => User::find($versement->add_by),
-                'recepteur' => User::find($versement->correspondant),
+                'emetteur' => $versement->manager,
+                'recepteur' => $versement->collector,
             ];
         }
 

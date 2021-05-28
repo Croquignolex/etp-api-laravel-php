@@ -20,4 +20,14 @@ class Flottage_interne extends Model
     {
         return $this->belongsTo('App\User', 'id_user');
     }
+
+    public function puce_emetrice()
+    {
+        return $this->belongsTo('App\Puce', 'id_sim_from');
+    }
+
+    public function puce_receptrice()
+    {
+        return $this->belongsTo('App\Puce', 'id_sim_to');
+    }
 }

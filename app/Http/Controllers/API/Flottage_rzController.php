@@ -47,12 +47,19 @@ class Flottage_rzController extends Controller
             ]);
         }
 
-        //On recupère la puce qui envoie
-        $puce_from = Puce::find($request->id_puce_from);
-        //On recupère la puce qui recoit
-        $puce_to = Puce::find($request->id_puce_to);
+        //Coherence du montant de la transaction
+        $montant = $request->montant;
+        if ($montant <= 0) {
+            return response()->json([
+                'message' => "Montant de la transaction incohérent",
+                'status' => false,
+                'data' => null
+            ]);
+        }
 
         // On verifi que la puce passée en paramettre existe
+        $puce_from = Puce::find($request->id_puce_from);
+        $puce_to = Puce::find($request->id_puce_to);
         if (is_null($puce_from) || is_null($puce_to)) {
             return response()->json([
                 'message' => "Une ou plusieurs puces entrées n'existe pas",
@@ -62,7 +69,7 @@ class Flottage_rzController extends Controller
         }
 
         //On se rassure que le solde est suffisant
-        if ($puce_from->solde < $request->montant) {
+        if ($puce_from->solde < $montant) {
             return response()->json([
                 'message' => "Le solde de la puce émetrice insuffisant",
                 'status' => false,
@@ -82,6 +89,10 @@ class Flottage_rzController extends Controller
             'montant' => $request->montant,
         ]);
         $flottage_rz->save();
+
+        // On retranche quand même la flotte dans la puce emettrice
+        $puce_from->solde = $puce_from->solde - $montant;
+        $montant->save();
 
         //Database Notification du RZ
         $rz = $puce_to->rz;
