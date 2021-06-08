@@ -39,6 +39,7 @@ class ApprovisionnementEtpController extends Controller
      * Effectuer un destockage
      */
     // GESTIONNAIRE DE FLOTTE
+    // RESPONSABLE DE ZONE
     public function store(Request $request)
     {
         // Valider données envoyées
@@ -68,6 +69,18 @@ class ApprovisionnementEtpController extends Controller
             ]);
         }
 
+        $connected_user = Auth::user();
+        $connected_caisse = $connected_user->caisse->first();
+
+        // Vérification du solde caisse
+        if ($connected_caisse->solde < $montant) {
+            return response()->json([
+                'message' => "Solde caisse insuffisant pour éffectuer cette opération",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
         $type = $request->type;
         $fournisseur = $request->id_fournisseur;
         $id_agent = $request->id_agent;
@@ -76,7 +89,6 @@ class ApprovisionnementEtpController extends Controller
         $puce_receptrice = Puce::find($id_puce);
         $type_puce = $puce_receptrice->type_puce->name;
 
-        $connected_user = Auth::user();
         $user_role = $connected_user->roles->first()->name;
         $is_collector = $user_role === Roles::RECOUVREUR;
 
@@ -87,30 +99,29 @@ class ApprovisionnementEtpController extends Controller
             'id_recouvreur' => $connected_user->id,
             'type' => $type,
             'id_puce' => $id_puce,
-            'id_agent' => isset($request->id_agent) ? $id_agent : null,
-            'id_fournisseur' => isset($request->id_fournisseur) ? $fournisseur : null,
+            'id_agent' => isset($id_agent) ? $id_agent : null,
+            'id_fournisseur' => isset($fournisseur) ? $fournisseur : null,
             'statut' => $status,
             'montant' => $montant
         ]);
         $destockage->save();
 
-        if($type === Statut::BY_AGENT) {
-            // Dimuner les especes dans la caisse
-            $connected_caisse = $connected_user->caisse->first();
-            $connected_caisse->solde = $connected_caisse->solde - $montant;
-            $connected_caisse->save();
+        // Dimuner les especes dans la caisse
+        $connected_caisse->solde = $connected_caisse->solde - $montant;
+        $connected_caisse->save();
 
-            if($status === Statut::EN_COURS) {
+        if ($status === Statut::EFFECTUER) {
+            // Flotte ajouté dans les puce emetrice
+            $puce_receptrice->solde = $puce_receptrice->solde + $montant;
+            $puce_receptrice->save();
+        }
+        else if ($status === Statut::EN_COURS) {
+            if($type === Statut::BY_AGENT) {
                 $message = "Déstockage éffectué par " . $connected_user->name;
-                $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
-                $event = new NotificationsEvent($role->id, ['message' => $message]);
-                broadcast($event)->toOthers();
-
                 //Database Notification
                 $users = User::all();
                 foreach ($users as $user) {
-                    if ($user->hasRole([$role->name])) {
-
+                    if ($user->hasRole([ Roles::GESTION_FLOTTE])) {
                         $user->notify(new Notif_destockage([
                             'data' => $destockage,
                             'message' => $message
@@ -123,24 +134,28 @@ class ApprovisionnementEtpController extends Controller
                     'message' => $message,
                     'data' => $destockage
                 ]));
-
-                if($is_collector && $type_puce === Statut::FLOTTAGE) {
-                    // Si RZ et puce GF (reduire la dette)
-                    $connected_user->dette = $connected_user->dette - $montant;
-                    $connected_user->save();
+            }
+            else if($type === Statut::BY_DIGIT_PARTNER || $type === Statut::BY_BANK) {
+                $message = "Approvisionnment éffectué par " . $connected_user->name;
+                //Database Notification
+                $users = User::all();
+                foreach ($users as $user) {
+                    if ($user->hasRole([Roles::SUPERVISEUR])) {
+                        $user->notify(new Notif_destockage([
+                            'data' => $destockage,
+                            'message' => $message
+                        ]));
+                    }
                 }
-            } else if ($status === Statut::EFFECTUER) {
-                // Flotte ajouté dans les puce emetrice
-                $puce_receptrice->solde = $puce_receptrice->solde + $montant;
-                $puce_receptrice->save();
             }
         }
 
         $user = $destockage->id_agent === null ? $destockage->id_agent : $destockage->agent_user;
         $agent = $user === null ? $user : $user->agent->first();
+        $message = ($type === Statut::BY_AGENT) ? "Déstockage effectué avec succès" : "Approvisionnement effectué avec succès";
 
         return response()->json([
-            'message' => "Déstockage effectué avec succès",
+            'message' => $message,
             'status' => true,
             'data' => [
                 'id' => $destockage->id,
@@ -149,7 +164,7 @@ class ApprovisionnementEtpController extends Controller
                 'created_at' => $destockage->created_at,
                 'recouvreur' => $connected_user,
                 'puce' => $puce_receptrice,
-                'fournisseur' => $fournisseur,
+                'fournisseur' => $destockage->fournisseur,
                 'agent' => $agent,
                 'user' => $user,
                 'operateur' => $puce_receptrice->flote
@@ -343,31 +358,30 @@ class ApprovisionnementEtpController extends Controller
             ]);
         }
 
+        $connected_user = Auth::user();
+        $montant = $destockage->montant;
+        $puce_receptrice = $destockage->puce;
+        $destokeur = $destockage->user;
+
         //on approuve le destockage
         $destockage->statut = Statut::EFFECTUER;
-        $destockage->save();
-
-        $destokeur = $destockage->user;
-        $destokeur_role = $destokeur->roles->first()->name;
-        $is_collector = $destokeur_role === Roles::RECOUVREUR;
-
-        $puce_receptrice = $destockage->puce;
-        $montant = $destockage->montant;
 
         // Flotte ajouté dans les puce emetrice
         $puce_receptrice->solde = $puce_receptrice->solde + $montant;
         $puce_receptrice->save();
 
-        $connected_user = Auth::user();
-        $message = "Déstockage apprové par " . $connected_user->name;
+        // Baisser la dette du RZ
+        $destokeur->dette = $destokeur->dette - $montant;
+        $destokeur->save();
 
-        if($is_collector) {
-            //Database Notification du déstockeur RZ
-            $destokeur->notify(new Notif_flottage([
-                'message' => $message,
-                'data' => $destockage
-            ]));
-        }
+        $destockage->save();
+
+        $message = "Déstockage apprové par " . $connected_user->name;
+        //Database Notification du déstockeur RZ
+        $destokeur->notify(new Notif_flottage([
+            'message' => $message,
+            'data' => $destockage
+        ]));
 
         //Database Notification a
         $destockage->agent->user->notify(new Notif_flottage([
@@ -383,12 +397,14 @@ class ApprovisionnementEtpController extends Controller
     }
 
     /**
-     * ////approuver un approvisionnement
+     * Approuver un approvisionnement
      */
+    // SUPERVISEUR
     public function approuve_approvisionnement($id)
     {
         //si le destockage n'existe pas
-        if (!($destockage = Destockage::find($id))) {
+        $destockage = Destockage::find($id);
+        if (is_null($destockage)) {
             return response()->json([
                 'message' => "L'approvisionnement n'existe pas",
                 'status' => false,
@@ -396,43 +412,36 @@ class ApprovisionnementEtpController extends Controller
             ]);
         }
 
+        $connected_user = Auth::user();
+        $montant = $destockage->montant;
+        $master_sim = $destockage->puce;
+        $approvisionneur = $destockage->user;
+
         //on approuve le destockage
         $destockage->statut = Statut::EFFECTUER;
 
-        //message de reussite
-        if ($destockage->save()) {
+        // Augmenter la flotte dans la master sim
+        $master_sim->solde = $master_sim->solde + $montant;
+        $master_sim->save();
 
-            //Notification
-            $role = Role::where('name', Roles::RECOUVREUR)->first();
-            $event = new NotificationsEvent($role->id, ['message' => 'Approvisionnement Approvée']);
-            broadcast($event)->toOthers();
+        // Baisser la dette du RZ
+        $approvisionneur->dette = $approvisionneur->dette - $montant;
+        $approvisionneur->save();
 
-            //Database Notification
-            $users = User::all();
-            foreach ($users as $user) {
+        $destockage->save();
 
-                if ($user->hasRole([$role->name])) {
+        // Notifier si le RZ
+        $message = "Approvisionnement apprové par " . $connected_user;
+        $approvisionneur->notify(new Notif_destockage([
+            'data' => $destockage,
+            'message' => $message
+        ]));
 
-                    $user->notify(new Notif_destockage([
-                        'data' => $destockage,
-                        'message' => "Approvisionnement Approvée"
-                    ]));
-                }
-            }
-
-            return response()->json([
-                'message' => "Approvisionnement apprové avec succès",
-                'status' => true,
-                'data' => null
-            ]);
-         }else {
-            // Renvoyer une erreur
-            return response()->json([
-                'message' => 'Erreur lors de la confirmation',
-                'status'=>false,
-                'data' => null
-            ]);
-        }
+        return response()->json([
+            'message' => "Approvisionnement apprové avec succès",
+            'status' => true,
+            'data' => null
+        ]);
     }
 
     /**
@@ -461,6 +470,7 @@ class ApprovisionnementEtpController extends Controller
      * Lister les approvisionnements
      */
     // GESTIONNAIRE DE FLOTTE
+    // SUPERVISEUR
     public function list_all()
     {
         $destockages = Destockage::where('type', Statut::BY_DIGIT_PARTNER)
@@ -480,36 +490,30 @@ class ApprovisionnementEtpController extends Controller
     }
 
     /**
-     * ////lister les approvisionnements par un responsable de zone
+     * Lister les approvisionnements par un responsable de zone
      */
+    // RESPONSABLE DE ZONE
     public function list_all_collector()
     {
         $user = Auth::user();
-        $userRole = $user->roles->first()->name;
 
-        if($userRole === Roles::RECOUVREUR) {
-            $destockages = Destockage::where('id_recouvreur', $user->id)
-                ->where(function($query) {
-                    $query->where('type', Statut::BY_DIGIT_PARTNER);
-                    $query->orWhere('type', Statut::BY_BANK);
-                })
-                ->orderBy('created_at', 'desc')->paginate(6);
+        $destockages = Destockage::where('id_recouvreur', $user->id)
+            ->where(function($query) {
+                $query->where('type', Statut::BY_DIGIT_PARTNER);
+                $query->orWhere('type', Statut::BY_BANK);
+            })
+            ->orderBy('statut', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->paginate(9);
 
-            return response()->json([
-                'message' => "",
-                'status' => true,
-                'data' => [
-                    'destockages' => DestockageResource::collection($destockages->items()),
-                    'hasMoreData' => $destockages->hasMorePages(),
-                ]
-            ]);
-        } else {
-            return response()->json([
-                'message' => "Cet utilisateur n'est pas un responsable de zone",
-                'status' => false,
-                'data' => null
-            ]);
-        }
+        return response()->json([
+            'message' => "",
+            'status' => true,
+            'data' => [
+                'destockages' => DestockageResource::collection($destockages->items()),
+                'hasMoreData' => $destockages->hasMorePages(),
+            ]
+        ]);
     }
 
     // BY_AGENT
@@ -538,6 +542,7 @@ class ApprovisionnementEtpController extends Controller
      * Effectuer un destockage anonyme
      */
     // GESTIONNAIRE DE FLOTTE
+    // RESPONSABLE DE ZONE
     public function destockage_anonyme(Request $request)
     {
         // Valider données envoyées
@@ -698,17 +703,13 @@ class ApprovisionnementEtpController extends Controller
             $connected_caisse->save();
 
             //Notification
-            if($status === Statut::EN_COURS) {
+            if($status === Statut::EN_COURS)
+            {
                 $message = "Déstockage éffectué par " . $connected_user->name;
-                $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
-                $event = new NotificationsEvent($role->id, ['message' => $message]);
-                broadcast($event)->toOthers();
-
                 //Database Notification
                 $users = User::all();
                 foreach ($users as $user) {
-                    if ($user->hasRole([$role->name])) {
-
+                    if ($user->hasRole([Roles::GESTION_FLOTTE])) {
                         $user->notify(new Notif_destockage([
                             'data' => $destockage,
                             'message' => $message
@@ -721,16 +722,11 @@ class ApprovisionnementEtpController extends Controller
                     'message' => $message,
                     'data' => $destockage
                 ]));
-            } else if($status === Statut::EFFECTUER) {
+            }
+            else if($status === Statut::EFFECTUER)
+            {
                 // Flotte ajouté dans les puce emetrice
                 $puce_receptrice->solde = $puce_receptrice->solde + $montant;
-
-                if($is_collector && $type_puce === Statut::FLOTTAGE) {
-                    // Si RZ et puce GF (reduire la dette)
-                    $connected_user->dette = $connected_user->dette - $montant;
-                    $connected_user->save();
-                }
-
                 $puce_receptrice->save();
             }
 
@@ -753,31 +749,26 @@ class ApprovisionnementEtpController extends Controller
     }
 
     /**
-     * ////lister les destockages par un responsable de zone
+     * Lister les destockages par un responsable de zone
      */
+    // RESPONSABLE DE ZONE
     public function list_all_destockage_collector()
     {
         $user = Auth::user();
-        $userRole = $user->roles->first()->name;
+        $destockages = Destockage::where('type', Statut::BY_AGENT)
+            ->where('id_recouvreur', $user->id)
+            ->orderBy('statut', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->paginate(9);
 
-        if($userRole === Roles::RECOUVREUR) {
-            $destockages = Destockage::where('type', Statut::BY_AGENT)->where('id_recouvreur', $user->id)->orderBy('created_at', 'desc')->paginate(6);
-
-            return response()->json([
-                'message' => "",
-                'status' => true,
-                'data' => [
-                    'destockages' => DestockageResource::collection($destockages->items()),
-                    'hasMoreData' => $destockages->hasMorePages(),
-                ]
-            ]);
-        } else {
-            return response()->json([
-                'message' => "Cet utilisateur n'est pas un responsable de zone",
-                'status' => false,
-                'data' => null
-            ]);
-        }
+        return response()->json([
+            'message' => "",
+            'status' => true,
+            'data' => [
+                'destockages' => DestockageResource::collection($destockages->items()),
+                'hasMoreData' => $destockages->hasMorePages(),
+            ]
+        ]);
     }
 
     /**
@@ -786,27 +777,19 @@ class ApprovisionnementEtpController extends Controller
     public function list_all_destockage_agent()
     {
         $user = Auth::user();
-        $userRole = $user->roles->first()->name;
+        $destockages = Destockage::where('type', Statut::BY_AGENT)
+            ->where('id_agent', $user->id)
+            ->orderBy('statut', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->paginate(9);
 
-        if($userRole === Roles::AGENT || $userRole === Roles::RESSOURCE) {
-            $destockages = Destockage::where('type', Statut::BY_AGENT)
-                ->where('id_agent', $user->id)
-                ->orderBy('created_at', 'desc')->paginate(6);
-
-            return response()->json([
-                'message' => "",
-                'status' => true,
-                'data' => [
-                    'destockages' => DestockageResource::collection($destockages->items()),
-                    'hasMoreData' => $destockages->hasMorePages(),
-                ]
-            ]);
-        } else {
-            return response()->json([
-                'message' => "Cet utilisateur n'est pas un agent/ressource",
-                'status' => false,
-                'data' => null
-            ]);
-        }
+        return response()->json([
+            'message' => "",
+            'status' => true,
+            'data' => [
+                'destockages' => DestockageResource::collection($destockages->items()),
+                'hasMoreData' => $destockages->hasMorePages(),
+            ]
+        ]);
     }
 }

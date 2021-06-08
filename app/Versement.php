@@ -22,12 +22,12 @@ class Versement extends Model
         return $this->belongsTo('App\Caisse', 'id_caisse');
     }
 
-    public function manager()
+    public function user()
     {
         return $this->belongsTo('App\User', 'add_by');
     }
 
-    public function collector()
+    public function related()
     {
         return $this->belongsTo('App\User', 'correspondant');
     }

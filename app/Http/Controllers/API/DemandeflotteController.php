@@ -30,9 +30,11 @@ class DemandeflotteController extends Controller
     }
 
     /**
-     * //Initier une demande de Flotte
+     * Initier une demande de Flotte
      */
-    public function store(Request $request, $id)
+    // AGENT
+    // RESSOURCE
+    public function store(Request $request)
     {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
@@ -48,7 +50,19 @@ class DemandeflotteController extends Controller
             ]);
         }
 
-        if (!($puce = Puce::Find($request->id_puce))) {
+        //Coherence du montant de la transaction
+        $montant = $request->montant;
+        if ($montant <= 0) {
+            return response()->json([
+                'message' => "Montant de la transaction incohérent",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        // Vérifier la puce agent
+        $puce = Puce::find($request->id_puce);
+        if (is_null($puce)) {
             return response()->json([
                 'message' => "Cette puce n'existe pas",
                 'status' => false,
@@ -56,87 +70,55 @@ class DemandeflotteController extends Controller
             ]);
         }
 
-        if (!($puce->agent->user->id ==  $id)) {
+        // Vérification de l'appartenance de la puce
+        $connected_user = Auth::user();
+        if ($puce->agent->user->id !== $connected_user->id) {
             return response()->json([
-                'message' => "La puce selectionnée doit vous appartenir",
+                'message' => "Cette puce ne vous appartient pas",
                 'status' => false,
                 'data' => null
             ]);
         }
-
-        // Récupérer les données validées
-        $id_user = $id;
-        $add_by = $id;
-        $reference = null;
-        $montant = $request->montant;
-        $statut = Statut::EN_ATTENTE;
-        $id_puce = $request->id_puce;
 
         // Nouvelle demande de flotte
         $demande_flote = new Demande_flote([
-            'id_user' => $id_user,
-            'add_by' => $add_by,
-            'reference' => $reference,
+            'id_user' => $connected_user->id,
+            'add_by' => $connected_user->id,
             'montant' => $montant,
             'reste' => $montant,
-            'statut' => $statut,
-            'source' => null,
-			'id_puce' => $id_puce,
+            'statut' => Statut::EN_ATTENTE,
+			'id_puce' => $puce->id,
         ]);
+        $demande_flote->save();
 
-        // creation de La demande
-        if ($demande_flote->save()) {
-
-            ////Broadcast Notification
-            $message = "Demande de flotte éffectué";
-            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
-            $event = new NotificationsEvent($role->id, ['message' => $message]);
-            broadcast($event)->toOthers();
-
-            //Database Notification
-            $users = User::all();
-            foreach ($users as $user) {
-
-                if ($user->hasRole([$role->name])) {
-
-                    $user->notify(new Notif_demande_flotte([
-                        'data' => $demande_flote,
-                        'message' => $message
-                    ]));
-                }
+        //Database Notification
+        $message = "Nouvelle demande de flotte éffectué par " . $connected_user->name;
+        $users = User::all();
+        foreach ($users as $user) {
+            if ($user->hasRole([Roles::GESTION_FLOTTE])) {
+                $user->notify(new Notif_demande_flotte([
+                    'data' => $demande_flote,
+                    'message' => $message
+                ]));
             }
-            $user = Auth::user();
-
-            //recuperer l'utilisateur concerné
-            $user = $demande_flote->user;
-
-            //recuperer l'agent concerné
-            $agent = $user->agent->first();
-
-            //recuperer le demandeur
-            $demandeur = User::find($demande_flote->add_by);
-
-            // Renvoyer un message de succès
-            return response()->json([
-                'message' => 'Demande de Flote créée',
-                'status' => true,
-                'data' => [
-                    'demande' => $demande_flote,
-                    'demandeur' => $demandeur,
-                    'agent' => $agent,
-                    'user' => $user,
-                    'puce' => $demande_flote->puce,
-                    'operateur' => $demande_flote->puce->flote
-                ]
-            ]);
-        } else {
-            // Renvoyer une erreur
-            return response()->json([
-                'message' => 'Erreur lors de la demande',
-                'status' => false,
-                'data' => null
-            ]);
         }
+
+        //recuperer l'agent concerné
+        $agent = $connected_user->agent->first();
+
+        // Renvoyer un message de succès
+        return response()->json([
+            'message' => 'Demande de flotte éffectuée avec succès',
+            'status' => true,
+            'data' => [
+                'demande' => $demande_flote,
+                'demandeur' => $connected_user,
+                'agent' => $agent,
+                'user' => $connected_user,
+                'puce' => $puce,
+                'operateur' => $puce->flote
+            ]
+        ]);
     }
 
 	/**
@@ -292,36 +274,26 @@ class DemandeflotteController extends Controller
     }
 
     /**
-     * //lister mes demandes de flotes peu importe le statut
+     * Lister mes demandes de flotes peu importe le statut
      */
+    // AGENT
+    // RESSOURCE
     public function list_all_status()
     {
         $user = Auth::user();
-        $userRole = $user->roles->first()->name;
+        $demandes_flote = Demande_flote::where('id_user', $user->id)
+            ->orderBy('statut', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->paginate(9);
 
-        if($userRole === Roles::AGENT || $userRole === Roles::RESSOURCE) {
-            $demandes_flote = Demande_flote::where('id_user', $user->id)
-                ->orderBy('statut', 'desc')
-                ->orderBy('created_at', 'desc')
-                ->paginate(6);
-
-            $demandes_flotes = $this->fleetsResponse($demandes_flote->items());
-
-            return response()->json([
-                'message' => "",
-                'status' => true,
-                'data' => [
-                    'demandes' => $demandes_flotes,
-                    'hasMoreData' => $demandes_flote->hasMorePages(),
-                ]
-            ]);
-        } else {
-            return response()->json([
-                'message' => "Cet utilisateur n'est pas un responsable de zone",
-                'status' => false,
-                'data' => null
-            ]);
-        }
+        return response()->json([
+            'message' => "",
+            'status' => true,
+            'data' => [
+                'demandes' => $this->fleetsResponse($demandes_flote->items()),
+                'hasMoreData' => $demandes_flote->hasMorePages(),
+            ]
+        ]);
     }
 
     /**
@@ -347,87 +319,70 @@ class DemandeflotteController extends Controller
     }
 
     /**
-     * //lister mes demandes de flotes responsable de zone
+     * lister mes demandes de flotes responsable de zone
      */
+    // RESPONSABLE DE ZONE
     public function list_demandes_flote_collector()
     {
         $user = Auth::user();
-        $userRole = $user->roles->first()->name;
+        $demandes_flote = Demande_flote::where('add_by', $user->id)
+            ->orderBy('statut', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->paginate(9);
 
-        if($userRole === Roles::RECOUVREUR) {
-            $demandes_flote = Demande_flote::where('add_by', $user->id)->orderBy('created_at', 'desc')->paginate(6);
-
-            $demandes_flotes = $this->fleetsResponse($demandes_flote->items());
-
-            return response()->json([
-                'message' => "",
-                'status' => true,
-                'data' => [
-                    'demandes' => $demandes_flotes,
-                    'hasMoreData' => $demandes_flote->hasMorePages(),
-                ]
-            ]);
-        } else {
-            return response()->json([
-                'message' => "Cet utilisateur n'est pas un responsable de zone",
-                'status' => false,
-                'data' => null
-            ]);
-        }
+        return response()->json([
+            'message' => "",
+            'status' => true,
+            'data' => [
+                'demandes' =>  $this->fleetsResponse($demandes_flote->items()),
+                'hasMoreData' => $demandes_flote->hasMorePages(),
+            ]
+        ]);
     }
 
     /**
-     * //lister toutes mes demandes de flotes (responsable de zone)
+     * Lister toutes mes demandes de flotes (responsable de zone)
      */
+    // RESPONSABLE DE ZONE
     public function list_demandes_flote_collector_all()
     {
         $user = Auth::user();
-        $userRole = $user->roles->first()->name;
+        $demandes_flote = Demande_flote::where('add_by', $user->id)
+            ->orderBy('statut', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->get();
 
-        if($userRole === Roles::RECOUVREUR) {
-            $demandes_flote = Demande_flote::where('add_by', $user->id)->orderBy('created_at', 'desc')->get();
-
-            return response()->json([
-                'message' => "",
-                'status' => true,
-                'data' => [
-                    'demandes' => $this->fleetsResponse($demandes_flote)
-                ]
-            ]);
-        } else {
-            return response()->json([
-                'message' => "Cet utilisateur n'est pas un responsable de zone",
-                'status' => false,
-                'data' => null
-            ]);
-        }
+        return response()->json([
+            'message' => "",
+            'status' => true,
+            'data' => [
+                'demandes' => $this->fleetsResponse($demandes_flote),
+                'hasMoreData' => false
+            ]
+        ]);
     }
 
     /**
-     * //lister toutes mes demandes de flotes (agent)
+     * Lister toutes mes demandes de flotes (agent)
      */
+    // AGENT
+    // RESSOURCE
     public function list_demandes_flote_agent_all()
     {
         $user = Auth::user();
-        $userRole = $user->roles->first()->name;
+        $demandes_flote = Demande_flote::where('id_user', $user->id)
+            ->orderBy('statut', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->get();
 
-        if($userRole === Roles::AGENT || $userRole === Roles::RESSOURCE) {
-            $demandes_flote = Demande_flote::where('id_user', $user->id)->orderBy('created_at', 'desc')->get();
-
-            return response()->json([
-                'message' => "",
-                'status' => true,
-                'data' => [
-                    'demandes' => $this->fleetsResponse($demandes_flote)
-                ]
-            ]);
-        } else {
-            return response()->json([
-                'message' => "Cet utilisateur n'est pas un agent/ressource",
-                'status' => false,
-                'data' => null
-            ]);
-        }
+        return response()->json([
+            'message' => "",
+            'status' => true,
+            'data' => [
+                'demandes' => $this->fleetsResponse($demandes_flote),
+                'hasMoreData' => false
+            ]
+        ]);
     }
 
     /**

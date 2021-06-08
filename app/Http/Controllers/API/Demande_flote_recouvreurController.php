@@ -30,16 +30,18 @@ class Demande_flote_recouvreurController extends Controller
     }
 
     /**
-     * //Initier une demande de Flotte
+     * Initier une demande de Flotte
      */
+    // RESPONSABLE DE ZONE
     public function store(Request $request)
     {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
-            'montant' => ['required', 'Numeric'],
-            'id_agent' => ['required', 'Numeric'],
-            'id_puce' => ['required', 'Numeric']
+            'montant' => ['required', 'numeric'],
+            'id_agent' => ['required', 'numeric'],
+            'id_puce' => ['required', 'numeric']
         ]);
+
         if ($validator->fails()) {
             return response()->json([
                 'message' => "Le formulaire contient des champs mal renseignés",
@@ -48,104 +50,78 @@ class Demande_flote_recouvreurController extends Controller
             ]);
         }
 
-        if (!User::find($request->id_agent)) {
+        //Coherence du montant de la transaction
+        $montant = $request->montant;
+        if ($montant <= 0) {
             return response()->json([
-                'message' => "Cet Agent n'existe pas",
+                'message' => "Montant de la transaction incohérent",
                 'status' => false,
                 'data' => null
             ]);
         }
 
-        if (!Puce::find($request->id_puce)) {
+        // Vérification de l'existence de l'agent
+        $agent_user = User::find($request->id_agent);
+        if (is_null($agent_user)) {
             return response()->json([
-                'message' => "Cette Puce n'existe pas",
+                'message' => "Cet agent n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        // Vérifier la puce agent
+        $puce = Puce::find($request->id_puce);
+        if (is_null($puce)) {
+            return response()->json([
+                'message' => "Cette puce n'existe pas",
                 'status' => false,
                 'data' => null
             ]);
         }
 
         //recuperer l'utilisateur connecté (c'est lui l'agent)
-        $add_by = Auth::user();
-
-        //recuperer l'agent concerné
-        $user = User::find($request->id_agent);
-
-        // Récupérer les données validées
-
-        $id_user = $user->id;
-        $add_by = $add_by->id;
-        $reference = null;
-        $montant = $request->montant;
-        $statut = Statut::EN_ATTENTE;
-        $source = null;
-        //recuperer l'id de puce de l'agent
-        $id_puce = $request->id_puce;
+        $connected_user = Auth::user();
 
         // Nouvelle demande de flotte
         $demande_flote = new Demande_flote([
-            'id_user' => $id_user,
-            'add_by' => $add_by,
-            'reference' => $reference,
+            'id_user' => $agent_user->id,
+            'add_by' => $connected_user->id,
             'montant' => $montant,
             'reste' => $montant,
-            'statut' => $statut,
-            'id_puce' => $id_puce,
-            'source' => $source
+            'statut' => Statut::EN_ATTENTE,
+            'id_puce' => $puce->id,
         ]);
+        $demande_flote->save();
 
-        // creation de La demande
-        if ($demande_flote->save()) {
-
-            //Notification
-            $message = "Demande de Flotte éffectué par " . $add_by->name;
-            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
-            $event = new NotificationsEvent($role->id, ['message' => $message]);
-            broadcast($event)->toOthers();
-
-            //Database Notification
-            $users = User::all();
-            foreach ($users as $user) {
-
-                if ($user->hasRole([$role->name])) {
-
-                    $user->notify(new Notif_demande_flotte([
-                        'data' => $demande_flote,
-                        'message' => $message
-                    ]));
-                }
+        //Database Notification
+        $message = "Nouvelle demande de flotte éffectué par " . $connected_user->name . " pour " . $agent_user->name;
+        $users = User::all();
+        foreach ($users as $user) {
+            if ($user->hasRole([Roles::GESTION_FLOTTE])) {
+                $user->notify(new Notif_demande_flotte([
+                    'data' => $demande_flote,
+                    'message' => $message
+                ]));
             }
-
-            //recuperer l'utilisateur concerné
-            $user = $demande_flote->user;
-
-            //recuperer l'agent concerné
-            $agent = $user->agent->first();
-
-            //recuperer le demandeur
-            $demandeur = User::find($demande_flote->add_by);
-
-            // Renvoyer un message de succès
-            return response()->json([
-                'message' => 'Demande de Flote créée',
-                'status' => true,
-                'data' => [
-                    'demande' => $demande_flote,
-                    'demandeur' => $demandeur,
-                    'agent' => $agent,
-                    'user' => $user,
-                    'puce' => $demande_flote->puce
-                ]
-            ]);
-        } else {
-            // Renvoyer une erreur
-            return response()->json(
-                [
-                    'message' => 'erreur lors de la demande',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
         }
+
+        //recuperer l'agent concerné
+        $agent = $agent_user->agent->first();
+
+        // Renvoyer un message de succès
+        return response()->json([
+            'message' => 'Demande de flotte éffectuée avec succès',
+            'status' => true,
+            'data' => [
+                'demande' => $demande_flote,
+                'demandeur' => $connected_user,
+                'agent' => $agent,
+                'user' => $agent_user,
+                'puce' => $puce,
+                'operateur' => $puce->flote
+            ]
+        ]);
     }
 
     /**

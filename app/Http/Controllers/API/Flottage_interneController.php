@@ -196,11 +196,12 @@ class Flottage_interneController extends Controller
      * Approuver le transfert de flotte
      */
     // GESTIONNAIRE DE FLOTTE
+    // SUPERVISEUR
+    // RESPONSABLE DE ZONE
     public function approuve($id)
     {
-        $transfert_flotte = Flottage_interne::find($id);
-
         //si le destockage n'existe pas
+        $transfert_flotte = Flottage_interne::find($id);
         if (is_null($transfert_flotte)) {
             return response()->json([
                 'message' => "Le transfert de flotte n'existe pas",
@@ -242,34 +243,37 @@ class Flottage_interneController extends Controller
         }
 
         $transfert_flotte->save();
-
         $connected_user = Auth::user();
-        $users = User::all();
         $message = "Transfert de flotte Apprové par " . $connected_user->name;
 
-        if($puce_emetrice->type_puce->name === Statut::PUCE_RZ) {
+        if($type_puce_emetrice === Statut::PUCE_RZ)
+        {
             // Notifier le RZ emetteur
             $rz = $puce_emetrice->rz;
             $rz->notify(new Notif_destockage([
                 'data' => $transfert_flotte,
                 'message' => $message
             ]));
-        } else if($puce_emetrice->type_puce->name === Statut::FLOTTAGE_SECONDAIRE) {
+        }
+        else if($type_puce_emetrice === Statut::FLOTTAGE)
+        {
+            $users = User::all();
             // Notifier tous les superviseur
-            $role = Role::where('name', Roles::SUPERVISEUR)->first();
             foreach ($users as $user) {
-                if ($user->hasRole([$role->name])) {
+                if ($user->hasRole([ Roles::GESTION_FLOTTE])) {
                     $user->notify(new Notif_destockage([
                         'data' => $transfert_flotte,
                         'message' => $message
                     ]));
                 }
             }
-        } else if($puce_emetrice->type_puce->name === Statut::FLOTTAGE) {
+        }
+        else if($type_puce_emetrice === Statut::FLOTTAGE_SECONDAIRE)
+        {
+            $users = User::all();
             // Notifier tous les gestionnaires de flottes
-            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
             foreach ($users as $user) {
-                if ($user->hasRole([$role->name])) {
+                if ($user->hasRole([Roles::SUPERVISEUR])) {
                     $user->notify(new Notif_destockage([
                         'data' => $transfert_flotte,
                         'message' => $message
@@ -286,181 +290,39 @@ class Flottage_interneController extends Controller
     }
 
     /**
-     * @param Request $request
-     * @return JsonResponse
-     */
-    Public function flottage_interne_rz(Request $request) {
-
-        // Valider données envoyées
-        $validator = Validator::make($request->all(), [
-            'montant' => ['required', 'numeric'],
-            'id_puce_from' => ['required', 'numeric'],
-            'id_puce_to' => ['required', 'numeric'],
-        ]);
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => "Le formulaire contient des champs mal renseignés",
-                'status' => false,
-                'data' => null
-            ]);
-        }
-
-        // On verifi que les puces passées en paramettre existent
-        if (Puce::find($request->id_puce_from) && Puce::find($request->id_puce_to)) {
-
-            //On recupère la puce qui envoie
-            $puce_from = Puce::find($request->id_puce_from);
-
-            //On recupère la puce qui recoit
-            $puce_to = Puce::find($request->id_puce_to);
-
-            //on recupère les types de la puce qui envoie
-            $type_puce_from = Type_puce::find($puce_from->type)->name;
-
-            //on recupère les types de la puce qui recoit
-            $type_puce_to = Type_puce::find($puce_to->type)->name;
-
-            //on recupère la flotte des puces
-            $flote_to = $puce_to->flote;
-            $flote_from = $puce_from->flote;
-
-            //On se rassure que les puces passée en paramettre respectent toutes les conditions
-            if ($type_puce_from != Statut::FLOTTAGE_SECONDAIRE && $type_puce_to != Statut::PUCE_RZ) {
-                return response()->json([
-                    'message' => "Choisir une puce valide pour la reception",
-                    'status' => false,
-                    'data' => null
-                ]);
-            }
-
-        } else {
-            return response()->json([
-                'message' => "Une ou plusieurs puces entrées n'existe pas",
-                'status' => false,
-                'data' => null
-            ]);
-        }
-
-        //On verifie que c'est les puce du meme reseau
-        if ($flote_to != $flote_from) {
-            return response()->json([
-                'message' => "Vous devez choisir les puces du meme réseau",
-                'status' => false,
-                'data' => null
-            ]);
-        }
-
-        //On se rassure que le solde est suffisant
-        if ($puce_from->solde < $request->montant) {
-            return response()->json([
-                'message' => "Le solde est insuffisant",
-                'status' => false,
-                'data' => null
-            ]);
-        }
-
-        //on debite le solde du supperviseur
-        $puce_from->solde = $puce_from->solde - $request->montant;
-
-        //On credite le solde du responsable de zonne
-        $puce_to->solde = $puce_to->solde + $request->montant;
-
-        // On débite la caisse de l'utilisateur associé à la puce receptrice si celui-ci est un responsable de zone
-        $receiver = $puce_to->rz;
-        if($receiver !== null) {
-            $caisse_rz2 = $receiver->caisse->first();
-            $caisse_rz2->solde = $caisse_rz2->solde - $request->montant;
-            $caisse_rz2->save();
-        }
-
-        //Le supperviseur
-        $supperviseur = Auth::user();
-
-        // Nouveau flottage
-        $flottage_interne = new Flottage_interne([
-            'id_user' => $supperviseur->id,
-            'id_sim_from' => $puce_from->id,
-            'id_sim_to' => $puce_to->id,
-            'reference' => null,
-            'statut' => Statut::EFFECTUER,
-            'note' => null,
-            'type' => Roles::SUPERVISEUR,
-            'montant' => $request->montant,
-            'reste' => 0
-        ]);
-
-        //si l'enregistrement du flottage a lieu
-        if ($flottage_interne->save()) {
-
-            $puce_from->save();
-            $puce_to->save();
-
-            if($receiver !== null) {
-                //Notification du responsable de zone
-                $puce_to->rz->notify(new Notif_flottage([
-                    'data' => $flottage_interne,
-                    'message' => "Nouveau flottage Interne"
-                ]));
-            }
-
-            //recuperer la puce du superviseur
-            $puce_emetrice = Puce::find($flottage_interne->id_sim_from);
-
-            //recuperer la puce du gestionnaire de flotte
-            $puce_receptrice = Puce::find($flottage_interne->id_sim_to);
-
-            //recuperer celui qui a effectué le flottage
-            $superviseur = User::find($flottage_interne->id_user);
-
-            // Renvoyer un message de succès
-            return response()->json([
-                'message' => "Transfert de flotte effectué avec succès",
-                'status' => true,
-                'data' => [
-                    'puce_receptrice' => $puce_receptrice,
-                    'puce_emetrice' => $puce_emetrice,
-                    'utilisateur' => $superviseur,
-                    'flottage' => $flottage_interne
-                ]
-            ]);
-        } else {
-            // Renvoyer une erreur
-            return response()->json([
-                'message' => 'Erreur lors du flottage',
-                'status' => false,
-                'data' => null
-            ]);
-        }
-    }
-
-    /**
      * Lister tous les flottages interne
      */
     // GESTIONNAIRE DE FLOTTE
+    // SUPERVISEUR
+    // RESPONSABLE DE ZONE
     public function list_all()
     {
         $connected_user_role = Auth::user()->roles->first()->name;
 
         if ($connected_user_role === Roles::RECOUVREUR) {
-            $transfers = Flottage_interne::orderBy('statut', 'desc')
+            $transfers = Flottage_interne::where('type', 'like', Statut::PUCE_RZ . '%')
+                ->orWhere('type', 'like', '%' . Statut::PUCE_RZ)
+                ->orderBy('statut', 'desc')
                 ->orderBy('created_at', 'desc')
-                ->get();
-            $transfers_response = $this->transfersResponse($transfers);
-            $hasMoreData = false;
+                ->paginate(9);
+        } else if($connected_user_role === Roles::GESTION_FLOTTE) {
+            $transfers = Flottage_interne::where('type', 'like', Statut::FLOTTAGE . '%')
+                ->orWhere('type', 'like', '%' . Statut::FLOTTAGE)
+                ->orderBy('statut', 'desc')
+                ->orderBy('created_at', 'desc')
+                ->paginate(9);
         } else {
             $transfers = Flottage_interne::orderBy('statut', 'desc')
                 ->orderBy('created_at', 'desc')
                 ->paginate(9);
-            $transfers_response = $this->transfersResponse($transfers->items());
-            $hasMoreData = $transfers->hasMorePages();
         }
 
         return response()->json([
             'message' => '',
             'status' => true,
             'data' => [
-                'flottages' => $transfers_response,
-                'hasMoreData' => $hasMoreData,
+                'flottages' => $this->transfersResponse($transfers->items()),
+                'hasMoreData' => $transfers->hasMorePages(),
             ]
         ]);
     }
@@ -543,7 +405,7 @@ class Flottage_interneController extends Controller
      * @return JsonResponse
      * Creer un Flottage d'un responsable de zone vers un gestionnaire de flotte ou vers un superviseur
      */
-    Public function flottage_interne_rz_gf(Request $request)
+    public function flottage_interne_rz_gf(Request $request)
     {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
@@ -702,7 +564,7 @@ class Flottage_interneController extends Controller
      * @return JsonResponse
      * Creer un Flottage d'un Agent ETP vers un gestionnaire de flotte
      */
-    Public function flottage_interne_ae_gf(Request $request)
+    public function flottage_interne_ae_gf(Request $request)
     {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
@@ -883,39 +745,22 @@ class Flottage_interneController extends Controller
     private function transfersResponse($tranfers)
     {
         $returnedTransfers = [];
-        $connected_user_role = Auth::user()->roles->first()->name;
 
         foreach($tranfers as $flottage_interne)
         {
-            $puce_emetrice = Puce::find($flottage_interne->id_sim_from);
-            $puce_receptrice = Puce::find($flottage_interne->id_sim_to);
-            $superviseur = User::find($flottage_interne->id_user);
+            $puce_emetrice = $flottage_interne->puce_emetrice;
+            $puce_receptrice = $flottage_interne->puce_receptrice;
+            $superviseur = $flottage_interne->user;
 
-            if ($connected_user_role === Roles::RECOUVREUR) {
-                if(
-                    ($puce_emetrice->rz !== null && $puce_emetrice->rz->id === Auth::user()->id) ||
-                    ($puce_receptrice->rz !== null && $puce_receptrice->rz->id === Auth::user()->id)
-                ) {
-                    // Take only the current collector receiving sims
-                    $returnedTransfers[] = [
-                        'puce_receptrice' => $puce_receptrice,
-                        'puce_emetrice' => $puce_emetrice,
-                        'utilisateur' => $superviseur,
-                        'flottage' => $flottage_interne,
-                        'operateur' => $puce_emetrice->flote
-                    ];
-                }
-            } else {
-                // Take all if it is not a collector
-                $returnedTransfers[] = [
-                    'puce_receptrice' => $puce_receptrice,
-                    'puce_emetrice' => $puce_emetrice,
-                    'utilisateur' => $superviseur,
-                    'flottage' => $flottage_interne,
-                    'operateur' => $puce_emetrice->flote,
-                    'type_recepteur' => $puce_receptrice->type_puce
-                ];
-            }
+            // Take all if it is not a collector
+            $returnedTransfers[] = [
+                'puce_receptrice' => $puce_receptrice,
+                'puce_emetrice' => $puce_emetrice,
+                'utilisateur' => $superviseur,
+                'flottage' => $flottage_interne,
+                'operateur' => $puce_emetrice->flote,
+                'type_recepteur' => $puce_receptrice->type_puce
+            ];
         }
 
         return $returnedTransfers;

@@ -195,8 +195,9 @@ class CorporateController extends Controller
     }
 
     /**
-     * ////lister toutes les corporates
+     * Lister toutes les corporates
      */
+    // SUPERVISOR
     public function list_all()
     {
         $corporates = Corporate::orderBy('created_at', 'desc')->get();

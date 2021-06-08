@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Notifications\Recouvrement as Notif_recouvrement;
+use App\Recouvrement;
 use App\User;
 use App\Puce;
 use App\Role;
@@ -13,6 +15,7 @@ use App\Enums\Statut;
 use App\Demande_flote;
 use App\FlotageAnonyme;
 use App\Approvisionnement;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Events\NotificationsEvent;
@@ -196,14 +199,16 @@ class FlotageController extends Controller
      * @return JsonResponse
      */
     // GESTIONNAIRE DE FOTTE
+    // RESPONSABLE DE ZONE
     public function flottage_express(Request $request)
     {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
-            'montant' => ['required', 'Numeric'],
-            'id_agent' => ['required', 'Numeric'],
-            'id_puce_agent' => ['required', 'Numeric'],
-            'id_puce_flottage' => ['required', 'Numeric']
+            'montant' => ['required', 'numeric'],
+            'id_agent' => ['required', 'numeric'],
+            'id_puce_agent' => ['required', 'numeric'],
+            'id_puce_flottage' => ['required', 'numeric'],
+            'direct_pay' => ['nullable', 'string'],
         ]);
 
         if ($validator->fails()) {
@@ -238,7 +243,7 @@ class FlotageController extends Controller
         //On verifi si la puce agent passée existe réellement
         if (is_null($puce_agent)) {
             return response()->json([
-                'message' => "Cette puce agent n'existe pas",
+                'message' => "La puce receptrice n'existe pas",
                 'status' => false,
                 'data' => null
             ]);
@@ -248,7 +253,7 @@ class FlotageController extends Controller
         //On verifi si la puce de  flottage passée existe réellement
         if (is_null($puce_etp)) {
             return response()->json([
-                'message' => "Cette puce de flottage n'existe pas",
+                'message' => "La puce émetrice n'existe pas",
                 'status' => false,
                 'data' => null
             ]);
@@ -258,7 +263,7 @@ class FlotageController extends Controller
         // Verification du solde
         if($puce_etp->solde < $montant) {
             return response()->json([
-                'message' => "Solde insuffisant dans la puce émétrice",
+                'message' => "Solde flotte insuffisant dans la puce émétrice pour cette opération",
                 'status' => false,
                 'data' => null
             ]);
@@ -273,22 +278,15 @@ class FlotageController extends Controller
             ]);
         }
 
-        // Récupérer les données pour la création d'une demande fictive de flotte
-        $id_user = $user->id;
-        $add_by = $connected_user->id;
-        $statut = Statut::EFFECTUER;
-        $source = $request->id_puce_flottage;
-        $id_puce = $request->id_puce_agent;
-
         // Nouvelle demande fictive de flotte
         $demande_flotte = new Demande_flote([
-            'id_user' => $id_user,
-            'add_by' => $add_by,
+            'id_user' => $user->id,
+            'add_by' => $connected_user->id,
             'montant' => $montant,
             'reste' => 0,
-            'statut' => $statut,
-            'id_puce' => $id_puce,
-            'source' => $source
+            'statut' => Statut::EFFECTUER,
+            'id_puce' => $puce_agent->id,
+            'source' => $puce_etp->id
         ]);
         $demande_flotte->save();
 
@@ -297,31 +295,87 @@ class FlotageController extends Controller
             'id_demande_flote' => $demande_flotte->id,
             'id_user' => $connected_user->id,
             'statut' => Statut::EN_ATTENTE,
-            'from' => $source,
+            'from' => $puce_etp->id,
             'montant' => $montant,
             'reste' => $montant
         ]);
         $flottage->save();
 
-        //Broadcast Notification des responsables de zone
-        $message = "Flottage éffectué par " . $connected_user->name;
-        $role = Role::where('name', Roles::RECOUVREUR)->first();
-        $event = new NotificationsEvent($role->id, ['message' => $message]);
-        broadcast($event)->toOthers();
+        $is_collector = $connected_user->roles->first()->name === Roles::RECOUVREUR;
+        if($is_collector) {
+            // paiement direct du flottage par le RZ
+            if($request->direct_pay === Statut::EFFECTUER)
+            {
+                // Nouveau recouvrement
+                $recouvrement = new Recouvrement([
+                    'id_user' => $connected_user->id,
+                    'type_transaction' => Statut::RECOUVREMENT,
+                    'montant' => $montant,
+                    'reste' => $montant,
+                    'id_flottage' => $flottage->id,
+                    'statut' => Statut::EFFECTUER,
+                    'user_destination' => $connected_user->id,
+                    'user_source' => $user->id
+                ]);
+                $recouvrement->save();
 
-        //noifier les responsables de zonne
-        $users = User::all();
-        foreach ($users as $_user) {
+                $message = "Recouvrement d'espèces éffectué par " . $connected_user->name;
+                //Database Notification
+                $users = User::all();
+                foreach ($users as $user) {
+                    if ($user->hasRole([Roles::SUPERVISEUR])) {
+                        $user->notify(new Notif_recouvrement([
+                            'data' => $recouvrement,
+                            'message' => $message
+                        ]));
+                    }
+                }
 
-            if ($_user->hasRole([$role->name])) {
-
-                $_user->notify(new Notif_flottage([
-                    'data' => $flottage,
+                //notification de l'agent
+                $user->notify(new Notif_recouvrement([
+                    'data' => $recouvrement,
                     'message' => $message
                 ]));
+
+                $caisse = $user->caisse->first();
+                //On credite la caisse de l'Agent pour le remboursement de la flotte recu, ce qui implique qu'il rembource ses detes à ETP
+                $caisse->solde = $caisse->solde - $montant;
+                $caisse->save();
+
+                //la caisse de l'utilisateur connecté
+                $connected_caisse = $connected_user->caisse->first();
+                // Augmenter la caisse
+                $connected_caisse->solde = $connected_caisse->solde + $montant;
+                $connected_caisse->save();
+
+                //On calcule le reste à recouvrir
+                $flottage->reste = 0;
+                $flottage->statut = Statut::EFFECTUER;
+                $flottage->save();
+            }
+            else
+            {
+                // Augmenter la caisse du RZ et augmenter sa dette
+                $connected_user->dette = $connected_user->dette - $montant;
+                $connected_user->save();
+            }
+        }
+        else
+        {
+            $message = "Flottage éffectué par " . $connected_user->name;
+            //noifier les responsables de zonne
+            $users = User::all();
+            foreach ($users as $_user) {
+                if ($_user->hasRole([Roles::RECOUVREUR])) {
+                    $_user->notify(new Notif_flottage([
+                        'data' => $flottage,
+                        'message' => $message
+                    ]));
+                }
             }
         }
 
+        $message = "Flottage éffectué par " . $connected_user->name;
         //noifier l'agent concerné
         $user->notify(new Notif_flottage([
             'data' => $flottage,
@@ -358,6 +412,7 @@ class FlotageController extends Controller
      * @return JsonResponse
      */
     // GESTIONNAIRE DE FOTTE
+    // RESPONSABLE DE ZONE
     public function flottage_anonyme(Request $request)
     {
         // Valider données envoyées
@@ -365,6 +420,7 @@ class FlotageController extends Controller
             'montant' => ['required', 'numeric'],
             'nom_agent' => ['required', 'string'], //le nom de celui qui recoit la flotte
             'id_puce_from' => ['required', 'numeric'],
+            'direct_pay' => ['nullable', 'string'],
             'nro_puce_to' => ['required', 'numeric'], //le numéro de la puce qui recoit la flotte
         ]);
 
@@ -431,6 +487,7 @@ class FlotageController extends Controller
         } else {
             //======================================================================
             $needle_user = User::where('phone', $numero_agent)->get()->first();
+            $is_collector = $connected_user->roles->first()->name === Roles::RECOUVREUR;
 
             // Check de l'existence de la puce
             if($needle_sim !== null) {
@@ -533,25 +590,81 @@ class FlotageController extends Controller
             ]);
             $flottage->save();
 
-            //Broadcast Notification des responsables de zone
-            $message = "Flottage éffectué par " . $connected_user->name;
-            $role = Role::where('name', Roles::RECOUVREUR)->first();
-            $event = new NotificationsEvent($role->id, ['message' => $message]);
-            broadcast($event)->toOthers();
+            if($is_collector)
+            {
+                // paiement direct du flottage par le RZ
+                if($request->direct_pay === Statut::EFFECTUER)
+                {
+                    // Nouveau recouvrement
+                    $recouvrement = new Recouvrement([
+                        'id_user' => $connected_user->id,
+                        'type_transaction' => Statut::RECOUVREMENT,
+                        'montant' => $montant,
+                        'reste' => $montant,
+                        'id_flottage' => $flottage->id,
+                        'statut' => Statut::EFFECTUER,
+                        'user_destination' => $connected_user->id,
+                        'user_source' => $user->id
+                    ]);
+                    $recouvrement->save();
 
-            //noifier les responsables de zonne
-            $users = User::all();
-            foreach ($users as $_user) {
+                    $message = "Recouvrement d'espèces éffectué par " . $connected_user->name;
+                    //Database Notification
+                    $users = User::all();
+                    foreach ($users as $user) {
+                        if ($user->hasRole([Roles::SUPERVISEUR])) {
+                            $user->notify(new Notif_recouvrement([
+                                'data' => $recouvrement,
+                                'message' => $message
+                            ]));
+                        }
+                    }
 
-                if ($_user->hasRole([$role->name])) {
-
-                    $_user->notify(new Notif_flottage([
-                        'data' => $flottage,
+                    //notification de l'agent
+                    $user->notify(new Notif_recouvrement([
+                        'data' => $recouvrement,
                         'message' => $message
                     ]));
+
+                    $caisse = $user->caisse->first();
+                    //On credite la caisse de l'Agent pour le remboursement de la flotte recu, ce qui implique qu'il rembource ses detes à ETP
+                    $caisse->solde = $caisse->solde - $montant;
+                    $caisse->save();
+
+                    //la caisse de l'utilisateur connecté
+                    $connected_caisse = $connected_user->caisse->first();
+                    // Augmenter la caisse
+                    $connected_caisse->solde = $connected_caisse->solde + $montant;
+                    $connected_caisse->save();
+
+                    //On calcule le reste à recouvrir
+                    $flottage->reste = 0;
+                    $flottage->statut = Statut::EFFECTUER;
+                    $flottage->save();
+                }
+                else
+                {
+                    // Augmenter la caisse du RZ et augmenter sa dette
+                    $connected_user->dette = $connected_user->dette - $montant;
+                    $connected_user->save();
+                }
+            }
+            else
+            {
+                $message = "Flottage éffectué par " . $connected_user->name;
+                //noifier les responsables de zonne
+                $users = User::all();
+                foreach ($users as $_user) {
+                    if ($_user->hasRole([Roles::RECOUVREUR])) {
+                        $_user->notify(new Notif_flottage([
+                            'data' => $flottage,
+                            'message' => $message
+                        ]));
+                    }
                 }
             }
 
+            $message = "Flottage éffectué par " . $connected_user->name;
             //noifier l'agent concerné
             $user->notify(new Notif_flottage([
                 'data' => $flottage,

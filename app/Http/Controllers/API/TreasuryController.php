@@ -27,6 +27,7 @@ class TreasuryController extends Controller
      * Creer un Encaissement
      */
     // GESTIONNAIRE DE FLOTTE
+    // RESPONSABLE DE ZONE
     public function treasury_in(Request $request)
     {
         // Valider données envoyées
@@ -100,6 +101,7 @@ class TreasuryController extends Controller
      * Creer un Decaissement
      */
     // GESTIONNAIRE DE FLOTTE
+    // RESPONSABLE DE ZONE
     public function treasury_out(Request $request)
     {
         // Valider données envoyées
@@ -182,6 +184,7 @@ class TreasuryController extends Controller
      * Lister les Encaissements
      */
     // GESTIONNAIRE DE FLOTTE
+    // RESPONSABLE DE ZONE
     public function treasuries_in()
     {
         $user = Auth::user();
@@ -220,6 +223,7 @@ class TreasuryController extends Controller
      * Lister les Decaissements
      */
     // GESTIONNAIRE DE FLOTTE
+    // RESPONSABLE DE ZONE
     public function treasuries_out()
     {
         $user = Auth::user();

@@ -396,10 +396,9 @@ class AgentController extends Controller
     }
 
     /**
-     * liste des Agents
-     *
-     * @return JsonResponse
+     * Liste des Agents
      */
+    // SUPERVISOR
     public function list_all()
     {
         $agents = Agent::orderBy('created_at', 'desc')->get();

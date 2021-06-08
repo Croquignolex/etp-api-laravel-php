@@ -36,12 +36,13 @@ class RecouvrementController extends Controller
      * Recouvrement d'espèces
      */
     // GESTIONNAIRE DE FLOTTE
+    // RESPONSABLE DE ZONE
     public function store(Request $request)
     {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
-            'montant' => ['required', 'Numeric'],
-            'id_flottage' => ['required', 'Numeric']
+            'montant' => ['required', 'numeric'],
+            'id_flottage' => ['required', 'numeric']
         ]);
 
         if ($validator->fails()) {
@@ -100,18 +101,11 @@ class RecouvrementController extends Controller
         ]);
         $recouvrement->save();
 
-        //Notification du gestionnaire de flotte
         $message = "Recouvrement d'espèces éffectué par " . $connected_user->name;
-        $role = Role::where('name', Roles::SUPERVISEUR)->first();
-        $event = new NotificationsEvent($role->id, ['message' => $message]);
-        broadcast($event)->toOthers();
-
         //Database Notification
         $users = User::all();
         foreach ($users as $user) {
-
-            if ($user->hasRole([$role->name])) {
-
+            if ($user->hasRole([Roles::SUPERVISEUR])) {
                 $user->notify(new Notif_recouvrement([
                     'data' => $recouvrement,
                     'message' => $message
@@ -119,11 +113,30 @@ class RecouvrementController extends Controller
             }
         }
 
+        //notification de l'agent
+        $user->notify(new Notif_recouvrement([
+            'data' => $recouvrement,
+            'message' => $message
+        ]));
+
         ////ce que le recouvrement implique
 
         //On credite la caisse de l'Agent pour le remboursement de la flotte recu, ce qui implique qu'il rembource ses detes à ETP
         $caisse->solde = $caisse->solde - $montant;
         $caisse->save();
+
+        //la caisse de l'utilisateur connecté
+        $connected_caisse = $connected_user->caisse->first();
+        // Augmenter la caisse
+        $connected_caisse->solde = $connected_caisse->solde + $montant;
+        $connected_caisse->save();
+
+        if($connected_user->hasRole([Roles::RECOUVREUR]))
+        {
+            // Augmenter la caisse du RZ et augmenter sa dette
+            $connected_user->dette = $connected_user->dette + $montant;
+            $connected_user->save();
+        }
 
         //On calcule le reste à recouvrir
         $flottage->reste = $flottage->reste - $montant;
@@ -134,20 +147,6 @@ class RecouvrementController extends Controller
 
         //Enregistrer les oppérations
         $flottage->save();
-
-        //la caisse de l'utilisateur connecté
-        $connected_caisse = $connected_user->caisse->first();
-
-        if ($connected_user->hasRole([Roles::GESTION_FLOTTE])) {
-            // Augmenter la caisse de la gestionnaire de flotte
-            $connected_caisse->solde = $connected_caisse->solde + $montant;
-            $connected_caisse->save();
-        } else if($connected_user->hasRole([Roles::RECOUVREUR])) {
-            // Augmenter la caisse du RZ et augmenter sa dette
-            $connected_caisse->solde = $connected_caisse->solde + $montant;
-            $connected_user->dette = $connected_user->dette + $montant;
-            $connected_caisse->save();
-        }
 
         return response()->json([
             'message' => "Recouvrement d'espèces effectué avec succès",
@@ -233,29 +232,22 @@ class RecouvrementController extends Controller
     }
 
     /**
-     * ////lister les recouvrements d'un RZ
+     * Lister les recouvrements d'un RZ
      */
+    // RESPONSABLE DE ZONE
     public function list_recouvrement_by_rz()
     {
         $user = Auth::user();
 
-        if ($user->roles->first()->name !== Roles::RECOUVREUR){
-            return response()->json([
-                'message' => "Le responsable de zonne n'existe pas",
-                'status' => false,
-                'data' => null
-            ]);
-        }
-
-        $recoveries = Recouvrement::where('id_user', $user->id)->orderBy('created_at', 'desc')->paginate(9);
-
-        $recoveries_response =  $this->recoveriesResponse($recoveries->items());
+        $recoveries = Recouvrement::where('id_user', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->paginate(9);
 
         return response()->json([
             'message' => '',
             'status' => true,
             'data' => [
-                'recouvrements' => $recoveries_response,
+                'recouvrements' =>  $this->recoveriesResponse($recoveries->items()),
                 'hasMoreData' => $recoveries->hasMorePages(),
             ]
         ]);

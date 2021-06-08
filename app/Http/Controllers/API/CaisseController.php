@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Enums\Transations;
 use App\Puce;
 use App\Role;
 use App\User;
@@ -25,9 +26,10 @@ class CaisseController extends Controller
      */
     function __construct()
     {
-        $ges_flotte = Roles::GESTION_FLOTTE;
         $rz = Roles::RECOUVREUR;
-        $this->middleware("permission:$ges_flotte|$rz");
+        $superviseur = Roles::SUPERVISEUR;
+        $ges_flotte = Roles::GESTION_FLOTTE;
+        $this->middleware("permission:$ges_flotte|$rz|$superviseur");
     }
 
     /**
@@ -130,6 +132,8 @@ class CaisseController extends Controller
      * Creer un Decaissement
      */
     // GESTIONNAIRE DE FLOTTE
+    // SUPERVISEUR
+    // RESPONSABLE DE ZONE
     public function decaissement(Request $request)
     {
         // Valider données envoyées
@@ -160,7 +164,7 @@ class CaisseController extends Controller
         $receveur = User::find($request->id_receveur);
         if (is_null($receveur)) {
             return response()->json([
-                'message' => "Responsable de zone non reconnu",
+                'message' => "Receveur non reconnu",
                 'status' => false,
                 'data' => null
             ]);
@@ -178,18 +182,12 @@ class CaisseController extends Controller
             ]);
         }
 
-        //recuperer la caisse de l'utilisateur qui recoit le verssement
-        $caisse_receveur = $receveur->caisse->first();
-        $add_by = $connected_user->id;
-        $note = "pour un Decaissement";
-
         // Nouveau decaissement
         $decaissement = new Versement ([
             'correspondant' => $receveur->id,
             'montant' => $montant,
-            'id_caisse' => $caisse_receveur->id,
-            'add_by' => $add_by,
-            'note' => $note,
+            'add_by' => $connected_user->id,
+            'note' => Transations::INTERNAL_TREASURY_OUT,
             'statut' => Statut::EN_COURS
         ]);
         $decaissement->save();
@@ -210,8 +208,8 @@ class CaisseController extends Controller
             'status' => true,
             'data' => [
                 'versement' => $decaissement,
-                'gestionnaire' => $decaissement->manager,
-                'recouvreur' => $decaissement->collector,
+                'gestionnaire' => $decaissement->user,
+                'recouvreur' => $decaissement->related,
             ]
         ]);
     }
@@ -280,14 +278,13 @@ class CaisseController extends Controller
 
         // Récupérer les données validées
         $add_by = $connected_user->id;
-        $note = "pour une passation de service";
 
         // Nouveau decaissement
         $decaissement = new Versement ([
             'correspondant' => $receveur->id,
             'montant' => $montant,
             'add_by' => $add_by,
-            'note' => $note,
+            'note' => Transations::INTERNAL_HANDOVER,
             'statut' => Statut::EN_COURS
         ]);
         $decaissement->save();
@@ -309,8 +306,8 @@ class CaisseController extends Controller
             'status' => true,
             'data' => [
                 'versement' => $decaissement,
-                'emetteur' => $decaissement->manager,
-                'recepteur' => $decaissement->collector,
+                'emetteur' => $decaissement->user,
+                'recepteur' => $decaissement->related,
             ]
         ]);
     }
@@ -338,7 +335,7 @@ class CaisseController extends Controller
 
         // Notifier la GF qui a initier la passation de service
         $message = "Passation de service confirmé par " . $connected_user->name;
-        $versement->manager->notify(new Notif_recouvrement([
+        $versement->user->notify(new Notif_recouvrement([
             'data' => $versement,
             'message' => $message
         ]));
@@ -361,30 +358,23 @@ class CaisseController extends Controller
      * Lister les Encaissements
      */
     // GESTIONNAIRE DE FLOTTE
+    // SUPERVISEUR
+    // RESPONSABLE DE ZONE
     public function encaissement_list()
     {
         $user = Auth::user();
-        $connected_user_role = $user->roles->first()->name;
 
-        if ($connected_user_role === Roles::RECOUVREUR) {
-            $versements = Versement::where('correspondant', $user->id)->where('note', "pour un versement")->orderBy('created_at', 'desc')->paginate(9);
-        } elseif($connected_user_role === Roles::GESTION_FLOTTE) {
-            $versements = Versement::where('add_by', $user->id)
-                ->where('note', "pour un versement")
-                ->orderBy('statut', 'desc')
-                ->orderBy('created_at', 'desc')
-                ->paginate(9);
-        } else {
-            $versements = Versement::where('note', "pour un versement")->orderBy('created_at', 'desc')->paginate(9);
-        }
-
-        $versements_response =  $this->paymentsResponse($versements->items());
+        $versements = Versement::where('correspondant', $user->id)
+            ->where('note', Transations::INTERNAL_TREASURY_OUT)
+            ->orderBy('statut', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->paginate(9);
 
         return response()->json([
             'message' => '',
             'status' => true,
             'data' => [
-                'versements' => $versements_response,
+                'versements' => $this->paymentsResponse($versements->items()),
                 'hasMoreData' => $versements->hasMorePages(),
             ]
         ]);
@@ -394,6 +384,8 @@ class CaisseController extends Controller
      * Confirmer encaissement
      */
     // GESTIONNAIRE DE FLOTTE
+    // SUPERVISOR
+    // RESPONSABLE DE ZONE
     public function approuve_encaissement($id)
     {
         $versement = Versement::find($id);
@@ -411,19 +403,36 @@ class CaisseController extends Controller
         $versement->save();
         $connected_user = Auth::user();
 
-        // Notifier le RZ
+        // Donnees emetteur
+        $emetteur = $versement->user;
+        $emetteur_role = $emetteur->roles->first()->name;
+
+         // Notifier l'emetteur;
         $message = "Encaissement confirmé par " . $connected_user->name;
-        $versement->collector->notify(new Notif_recouvrement([
+        $emetteur->notify(new Notif_recouvrement([
             'data' => $versement,
             'message' => $message
         ]));
 
+        $recepteur_role = $connected_user->roles->first()->name;
         $caisse_recepteur = $connected_user->caisse->first();
         $montant = $versement->montant;
 
         //on credite le compte de la gestionnaire de flotte
         $caisse_recepteur->solde = $caisse_recepteur->solde + $montant;
         $caisse_recepteur->save();
+
+        // Reduire la dette si emetteur RZ
+        if($emetteur_role === Roles::RECOUVREUR) {
+            $emetteur->dette = $emetteur->dette - $montant;
+            $emetteur->save();
+        }
+
+        // Augmenter la dette si recepteur RZ
+        if($recepteur_role === Roles::RECOUVREUR) {
+            $connected_user->dette = $connected_user->dette + $montant;
+            $connected_user->save();
+        }
 
         return response()->json([
             'message' => "Encaissement confirmé avec succès",
@@ -461,30 +470,23 @@ class CaisseController extends Controller
      * Lister les Decaissements
      */
     // GESTIONNAIRE DE FLOTTE
+    // SUPERVISEUR
+    // RESPONSABLE DE ZONE
     public function decaissement_list()
     {
         $user = Auth::user();
-        $connected_user_role = $user->roles->first()->name;
 
-        if ($connected_user_role === Roles::RECOUVREUR) {
-            $versements = Versement::where('correspondant', $user->id)->where('note', "pour un Decaissement")->orderBy('created_at', 'desc')->paginate(9);
-        } elseif($connected_user_role === Roles::GESTION_FLOTTE) {
-            $versements = Versement::where('add_by', $user->id)
-                ->where('note', "pour un Decaissement")
-                ->orderBy('statut', 'desc')
-                ->orderBy('created_at', 'desc')
-                ->paginate(9);
-        } else {
-            $versements = Versement::where('note', "pour un Decaissement")->orderBy('created_at', 'desc')->paginate(9);
-        }
-
-        $versements_response =  $this->paymentsResponse($versements->items());
+        $versements = Versement::where('add_by', $user->id)
+            ->where('note', Transations::INTERNAL_TREASURY_OUT)
+            ->orderBy('statut', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->paginate(9);
 
         return response()->json([
             'message' => '',
             'status' => true,
             'data' => [
-                'versements' => $versements_response,
+                'versements' => $this->paymentsResponse($versements->items()),
                 'hasMoreData' => $versements->hasMorePages(),
             ]
         ]);
@@ -519,26 +521,35 @@ class CaisseController extends Controller
      * Lister les passations de service
      */
     // GESTIONNAIRE DE FLOTTE
+    // SUPERVISEUR
     public function passations_list()
     {
-        $getionnaire_id = Auth::user()->id;
+        $connected_user = Auth::user();
+        $user_role = $connected_user->roles->first()->name;
+        $id_manager = $user_role === Roles::GESTION_FLOTTE;
 
-        $versements = Versement::where('note', 'pour une passation de service')
-            ->where(function($query) use ($getionnaire_id) {
-                $query->where('add_by', $getionnaire_id);
-                $query->orWhere('correspondant', $getionnaire_id);
-            })
-            ->orderBy('statut', 'desc')
-            ->orderBy('created_at', 'desc')
-            ->paginate(9);
-
-        $versements_response =  $this->handoverResponse($versements->items());
+       if($id_manager) {
+            $getionnaire_id = $connected_user->id;
+            $versements = Versement::where('note', Transations::INTERNAL_HANDOVER)
+                ->where(function($query) use ($getionnaire_id) {
+                    $query->where('add_by', $getionnaire_id);
+                    $query->orWhere('correspondant', $getionnaire_id);
+                })
+                ->orderBy('statut', 'desc')
+                ->orderBy('created_at', 'desc')
+                ->paginate(9);
+        } else {
+            $versements = Versement::where('note', Transations::INTERNAL_HANDOVER)
+                ->orderBy('statut', 'desc')
+                ->orderBy('created_at', 'desc')
+                ->paginate(9);
+        }
 
         return response()->json([
             'message' => '',
             'status' => true,
             'data' => [
-                'versements' => $versements_response,
+                'versements' => $this->handoverResponse($versements->items()),
                 'hasMoreData' => $versements->hasMorePages(),
             ]
         ]);
@@ -875,8 +886,8 @@ class CaisseController extends Controller
         {
             $returnedHandovers[] = [
                 'versement' => $versement,
-                'emetteur' => $versement->manager,
-                'recepteur' => $versement->collector,
+                'emetteur' => $versement->user,
+                'recepteur' => $versement->related,
             ];
         }
 
@@ -1071,8 +1082,8 @@ class CaisseController extends Controller
         {
             $returnedPayments[] = [
                 'versement' => $versement,
-                'gestionnaire' => $versement->manager,
-                'recouvreur' => $versement->collector,
+                'gestionnaire' => $versement->user,
+                'recouvreur' => $versement->related,
             ];
         }
 

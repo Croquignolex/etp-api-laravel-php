@@ -30,6 +30,8 @@ class Flottage_rzController extends Controller
 
     //creer le flottage
     // GESTIONNAIRE DE FLOTTE
+    // SUPERVISEUR
+    // RESPONSABLE DE ZONE
     Public function store(Request $request)
     {
         // Valider données envoyées
@@ -77,7 +79,18 @@ class Flottage_rzController extends Controller
             ]);
         }
 
+        //On verifi si les puce passée appartien à au meme oppérateur de flotte
+        if ($puce_from->flote->id != $puce_to->flote->id) {
+            return response()->json([
+                'message' => "Les deux puces ne sont pas du même opérateur",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
         $connected_user = Auth::user();
+        $fom_name = $puce_from->type_puce->name ;
+        $to_name = $puce_to->type_puce->name ;
 
         // Nouveau flottage
         $flottage_rz = new Flottage_interne([
@@ -85,24 +98,46 @@ class Flottage_rzController extends Controller
             'id_sim_from' => $puce_from->id,
             'id_sim_to' => $puce_to->id,
             'statut' => Statut::EN_COURS,
-            'type' => Roles::GESTION_FLOTTE,
+            'type' => $fom_name . '->' . $to_name,
             'montant' => $request->montant,
         ]);
         $flottage_rz->save();
 
         // On retranche quand même la flotte dans la puce emettrice
         $puce_from->solde = $puce_from->solde - $montant;
-        $montant->save();
+        $puce_from->save();
+
+        $users = User::all();
 
         //Database Notification du RZ
-        $rz = $puce_to->rz;
-        if(!is_null($rz)) {
-            $message = "Transfert de flotte éffectué par " . $connected_user->name;
-            $rz->notify(new Notif_flottage([
-                'message' => $message,
-                'data' => $flottage_rz
-            ]));
-        }
+        $message = "Transfert de flotte éffectué par " . $connected_user->name;
+       if($to_name === Statut::PUCE_RZ) {
+           $rz = $puce_to->rz;
+           if(!is_null($rz)) {
+               $rz->notify(new Notif_flottage([
+                   'data' => $flottage_rz,
+                   'message' => $message
+               ]));
+           }
+       } else if($to_name === Statut::FLOTTAGE) {
+           foreach ($users as $user) {
+               if ($user->hasRole([Roles::GESTION_FLOTTE])) {
+                   $user->notify(new Notif_flottage([
+                       'data' => $flottage_rz,
+                       'message' => $message
+                   ]));
+               }
+           }
+       } else if($to_name === Statut::FLOTTAGE_SECONDAIRE) {
+           foreach ($users as $user) {
+               if ($user->hasRole([Roles::SUPERVISEUR])) {
+                   $user->notify(new Notif_flottage([
+                       'data' => $flottage_rz,
+                       'message' => $message
+                   ]));
+               }
+           }
+       }
 
         // Renvoyer un message de succès
         return response()->json([
@@ -113,8 +148,7 @@ class Flottage_rzController extends Controller
                 'puce_emetrice' => $puce_from,
                 'utilisateur' => $connected_user,
                 'flottage' => $flottage_rz,
-                'operateur' => $puce_from->flote,
-                'type_recepteur' => $puce_to->type_puce
+                'operateur' => $puce_from->flote
             ]
         ]);
     }

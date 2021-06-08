@@ -13,10 +13,14 @@ class Transations
     const RECOUVREMENT = 'Recouvrement';
     const RETOUR_FLOTTE = 'Retour flotte';
 
-    const TREASURY_GF_OUT = 'Décaissement';
-    const TREASURY_GF_IN = 'Encaissement';
-    const TREASURY_RZ_OUT = 'Décaissement RZ';
-    const TREASURY_RZ_IN = 'Encaissement RZ';
+    const TREASURY_GF_OUT = 'Décaissement GF externe';
+    const TREASURY_GF_IN = 'Encaissement GF externe';
+    const TREASURY_RZ_OUT = 'Décaissement RZ externe';
+    const TREASURY_RZ_IN = 'Encaissement RZ externe';
+
+    const INTERNAL_TREASURY_OUT = 'Décaissement interne';
+    const INTERNAL_TREASURY_IN = 'Encaissement interne';
+    const INTERNAL_HANDOVER = 'Passation de service';
 
     /**
      * Returns the list of all enum variants

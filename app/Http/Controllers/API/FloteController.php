@@ -292,8 +292,9 @@ class FloteController extends Controller
     }
 
     /**
-     * //lister toutes les flotes
+     * Lister toutes les flotes
      */
+    // SUPERVISOR
     public function list_all()
     {
         $flotes = Flote::orderBy('created_at', 'desc')->get();

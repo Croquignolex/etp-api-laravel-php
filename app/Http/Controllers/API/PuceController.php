@@ -436,98 +436,168 @@ class PuceController extends Controller
     }
 
     /**
-     * //lister les puces d'un reesponsable de zone
+     * Lister les puces d'un reesponsable de zone
      */
+    // RESPONSABLE DE ZONE
     public function list_responsable()
     {
         $user = Auth::user();
-        $userRole = $user->roles->first()->name;
+        $puces = Puce::where('id_rz', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->paginate(6);
 
-        if($userRole === Roles::RECOUVREUR) {
-            $puces = Puce::where('id_rz', $user->id)->orderBy('created_at', 'desc')->paginate(6);
-
-            $sims_response =  $this->simsResponse($puces->items());
-
-            return response()->json([
-                'message' => '',
-                'status' => true,
-                'data' => [
-                    'puces' => $sims_response,
-                    'hasMoreData' => $puces->hasMorePages(),
-                ]
-            ]);
-        } else {
-            return response()->json([
-                'message' => "Cet utilisateur n'est pas un responsable de zone",
-                'status' => false,
-                'data' => null
-            ]);
-        }
-
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'puces' => $this->simsResponse($puces->items()),
+                'hasMoreData' => $puces->hasMorePages(),
+            ]
+        ]);
     }
 
     /**
-     * //lister les puces d'une gestionnaire de flotte
+     * Lister toutes les puces d'un reesponsable de zone
      */
+    // RESPONSABLE DE ZONE
+    public function list_responsable_all()
+    {
+        $user = Auth::user();
+        $puces = Puce::where('id_rz', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'puces' => $this->simsResponse($puces),
+                'hasMoreData' => false,
+            ]
+        ]);
+    }
+
+    /**
+     * Lister les puces d'une gestionnaire de flotte
+     */
+    // GESTIONNAIRE DE FLOTTE
     public function list_gestionnaire()
     {
-        $user = Auth::user();
-        $userRole = $user->roles->first()->name;
+        $id_puce = Type_puce::where('name', Statut::FLOTTAGE)->first()->id;
+        $puces = Puce::where('type', $id_puce)->orderBy('created_at', 'desc')->paginate(6);
 
-        if($userRole === Roles::GESTION_FLOTTE || $userRole === Roles::SUPERVISEUR || $userRole === Roles::ADMIN) {
-            $id_puce = Type_puce::where('name', Statut::FLOTTAGE)->first()->id;
-            $puces = Puce::where('type', $id_puce)->orderBy('created_at', 'desc')->paginate(6);
-
-            $sims_response =  $this->simsResponse($puces->items());
-
-            return response()->json([
-                'message' => '',
-                'status' => true,
-                'data' => [
-                    'puces' => $sims_response,
-                    'hasMoreData' => $puces->hasMorePages(),
-                ]
-            ]);
-        } else {
-            return response()->json([
-                'message' => "Cet utilisateur n'est ni une gestionnaire de flotte ni un superviseur ni un administrateur",
-                'status' => false,
-                'data' => null
-            ]);
-        }
-
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'puces' => $this->simsResponse($puces->items()),
+                'hasMoreData' => $puces->hasMorePages(),
+            ]
+        ]);
     }
 
     /**
-     * //lister les puces master
+     * Lister toutes les puces d'une gestionnaire de flotte
      */
+    // GESTIONNAIRE DE FLOTTE
+    public function list_gestionnaire_all()
+    {
+        $id_puce = Type_puce::where('name', Statut::FLOTTAGE)->first()->id;
+        $puces = Puce::where('type', $id_puce)->orderBy('created_at', 'desc')->get();
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'puces' => $this->simsResponse($puces),
+                'hasMoreData' => false,
+            ]
+        ]);
+    }
+
+    /**
+     * Lister toutes les puces internes à ETP
+     */
+    // GESTIONNAIRE DE FLOTTE
+    // RESPONSABLE DE ZONE
+    public function list_internane_all()
+    {
+        $id_puce_agent = Type_puce::where('name', Statut::AGENT)->first()->id;
+        $id_puce_resource = Type_puce::where('name', Statut::RESOURCE)->first()->id;
+        $puces = Puce::where('type', '<>', $id_puce_agent)
+            ->where('type', '<>', $id_puce_resource)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'puces' => $this->simsResponse($puces),
+                'hasMoreData' => false,
+            ]
+        ]);
+    }
+
+    /**
+     * Lister toutes les puces externes à ETP
+     */
+    // RESPONSABLE DE ZONE
+    public function list_externane_all()
+    {
+        $id_puce_agent = Type_puce::where('name', Statut::AGENT)->first()->id;
+        $id_puce_resource = Type_puce::where('name', Statut::RESOURCE)->first()->id;
+        $puces = Puce::where('type', $id_puce_agent)
+            ->orWhere('type', $id_puce_resource)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'puces' => $this->simsResponse($puces),
+                'hasMoreData' => false,
+            ]
+        ]);
+    }
+
+    /**
+     * Lister les puces master
+     */
+    // SUPERVISEUR
     public function list_master()
     {
-        $user = Auth::user();
-        $userRole = $user->roles->first()->name;
+        $id_puce = Type_puce::where('name', Statut::FLOTTAGE_SECONDAIRE)->first()->id;
+        $puces = Puce::where('type', $id_puce)->orderBy('created_at', 'desc')->paginate(9);
 
-        if($userRole === Roles::SUPERVISEUR || $userRole === Roles::ADMIN) {
-            $id_puce = Type_puce::where('name', Statut::FLOTTAGE_SECONDAIRE)->first()->id;
-            $puces = Puce::where('type', $id_puce)->orderBy('created_at', 'desc')->paginate(6);
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'puces' => $this->simsResponse($puces->items()),
+                'hasMoreData' => $puces->hasMorePages(),
+            ]
+        ]);
+    }
 
-            $sims_response =  $this->simsResponse($puces->items());
+    /**
+     * Lister toutes les puces master
+     */
+    // SUPERVISEUR
+    public function list_master_all()
+    {
+        $id_puce = Type_puce::where('name', Statut::FLOTTAGE_SECONDAIRE)->first()->id;
+        $puces = Puce::where('type', $id_puce)->orderBy('created_at', 'desc')->get();
 
-            return response()->json([
-                'message' => '',
-                'status' => true,
-                'data' => [
-                    'puces' => $sims_response,
-                    'hasMoreData' => $puces->hasMorePages(),
-                ]
-            ]);
-        } else {
-            return response()->json([
-                'message' => "Cet utilisateur n'est ni un superviseur ni un administrateur",
-                'status' => false,
-                'data' => null
-            ]);
-        }
-
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'puces' => $this->simsResponse($puces),
+                'hasMoreData' => false,
+            ]
+        ]);
     }
 
     /**
@@ -627,35 +697,45 @@ class PuceController extends Controller
     }
 
     /**
-     * //lister les puces d'un agent
+     * Lister les puces d'un agent
      */
+    // AGENT
     public function list_agent()
     {
         $user = Auth::user();
         $agent = $user->agent->first();
-        $userRole = $user->roles->first()->name;
 
-        if($userRole === Roles::AGENT || $userRole === Roles::RESSOURCE) {
-            $puces = Puce::where('id_agent', $agent->id)->orderBy('created_at', 'desc')->paginate(6);
+        $puces = Puce::where('id_agent', $agent->id)->orderBy('created_at', 'desc')->paginate(9);
 
-            $sims_response =  $this->simsResponse($puces->items());
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'puces' => $this->simsResponse($puces->items()),
+                'hasMoreData' => $puces->hasMorePages(),
+            ]
+        ]);
+    }
 
-            return response()->json([
-                'message' => '',
-                'status' => true,
-                'data' => [
-                    'puces' => $sims_response,
-                    'hasMoreData' => $puces->hasMorePages(),
-                ]
-            ]);
-        } else {
-            return response()->json([
-                'message' => "Cet utilisateur n'est pas un agent/ressource",
-                'status' => false,
-                'data' => null
-            ]);
-        }
+    /**
+     * Lister les puces d'un agent
+     */
+    // AGENT
+    public function list_agent_all()
+    {
+        $user = Auth::user();
+        $agent = $user->agent->first();
 
+        $puces = Puce::where('id_agent', $agent->id)->orderBy('created_at', 'desc')->get();
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'puces' => $this->simsResponse($puces),
+                'hasMoreData' => false,
+            ]
+        ]);
     }
 
     /**

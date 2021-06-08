@@ -253,8 +253,9 @@ class UserController extends Controller
     }
 
     /**
-     * //lister tous les recouveurs
+     * Lister tous les recouveurs
      */
+    // SUPERVISOR
     public function recouvreurs_all()
     {
         $collectors = User::orderBy('created_at', 'desc')->get()->filter(function(User $user) {
@@ -321,6 +322,26 @@ class UserController extends Controller
             'status' => true,
             'data' => [
                 'gestionnaires' => $this->managersResponse($managers),
+                'hasMoreData' => false,
+            ]
+        ]);
+    }
+
+    /**
+     * Lister tous les superviseurs
+     */
+    // GESTIONNAIRE DE FLOTTE
+    public function superviseurs_all()
+    {
+        $supervisors = User::orderBy('created_at', 'desc')->get()->filter(function(User $user) {
+            return ($user->roles->first()->name === Roles::SUPERVISEUR);
+        });
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'superviseurs' => $this->supervisorsResponse($supervisors),
                 'hasMoreData' => false,
             ]
         ]);

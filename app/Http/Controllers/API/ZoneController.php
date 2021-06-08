@@ -590,8 +590,9 @@ class ZoneController extends Controller
     }
 
     /**
-     * //lister toutes les zone
+     * Lister toutes les zone
      */
+    // SUPERVISOR
     public function list_all()
     {
         $zones = Zone::orderBy('created_at', 'desc')->get();

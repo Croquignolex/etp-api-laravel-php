@@ -35,14 +35,15 @@ class Retour_flotteController extends Controller
      * Retour de flotte
      */
     // GESTIONNAIRE DE FLOTTE
+    // RESPONSABLE DE ZONE
     public function retour(Request $request)
     {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
-            'puce_agent' => ['required', 'Numeric'],
-            'puce_flottage' => ['required', 'Numeric'],
-            'id_flottage' => ['required', 'Numeric'],
-            'montant' => ['required', 'Numeric'],
+            'puce_agent' => ['required', 'numeric'],
+            'puce_flottage' => ['required', 'numeric'],
+            'id_flottage' => ['required', 'numeric'],
+            'montant' => ['required', 'numeric'],
         ]);
 
         if ($validator->fails()) {
@@ -134,19 +135,12 @@ class Retour_flotteController extends Controller
         $puce_agent->solde = $puce_agent->solde - $montant;
         $puce_agent->save();
 
+        $message = 'Retour de flote éffectué par ' . $connected_user->name;
         if($status === Statut::EN_COURS) {
             //Notification du gestionnaire de flotte
-            $message = 'Retour de flote éffectué par ' . $connected_user->name;
-            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
-            $event = new NotificationsEvent($role->id, ['message' => $message]);
-            broadcast($event)->toOthers();
-
-            //Database Notification
             $users = User::all();
             foreach ($users as $_user) {
-
-                if ($_user->hasRole([$role->name])) {
-
+                if ($_user->hasRole([Roles::GESTION_FLOTTE])) {
                     $_user->notify(new Notif_retour_flotte([
                         'data' => $retour_flotte,
                         'message' => $message
@@ -156,14 +150,13 @@ class Retour_flotteController extends Controller
         } else if($status === Statut::EFFECTUER) {
             //on credite la puce de ETP concernée
             $puce_flottage->solde = $puce_flottage->solde + $montant;
+            $puce_flottage->save();
 
             if($is_collector && $type_puce === Statut::PUCE_RZ) {
                 // on augmente la dette du RZ s'il effectue le retour flotte dans sa puce
                 $connected_user->dette = $connected_user->dette + $montant;
                 $connected_user->save();
             }
-
-            $puce_flottage->save();
         }
 
         //notification de l'agent
@@ -220,13 +213,11 @@ class Retour_flotteController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(9);
 
-        $recoveries_response =  $this->recoveriesResponse($recoveries->items());
-
         return response()->json([
             'message' => '',
             'status' => true,
             'data' => [
-                'recouvrements' => $recoveries_response,
+                'recouvrements' => $this->recoveriesResponse($recoveries->items()),
                 'hasMoreData' => $recoveries->hasMorePages(),
             ]
         ]);
@@ -337,29 +328,23 @@ class Retour_flotteController extends Controller
     }
 
     /**
-     * ////lister les retour flotte d'un Agent precis
+     * Lister les retour flotte d'un Agent precis
      */
+    // RESPONSABLE DE ZONE
     public function list_retour_flotte_by_rz()
     {
         $user = Auth::user();
 
-        if ($user->roles->first()->name !== Roles::RECOUVREUR){
-            return response()->json([
-                'message' => "Le responsable de zonne n'existe pas",
-                'status' => false,
-                'data' => null
-            ]);
-        }
-
-        $recoveries = Retour_flote::where('id_user', $user->id)->orderBy('created_at', 'desc')->paginate(6);
-
-        $recoveries_response =  $this->recoveriesResponse($recoveries->items());
+        $recoveries = Retour_flote::where('id_user', $user->id)
+            ->orderBy('statut', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->paginate(9);
 
         return response()->json([
             'message' => '',
             'status' => true,
             'data' => [
-                'recouvrements' => $recoveries_response,
+                'recouvrements' => $this->recoveriesResponse($recoveries->items()),
                 'hasMoreData' => $recoveries->hasMorePages(),
             ]
         ]);

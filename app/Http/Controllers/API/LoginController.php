@@ -222,28 +222,22 @@ class LoginController extends Controller
 
     /**
      * Solde de l'utilisateur connecté
-     *
-     * @return JsonResponse
      */
+    // RESPONSABLE DE ZONE
     public function solde()
     {
-        if (Auth::check()) {
-            $user = Auth::user();
-            $caisse = Caisse::where('id_user', $user->id)->first();
-            return response()->json([
-                'message' => '',
-                'status' => true,
-                'data' => ['balance' => $caisse->solde]
-            ]);
-        } else {
-            return response()->json([
-                'message' => 'Utilisateur non identifié',
-                'status' => false,
-                'data' => null
-            ]);
-         }
-    }
+        $user = Auth::user();
+        $caisse = Caisse::where('id_user', $user->id)->first();
 
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'balance' => $caisse->solde,
+                'dette' => $user->dette,
+            ]
+        ]);
+    }
 
     /**
      * Réinitialisation du mot de passe
