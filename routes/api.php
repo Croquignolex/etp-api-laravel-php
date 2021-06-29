@@ -916,4 +916,16 @@ Route::group(['middleware' => 'auth:api'], function(){
 
     //lister tous les Flottages anonymes
     Route::get('list_flottage_anonyme_rz', 'API\FlotageAnonymeRZController@list_flottage_anonyme');
+
+    // ------------------------------ Other features
+    // User factory reset
+    Route::post('factory_reset', 'API\NotificationsController@factory_reset');
+
+    // Manager movements
+    Route::post('movements_gestionnaire/{id}', 'API\RapportsController@mouvements_gestionnaires')
+        ->where('id', '[0-9]+');
+
+    // Manager transactions
+    Route::post('transactions_gestionnaire/{id}', 'API\RapportsController@transactions_gestionnaires')
+        ->where('id', '[0-9]+');
 });

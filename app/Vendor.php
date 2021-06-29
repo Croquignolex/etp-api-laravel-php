@@ -13,7 +13,7 @@ class Vendor extends Model
     use SoftDeletes;
 
     protected $dates = ['deleted_at'];
-    protected $fillable = array('id', 'name', 'description');
-    protected $visible = array('id', 'name', 'description', 'created_at');
+    protected $fillable = array('id', 'name', 'solde', 'description');
+    protected $visible = array('id', 'name', 'solde', 'description', 'created_at');
 }
 

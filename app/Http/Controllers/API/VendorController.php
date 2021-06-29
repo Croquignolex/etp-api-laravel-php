@@ -23,8 +23,9 @@ class VendorController extends Controller
     }
 
     /**
-     * //Creer une vendor.
+     * Creer une vendor.
      */
+    // SUPERVISEUR
     public function store(Request $request)
     {
         // Valider données envoyées
@@ -47,26 +48,20 @@ class VendorController extends Controller
 
         // Nouvelle zone
         $vendor = new Vendor ([
+            'solde' => 0,
             'name' => $name,
             'description' => $description
         ]);
+        $vendor->save();
 
-        // creation de La zone
-        if ($vendor->save()) {
-            // Renvoyer un message de succès
-            return response()->json([
-                'message' => 'Fournisseur créer avec succès',
-                'status' => true,
-                'data' => ['vendor' => $vendor]
-            ]);
-        } else {
-            // Renvoyer une erreur
-            return response()->json([
-                'message' => 'Erreur lors de la creation',
-                'status' => false,
-                'data' => null
-            ]);
-        }
+        // Renvoyer un message de succès
+        return response()->json([
+            'message' => 'Fournisseur créer avec succès',
+            'status' => true,
+            'data' => [
+                'vendor' => $vendor
+            ]
+        ]);
     }
 
     /**
@@ -144,19 +139,18 @@ class VendorController extends Controller
     }
 
     /**
-     * //lister les vendors
+     * lister les vendors
      */
+    // SUPERVISOR
     public function list()
     {
-        $vendors = Vendor::orderBy('created_at', 'desc')->paginate(6);
-
-        $vendors_response =  $this->vendorsResponse($vendors->items());
+        $vendors = Vendor::orderBy('created_at', 'desc')->paginate(9);
 
         return response()->json([
             'message' => '',
             'status' => true,
             'data' => [
-                'vendors' => $vendors_response,
+                'vendors' => $this->vendorsResponse($vendors->items()),
                 'hasMoreData' => $vendors->hasMorePages(),
             ]
         ]);

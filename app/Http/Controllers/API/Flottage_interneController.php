@@ -759,7 +759,8 @@ class Flottage_interneController extends Controller
                 'utilisateur' => $superviseur,
                 'flottage' => $flottage_interne,
                 'operateur' => $puce_emetrice->flote,
-                'type_recepteur' => $puce_receptrice->type_puce
+                'type_recepteur' => $puce_receptrice->type_puce,
+                'rz' => $puce_receptrice->rz,
             ];
         }
 

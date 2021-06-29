@@ -2,20 +2,20 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Notifications\Recouvrement as Notif_recouvrement;
-use App\Recouvrement;
 use App\User;
 use App\Puce;
 use App\Role;
 use App\Agent;
 use App\Caisse;
+use App\Movement;
 use App\Type_puce;
 use App\Enums\Roles;
 use App\Enums\Statut;
+use App\Recouvrement;
 use App\Demande_flote;
 use App\FlotageAnonyme;
+use App\Enums\Transations;
 use App\Approvisionnement;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Events\NotificationsEvent;
@@ -23,6 +23,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
 use App\Notifications\Flottage as Notif_flottage;
+use App\Notifications\Recouvrement as Notif_recouvrement;
 
 class FlotageController extends Controller
 {
@@ -302,58 +303,72 @@ class FlotageController extends Controller
         $flottage->save();
 
         $is_collector = $connected_user->roles->first()->name === Roles::RECOUVREUR;
+        // Appliquer le paiement direct
+        if($request->direct_pay === Statut::EFFECTUER)
+        {
+            // Nouveau recouvrement
+            $recouvrement = new Recouvrement([
+                'id_user' => $connected_user->id,
+                'type_transaction' => Statut::RECOUVREMENT,
+                'montant' => $montant,
+                'reste' => $montant,
+                'id_flottage' => $flottage->id,
+                'statut' => Statut::EFFECTUER,
+                'user_destination' => $connected_user->id,
+                'user_source' => $user->id
+            ]);
+            $recouvrement->save();
+
+            $message = "Recouvrement d'espèces éffectué par " . $connected_user->name;
+            //Database Notification
+            $users = User::all();
+            foreach ($users as $user) {
+                if ($user->hasRole([Roles::SUPERVISEUR])) {
+                    $user->notify(new Notif_recouvrement([
+                        'data' => $recouvrement,
+                        'message' => $message
+                    ]));
+                }
+            }
+
+            //notification de l'agent
+            $user->notify(new Notif_recouvrement([
+                'data' => $recouvrement,
+                'message' => $message
+            ]));
+
+            $caisse = $user->caisse->first();
+            //On credite la caisse de l'Agent pour le remboursement de la flotte recu, ce qui implique qu'il rembource ses detes à ETP
+            $caisse->solde = $caisse->solde - $montant;
+            $caisse->save();
+
+            //la caisse de l'utilisateur connecté
+            $connected_caisse = $connected_user->caisse->first();
+            // Augmenter la caisse
+            $connected_caisse->solde = $connected_caisse->solde + $montant;
+            $connected_caisse->save();
+
+            if($connected_user->hasRole([Roles::GESTION_FLOTTE])) {
+                // Garder le mouvement de caisse éffectué par la GF
+                Movement::create([
+                    'name' => $recouvrement->source_user->name,
+                    'type' => Transations::RECOUVREMENT,
+                    'in' => $recouvrement->montant,
+                    'out' => 0,
+                    'balance' => $connected_caisse->solde,
+                    'id_manager' => $connected_user->id,
+                ]);
+            }
+
+            //On calcule le reste à recouvrir
+            $flottage->reste = 0;
+            $flottage->statut = Statut::EFFECTUER;
+            $flottage->save();
+        }
+
         if($is_collector) {
             // paiement direct du flottage par le RZ
-            if($request->direct_pay === Statut::EFFECTUER)
-            {
-                // Nouveau recouvrement
-                $recouvrement = new Recouvrement([
-                    'id_user' => $connected_user->id,
-                    'type_transaction' => Statut::RECOUVREMENT,
-                    'montant' => $montant,
-                    'reste' => $montant,
-                    'id_flottage' => $flottage->id,
-                    'statut' => Statut::EFFECTUER,
-                    'user_destination' => $connected_user->id,
-                    'user_source' => $user->id
-                ]);
-                $recouvrement->save();
-
-                $message = "Recouvrement d'espèces éffectué par " . $connected_user->name;
-                //Database Notification
-                $users = User::all();
-                foreach ($users as $user) {
-                    if ($user->hasRole([Roles::SUPERVISEUR])) {
-                        $user->notify(new Notif_recouvrement([
-                            'data' => $recouvrement,
-                            'message' => $message
-                        ]));
-                    }
-                }
-
-                //notification de l'agent
-                $user->notify(new Notif_recouvrement([
-                    'data' => $recouvrement,
-                    'message' => $message
-                ]));
-
-                $caisse = $user->caisse->first();
-                //On credite la caisse de l'Agent pour le remboursement de la flotte recu, ce qui implique qu'il rembource ses detes à ETP
-                $caisse->solde = $caisse->solde - $montant;
-                $caisse->save();
-
-                //la caisse de l'utilisateur connecté
-                $connected_caisse = $connected_user->caisse->first();
-                // Augmenter la caisse
-                $connected_caisse->solde = $connected_caisse->solde + $montant;
-                $connected_caisse->save();
-
-                //On calcule le reste à recouvrir
-                $flottage->reste = 0;
-                $flottage->statut = Statut::EFFECTUER;
-                $flottage->save();
-            }
-            else
+            if($request->direct_pay !== Statut::EFFECTUER)
             {
                 // Augmenter la caisse du RZ et augmenter sa dette
                 $connected_user->dette = $connected_user->dette - $montant;
@@ -421,7 +436,7 @@ class FlotageController extends Controller
             'nom_agent' => ['required', 'string'], //le nom de celui qui recoit la flotte
             'id_puce_from' => ['required', 'numeric'],
             'direct_pay' => ['nullable', 'string'],
-            'nro_puce_to' => ['required', 'numeric'], //le numéro de la puce qui recoit la flotte
+            'nro_puce_to' => ['required', 'string'], //le numéro de la puce qui recoit la flotte
         ]);
 
         if ($validator->fails()) {
@@ -492,7 +507,7 @@ class FlotageController extends Controller
             // Check de l'existence de la puce
             if($needle_sim !== null) {
                 return response()->json([
-                    'message' => "Cette puce existe déjà dans le système et ne peut être attribuée à un agent/ressource",
+                    'message' => "Ce compte existe déjà dans le système et ne peut être attribuée à un agent/ressource",
                     'status' => false,
                     'data' => null
                 ]);
@@ -590,59 +605,71 @@ class FlotageController extends Controller
             ]);
             $flottage->save();
 
-            if($is_collector)
-            {
-                // paiement direct du flottage par le RZ
-                if($request->direct_pay === Statut::EFFECTUER)
-                {
-                    // Nouveau recouvrement
-                    $recouvrement = new Recouvrement([
-                        'id_user' => $connected_user->id,
-                        'type_transaction' => Statut::RECOUVREMENT,
-                        'montant' => $montant,
-                        'reste' => $montant,
-                        'id_flottage' => $flottage->id,
-                        'statut' => Statut::EFFECTUER,
-                        'user_destination' => $connected_user->id,
-                        'user_source' => $user->id
-                    ]);
-                    $recouvrement->save();
+            // Paiement direct du flottage par le RZ
+            if($request->direct_pay === Statut::EFFECTUER) {
+                // Nouveau recouvrement
+                $recouvrement = new Recouvrement([
+                    'id_user' => $connected_user->id,
+                    'type_transaction' => Statut::RECOUVREMENT,
+                    'montant' => $montant,
+                    'reste' => $montant,
+                    'id_flottage' => $flottage->id,
+                    'statut' => Statut::EFFECTUER,
+                    'user_destination' => $connected_user->id,
+                    'user_source' => $user->id
+                ]);
+                $recouvrement->save();
 
-                    $message = "Recouvrement d'espèces éffectué par " . $connected_user->name;
-                    //Database Notification
-                    $users = User::all();
-                    foreach ($users as $user) {
-                        if ($user->hasRole([Roles::SUPERVISEUR])) {
-                            $user->notify(new Notif_recouvrement([
-                                'data' => $recouvrement,
-                                'message' => $message
-                            ]));
-                        }
+                $message = "Recouvrement d'espèces éffectué par " . $connected_user->name;
+                //Database Notification
+                $users = User::all();
+                foreach ($users as $user) {
+                    if ($user->hasRole([Roles::SUPERVISEUR])) {
+                        $user->notify(new Notif_recouvrement([
+                            'data' => $recouvrement,
+                            'message' => $message
+                        ]));
                     }
-
-                    //notification de l'agent
-                    $user->notify(new Notif_recouvrement([
-                        'data' => $recouvrement,
-                        'message' => $message
-                    ]));
-
-                    $caisse = $user->caisse->first();
-                    //On credite la caisse de l'Agent pour le remboursement de la flotte recu, ce qui implique qu'il rembource ses detes à ETP
-                    $caisse->solde = $caisse->solde - $montant;
-                    $caisse->save();
-
-                    //la caisse de l'utilisateur connecté
-                    $connected_caisse = $connected_user->caisse->first();
-                    // Augmenter la caisse
-                    $connected_caisse->solde = $connected_caisse->solde + $montant;
-                    $connected_caisse->save();
-
-                    //On calcule le reste à recouvrir
-                    $flottage->reste = 0;
-                    $flottage->statut = Statut::EFFECTUER;
-                    $flottage->save();
                 }
-                else
+
+                //notification de l'agent
+                $user->notify(new Notif_recouvrement([
+                    'data' => $recouvrement,
+                    'message' => $message
+                ]));
+
+                $caisse = $user->caisse->first();
+                //On credite la caisse de l'Agent pour le remboursement de la flotte recu, ce qui implique qu'il rembource ses detes à ETP
+                $caisse->solde = $caisse->solde - $montant;
+                $caisse->save();
+
+                //la caisse de l'utilisateur connecté
+                $connected_caisse = $connected_user->caisse->first();
+                // Augmenter la caisse
+                $connected_caisse->solde = $connected_caisse->solde + $montant;
+                $connected_caisse->save();
+
+                if($connected_user->hasRole([Roles::GESTION_FLOTTE])) {
+                    // Garder le mouvement de caisse éffectué par la GF
+                    Movement::create([
+                        'name' => $recouvrement->source_user->name,
+                        'type' => Transations::RECOUVREMENT,
+                        'in' => $recouvrement->montant,
+                        'out' => 0,
+                        'balance' => $connected_caisse->solde,
+                        'id_manager' => $connected_user->id,
+                    ]);
+                }
+
+                //On calcule le reste à recouvrir
+                $flottage->reste = 0;
+                $flottage->statut = Statut::EFFECTUER;
+                $flottage->save();
+            }
+
+            if($is_collector) {
+                // paiement direct du flottage par le RZ
+                if($request->direct_pay !== Statut::EFFECTUER)
                 {
                     // Augmenter la caisse du RZ et augmenter sa dette
                     $connected_user->dette = $connected_user->dette - $montant;

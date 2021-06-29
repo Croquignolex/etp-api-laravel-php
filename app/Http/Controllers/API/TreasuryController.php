@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Vendor;
+use App\Movement;
 use App\Treasury;
 use App\Enums\Roles;
 use App\Enums\Transations;
@@ -32,9 +34,10 @@ class TreasuryController extends Controller
     {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
-            'montant' => ['required', 'Numeric'],
-            'nom' => ['required', 'string'],
+            'montant' => ['required', 'numeric'],
+            'nom' => ['nullable', 'string'],
             'raison' => ['required', 'string'],
+            'fournisseur' => ['nullable'],
             'description' => ['nullable', 'string'],
         ]);
 
@@ -57,12 +60,21 @@ class TreasuryController extends Controller
         }
 
         $connected_user = Auth::user();
-        $nom = $request->nom;
+
         $raison = $request->raison;
         $description = $request->description;
+        $fournisseur = $request->fournisseur;
+        $nom = ($request->nom === null) ?  '' : $request->nom;
 
         $is_collector = $connected_user->roles->first()->name === Roles::RECOUVREUR;
         $type = $is_collector ? Transations::TREASURY_RZ_IN : Transations::TREASURY_GF_IN;
+
+        // Baisser le solde du fournisseur
+        if($fournisseur !== null) {
+            $vendor = Vendor::find($fournisseur);
+            $vendor->solde = $vendor->solde - $montant;
+            $vendor->save();
+        }
 
         // Nouveau versement
         $versement = new Treasury([
@@ -72,18 +84,31 @@ class TreasuryController extends Controller
             'type' => $type,
             'id_manager' => $connected_user->id,
             'description' => $description,
+            'id_vendor' => $fournisseur,
         ]);
         $versement->save();
 
         //on credite le compte du donneur
-        $caisse = $connected_user->caisse->first();
-        $caisse->solde = $caisse->solde + $montant;
-        $caisse->save();
+        $connected_caisse = $connected_user->caisse->first();
+        $connected_caisse->solde = $connected_caisse->solde + $montant;
+        $connected_caisse->save();
 
         if($is_collector) {
             // Augmenter la dette si l'opération est éffectué par un RZ
             $connected_user->dette = $connected_user->dette + $montant;
             $connected_user->save();
+        } else {
+            // Garder le mouvement de caisse éffectué par la GF
+            Movement::create([
+                'name' => is_null($versement->vendor)
+                    ? $versement->name
+                    : $versement->vendor->name . ' (fournisseur)',
+                'type' => Transations::TREASURY_IN,
+                'in' => $versement->amount,
+                'out' => 0,
+                'balance' => $connected_caisse->solde,
+                'id_manager' => $connected_user->id,
+            ]);
         }
 
         // Renvoyer un message de succès
@@ -93,6 +118,7 @@ class TreasuryController extends Controller
             'data' => [
                 'treasury' => $versement,
                 'manager' => $versement->manager,
+                'vendor' => $versement->vendor,
             ]
         ]);
     }
@@ -107,8 +133,9 @@ class TreasuryController extends Controller
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
             'montant' => ['required', 'Numeric'],
-            'nom' => ['required', 'string'],
+            'nom' => ['nullable', 'string'],
             'raison' => ['required', 'string'],
+            'fournisseur' => ['nullable'],
             'description' => ['nullable', 'string'],
         ]);
 
@@ -131,21 +158,30 @@ class TreasuryController extends Controller
         }
 
         $connected_user = Auth::user();
-        $nom = $request->nom;
+
         $raison = $request->raison;
         $description = $request->description;
+        $fournisseur = $request->fournisseur;
+        $nom = ($request->nom === null) ?  '' : $request->nom;
 
         $is_collector = $connected_user->roles->first()->name === Roles::RECOUVREUR;
         $type = $is_collector ? Transations::TREASURY_RZ_OUT : Transations::TREASURY_GF_OUT;
 
-        $caisse = $connected_user->caisse->first();
+        $connected_caisse = $connected_user->caisse->first();
 
-        if($caisse->solde < $montant) {
+        if($connected_caisse->solde < $montant) {
             return response()->json([
                 'message' => 'Solde caisse insuffisant pour cet opération',
                 'status' => false,
                 'data' => null
             ]);
+        }
+
+        // Baisser le solde du fournisseur
+        if($fournisseur !== null) {
+            $vendor = Vendor::find($fournisseur);
+            $vendor->solde = $vendor->solde + $montant;
+            $vendor->save();
         }
 
         // Nouveau versement
@@ -156,17 +192,31 @@ class TreasuryController extends Controller
             'type' => $type,
             'id_manager' => $connected_user->id,
             'description' => $description,
+            'id_vendor' => $fournisseur,
         ]);
         $versement->save();
 
         //on credite le compte du donneur
-        $caisse->solde = $caisse->solde - $montant;
-        $caisse->save();
+        $connected_caisse->solde = $connected_caisse->solde - $montant;
+        $connected_caisse->save();
 
         if($is_collector) {
             // Augmenter la dette si l'opération est éffectué par un RZ
             $connected_user->dette = $connected_user->dette - $montant;
             $connected_user->save();
+        }
+        else {
+            // Garder le mouvement de caisse éffectué par la GF
+            Movement::create([
+                'name' => is_null($versement->vendor)
+                    ? $versement->name
+                    : $versement->vendor->name . ' (fournisseur)',
+                'type' => Transations::TREASURY_OUT,
+                'in' => 0,
+                'out' => $versement->amount,
+                'balance' => $connected_caisse->solde,
+                'id_manager' => $connected_user->id,
+            ]);
         }
 
         // Renvoyer un message de succès
@@ -176,6 +226,7 @@ class TreasuryController extends Controller
             'data' => [
                 'treasury' => $versement,
                 'manager' => $versement->manager,
+                'vendor' => $versement->vendor,
             ]
         ]);
     }
@@ -267,7 +318,8 @@ class TreasuryController extends Controller
         {
             $returnedTreasuries[] = [
                 'treasury' => $treasury,
-                'manager' => $treasury->manager
+                'vendor' => $treasury->vendor,
+                'manager' => $treasury->manager,
             ];
         }
 

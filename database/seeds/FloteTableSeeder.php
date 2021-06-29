@@ -1,33 +1,42 @@
 <?php
 
+use App\Enums\Statut;
 use App\Flote;
+use App\Vendor;
 use Illuminate\Database\Seeder;
 
 class FloteTableSeeder extends Seeder {
 
 	public function run()
 	{
-		//DB::table('flotes')->delete();
-
 		// 'flote1'
-		Flote::create(array(
-				'nom' => \App\Enums\Statut::MTN,
-				'description' => 'opérateur MTN'
-			));
+		Flote::create([
+            'nom' => Statut::MTN,
+            'description' => 'Opérateur MTN'
+        ]);
 
 		// 'flote2'
-		Flote::create(array(
-				'nom' => \App\Enums\Statut::ORANGE,
-				'description' => 'opérateur Orange'
-			));
+		Flote::create([
+            'nom' => Statut::ORANGE,
+            'description' => 'Opérateur Orange'
+        ]);
 
-		// vendors
-        \App\Vendor::create(array(
-            'name' => \App\Enums\Statut::BY_DIGIT_PARTNER
-        ));
+		// vendors1
+        Vendor::create([
+            'name' => Statut::BY_DIGIT_PARTNER,
+            'description' => Statut::BY_DIGIT_PARTNER
+        ]);
 
-        \App\Vendor::create(array(
-            'name' => \App\Enums\Statut::BY_BANK
-        ));
+        // vendors2
+        Vendor::create([
+            'name' => Statut::BY_BANK,
+            'description' => Statut::BY_BANK
+        ]);
+
+        // vendors3
+        Vendor::create([
+            'name' => "BGFT",
+            'description' => "BGFT"
+        ]);
 	}
 }

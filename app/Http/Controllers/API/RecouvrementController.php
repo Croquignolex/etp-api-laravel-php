@@ -6,9 +6,11 @@ use App\User;
 use App\Puce;
 use App\Role;
 use App\Agent;
+use App\Movement;
 use App\Enums\Roles;
 use App\Recouvrement;
 use App\Enums\Statut;
+use App\Enums\Transations;
 use App\Approvisionnement;
 use Illuminate\Http\Request;
 use App\Events\NotificationsEvent;
@@ -136,6 +138,17 @@ class RecouvrementController extends Controller
             // Augmenter la caisse du RZ et augmenter sa dette
             $connected_user->dette = $connected_user->dette + $montant;
             $connected_user->save();
+        }
+        else if($connected_user->hasRole([Roles::GESTION_FLOTTE])) {
+            // Garder le mouvement de caisse éffectué par la GF
+            Movement::create([
+                'name' => $recouvrement->source_user->name,
+                'type' => Transations::RECOUVREMENT,
+                'in' => $recouvrement->montant,
+                'out' => 0,
+                'balance' => $connected_caisse->solde,
+                'id_manager' => $connected_user->id,
+            ]);
         }
 
         //On calcule le reste à recouvrir

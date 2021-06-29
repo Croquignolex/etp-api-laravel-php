@@ -170,6 +170,15 @@ class FloteController extends Controller
             'description' => ['nullable', 'string'],
             'type' => ['required', 'numeric'],
         ]);
+
+        if(Puce::where('numero', $request->numero)->get()) {
+            return response()->json([
+                'message' => "Ce compte existe déjà dans le système",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
         if ($validator->fails()) {
             return response()->json([
                 'message' => "Le formulaire contient des champs mal renseignés",

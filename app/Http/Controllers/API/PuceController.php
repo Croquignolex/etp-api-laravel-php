@@ -47,6 +47,14 @@ class PuceController extends Controller
 			'type' => ['required', 'numeric'],
         ]);
 
+        if(Puce::where('numero', $request->numero)->get()) {
+            return response()->json([
+                'message' => "Ce compte existe déjà dans le système",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
         if ($validator->fails()) {
             return response()->json([
                 'message' => "Le formulaire contient des champs mal renseignées ou la puce existe déjà dans le système",
@@ -229,65 +237,60 @@ class PuceController extends Controller
 
     /**
      * modification de l'opérateur de la puce
-     * @param Request $request
-     * @param $id
-     * @return JsonResponse
      */
+    // GESTIONNAIRE DE FLOTTE
     public function update_flote(Request $request, $id)
     {
+        $puce = Puce::find($id);
+        //si la puce n'existe pas
+        if (is_null($puce)) {
+            return response()->json([
+                'message' => "La puce n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
-            'id_flotte' => ['required', 'Numeric']
+            'id_flotte' => ['required']
         ]);
+
         if ($validator->fails()) {
-            return response()->json(
-                [
-                    'message' => "Le formulaire contient des champs mal renseignés",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
         }
 
         // Récupérer les données validées
         $id_flotte = $request->id_flotte;
 
-        // rechercher la puce
-        $puce = Puce::find($id);
-
         // Modifier la puce
         $puce->id_flotte = $id_flotte;
 
-        if ($puce->save()) {
-			$id_agent = $puce->id_agent;
-			$agent = is_null($id_agent) ? $id_agent : $puce->agent;
-			$user = is_null($id_agent) ? $id_agent : User::find($puce->agent->id_user);
-            // Renvoyer un message de succès
-            return response()->json(
-                [
-                    'message' => '',
-                    'status' => true,
-                    'data' => [
-                        'puce' => $puce,
-                        'flote' => $puce->flote,
-                        'type' => $puce->type_puce,
-                        'agent' => $agent,
-                        'user' => $user,
-                        'corporate' => $puce->company,
-                        'recouvreur' => $puce->rz,
-                    ]
+        $puce->save();
+
+        $id_agent = $puce->id_agent;
+        $agent = is_null($id_agent) ? $id_agent : $puce->agent;
+        $user = is_null($id_agent) ? $id_agent : $agent->user();
+        // Renvoyer un message de succès
+        return response()->json(
+            [
+                'message' => "Mise à jour de l'opérateur avec succès",
+                'status' => true,
+                'data' => [
+                    'puce' => $puce,
+                    'flote' => $puce->flote,
+                    'type' => $puce->type_puce,
+                    'agent' => $agent,
+                    'user' => $user,
+                    'corporate' => $puce->company,
+                    'recouvreur' => $puce->rz,
                 ]
-            );
-        } else {
-            // Renvoyer une erreur
-            return response()->json(
-                [
-                    'message' => 'Erreur lors de la modification',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
-        }
+            ]
+        );
     }
 
     /**

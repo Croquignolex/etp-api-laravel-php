@@ -12,6 +12,8 @@ class Transations
     const DESTOCKAGE = 'Déstockage';
     const RECOUVREMENT = 'Recouvrement';
     const RETOUR_FLOTTE = 'Retour flotte';
+    const TREASURY_OUT = 'Décaissement externe';
+    const TREASURY_IN = 'Encaissement externe';
 
     const TREASURY_GF_OUT = 'Décaissement GF externe';
     const TREASURY_GF_IN = 'Encaissement GF externe';

@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Approvisionnement;
 use App\Enums\Roles;
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 
@@ -91,6 +93,38 @@ class NotificationsController extends Controller
 
         return response()->json([
             'message' => "Notification supprimée avec succès",
+            'data' => null,
+            'status' => true,
+        ]);
+    }
+
+    /**
+     * Factory reset
+     */
+    // ADMIN
+    public function factory_reset()
+    {
+        DB::table('liquidites')->delete();
+        DB::table('versements')->delete();
+        DB::table('treasuries')->delete();
+        DB::table('destockages')->delete();
+        DB::table('flottage_rz')->delete();
+        DB::table('notifications')->delete();
+        DB::table('recouvrements')->delete();
+        DB::table('retour_flotes')->delete();
+        DB::table('demande_flotes')->delete();
+        DB::table('flotage_anonymes')->delete();
+        DB::table('flottage_internes')->delete();
+        DB::table('approvisionnements')->delete();
+        DB::table('demande_destockages')->delete();
+
+        DB::table('puces')->update(["solde" => 0]);
+        DB::table('users')->update(["dette" => 0]);
+        DB::table('caisses')->update(["solde" => 0]);
+        DB::table('vendors')->update(["solde" => 0]);
+
+        return response()->json([
+            'message' => "Rémise à zéro du système éffectué avec succès",
             'data' => null,
             'status' => true,
         ]);

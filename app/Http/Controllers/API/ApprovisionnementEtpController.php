@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Enums\Transations;
+use App\Movement;
 use App\Puce;
 use App\User;
 use App\Role;
 use App\Agent;
 use App\Caisse;
+use App\Vendor;
 use App\Type_puce;
 use App\Destockage;
 use App\Enums\Roles;
@@ -40,15 +43,17 @@ class ApprovisionnementEtpController extends Controller
      */
     // GESTIONNAIRE DE FLOTTE
     // RESPONSABLE DE ZONE
+    // SUPERVISEUR
     public function store(Request $request)
     {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
             'type' => ['required', 'string', 'max:255'], //BY_AGENT, BY_DIGIT_PARTNER or BY_BANK
-            'id_fournisseur' => ['nullable', 'Numeric'], // si le type est BY_DIGIT_PARTNER ou BY_BANK
-            'id_agent' => ['nullable', 'Numeric'],       // obligatoire si le type est BY_AGENT
-            'id_puce' => ['required', 'Numeric'],
-            'montant' => ['required', 'Numeric'],
+            'id_fournisseur' => ['nullable', 'numeric'], // si le type est BY_DIGIT_PARTNER ou BY_BANK
+            'id_agent' => ['nullable', 'numeric'],       // obligatoire si le type est BY_AGENT
+            'id_puce' => ['required', 'numeric'],
+            'montant' => ['required', 'numeric'],
+            'cash_pay' => ['nullable', 'string'],
         ]);
 
         if ($validator->fails()) {
@@ -71,9 +76,16 @@ class ApprovisionnementEtpController extends Controller
 
         $connected_user = Auth::user();
         $connected_caisse = $connected_user->caisse->first();
+        $user_role = $connected_user->roles->first()->name;
+
+        $is_supervisor = $user_role === Roles::SUPERVISEUR;
+        $cash_pay = $request->cash_pay === Statut::EFFECTUER;
 
         // Vérification du solde caisse
-        if ($connected_caisse->solde < $montant) {
+        if (
+            ($is_supervisor && $cash_pay && ($connected_caisse->solde < $montant)) ||
+            (!$is_supervisor && ($connected_caisse->solde < $montant))
+        ) {
             return response()->json([
                 'message' => "Solde caisse insuffisant pour éffectuer cette opération",
                 'status' => false,
@@ -89,7 +101,6 @@ class ApprovisionnementEtpController extends Controller
         $puce_receptrice = Puce::find($id_puce);
         $type_puce = $puce_receptrice->type_puce->name;
 
-        $user_role = $connected_user->roles->first()->name;
         $is_collector = $user_role === Roles::RECOUVREUR;
 
         $status = ($is_collector && ($type_puce !== Statut::PUCE_RZ)) ? Statut::EN_COURS : Statut::EFFECTUER;
@@ -106,14 +117,36 @@ class ApprovisionnementEtpController extends Controller
         ]);
         $destockage->save();
 
-        // Dimuner les especes dans la caisse
-        $connected_caisse->solde = $connected_caisse->solde - $montant;
-        $connected_caisse->save();
+        // Dimuner les especes dans la caisse si tous les profil sauf suerviseur avec cash activé
+        if(($is_supervisor && $cash_pay) || !$is_supervisor) {
+            $connected_caisse->solde = $connected_caisse->solde - $montant;
+            $connected_caisse->save();
+        }
 
-        if ($status === Statut::EFFECTUER) {
+        if ($status === Statut::EFFECTUER)
+        {
+            if($user_role === Roles::GESTION_FLOTTE) {
+                // Garder le mouvement de caisse éffectué par la GF
+                Movement::create([
+                    'name' => $destockage->agent_user->name,
+                    'type' => Transations::DESTOCKAGE,
+                    'in' => 0,
+                    'out' => $destockage->montant,
+                    'balance' => $connected_caisse->solde,
+                    'id_manager' => $connected_user->id,
+                ]);
+            }
+
             // Flotte ajouté dans les puce emetrice
             $puce_receptrice->solde = $puce_receptrice->solde + $montant;
             $puce_receptrice->save();
+
+            // Imputer la dette au fournisseur si paiement par cash direct désactivé
+            if(!$cash_pay && $is_supervisor) {
+                $vendor = Vendor::find($fournisseur);
+                $vendor->solde = $vendor->solde - $montant;
+                $vendor->save();
+            }
         }
         else if ($status === Statut::EN_COURS) {
             if($type === Statut::BY_AGENT) {
@@ -548,9 +581,9 @@ class ApprovisionnementEtpController extends Controller
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
             'nom_agent' => ['nullable', 'string'],
-            'id_puce_to' => ['required', 'Numeric'],
-            'montant' => ['required', 'Numeric'],
-            'nro_puce_from' => ['required', 'Numeric'],
+            'id_puce_to' => ['required', 'numeric'],
+            'montant' => ['required', 'numeric'],
+            'nro_puce_from' => ['required', 'string'],
         ]);
 
         if ($validator->fails()) {
@@ -610,7 +643,7 @@ class ApprovisionnementEtpController extends Controller
             // Check de l'existence de la puce
             if($needle_sim !== null) {
                 return response()->json([
-                    'message' => "Cette puce existe déjà dans le système et ne peut être attribuée à un agent/ressource",
+                    'message' => "Ce compte existe déjà dans le système et ne peut être attribuée à un agent/ressource",
                     'status' => false,
                     'data' => null
                 ]);
@@ -725,6 +758,18 @@ class ApprovisionnementEtpController extends Controller
             }
             else if($status === Statut::EFFECTUER)
             {
+                if($user_role === Roles::GESTION_FLOTTE) {
+                    // Garder le mouvement de caisse éffectué par la GF
+                    Movement::create([
+                        'name' => $destockage->agent_user->name,
+                        'type' => Transations::DESTOCKAGE,
+                        'in' => 0,
+                        'out' => $destockage->montant,
+                        'balance' => $connected_caisse->solde,
+                        'id_manager' => $connected_user->id,
+                    ]);
+                }
+
                 // Flotte ajouté dans les puce emetrice
                 $puce_receptrice->solde = $puce_receptrice->solde + $montant;
                 $puce_receptrice->save();

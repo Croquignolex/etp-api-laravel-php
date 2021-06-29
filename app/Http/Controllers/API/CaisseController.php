@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Enums\Transations;
 use App\Puce;
 use App\Role;
 use App\User;
+use App\Movement;
 use App\Liquidite;
 use App\Operation;
 use App\Versement;
 use App\Enums\Roles;
 use App\Enums\Statut;
+use App\Enums\Transations;
 use Illuminate\Http\Request;
 use App\Notifications\Recouvrement;
 use Illuminate\Support\Facades\Auth;
@@ -138,8 +139,9 @@ class CaisseController extends Controller
     {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
-            'id_receveur' => ['required', 'Numeric'], //id de l'utilisateur qui recoit l'argent
+            'id_receveur' => ['required', 'numeric'], //id de l'utilisateur qui recoit l'argent
             'montant' => ['required', 'Numeric'],
+            'raison' => ['nullable', 'string'],
         ]);
 
         if ($validator->fails()) {
@@ -172,6 +174,14 @@ class CaisseController extends Controller
 
         //recuperer la caisse de l'utilisateur connecté
         $connected_user = Auth::user();
+        if ($receveur->id == $connected_user->id) {
+            return response()->json([
+                'message' => "Vous ne pouvez pas éffectuer cette opération à vous même",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
         $caisse_emetteur = $connected_user->caisse->first();
 
         if ($caisse_emetteur->solde < $montant) {
@@ -188,12 +198,25 @@ class CaisseController extends Controller
             'montant' => $montant,
             'add_by' => $connected_user->id,
             'note' => Transations::INTERNAL_TREASURY_OUT,
-            'statut' => Statut::EN_COURS
+            'statut' => Statut::EN_COURS,
+            'recu' => $request->raison
         ]);
         $decaissement->save();
 
         $caisse_emetteur->solde = $caisse_emetteur->solde - $montant;
         $caisse_emetteur->save();
+
+        if($connected_user->hasRole([Roles::GESTION_FLOTTE])) {
+            // Garder le mouvement de caisse éffectué par la GF
+            Movement::create([
+                'name' => $decaissement->related->name,
+                'type' => Transations::INTERNAL_TREASURY_OUT,
+                'in' => 0,
+                'out' => $decaissement->montant,
+                'balance' => $caisse_emetteur->solde,
+                'id_manager' => $connected_user->id,
+            ]);
+        }
 
         //notification du receveur
         $message = "Décaissement éffectué par " . $connected_user->name;
@@ -293,6 +316,16 @@ class CaisseController extends Controller
         $connected_user_caisse->solde = $connected_user_caisse->solde - $montant;
         $connected_user_caisse->save();
 
+        // Garder le mouvement de caisse éffectué par la GF
+        Movement::create([
+            'name' => $decaissement->related->name,
+            'type' => Transations::INTERNAL_HANDOVER,
+            'in' => 0,
+            'out' => $decaissement->montant,
+            'balance' => $connected_user_caisse->solde,
+            'id_manager' => $connected_user->id,
+        ]);
+
         //notification du receveur
         $message = "Passation de service éffectuée par " . $connected_user->name;
         $receveur->notify(new Notif_recouvrement([
@@ -346,6 +379,16 @@ class CaisseController extends Controller
         //on credite le compte de la gestionnaire de flotte
         $caisse_recepteur->solde = $caisse_recepteur->solde + $montant;
         $caisse_recepteur->save();
+
+        // Garder le mouvement de caisse éffectué par la GF
+        Movement::create([
+            'name' => $versement->user->name,
+            'type' => Transations::INTERNAL_HANDOVER,
+            'in' => $versement->montant,
+            'out' => 0,
+            'balance' => $caisse_recepteur->solde,
+            'id_manager' => $connected_user->id,
+        ]);
 
         return response()->json([
             'message' => "Passation de service confirmé avec succès",
@@ -432,6 +475,17 @@ class CaisseController extends Controller
         if($recepteur_role === Roles::RECOUVREUR) {
             $connected_user->dette = $connected_user->dette + $montant;
             $connected_user->save();
+        }
+        else if($recepteur_role === Roles::GESTION_FLOTTE) {
+            // Garder le mouvement de caisse éffectué par la GF
+            Movement::create([
+                'name' => $versement->user->name,
+                'type' => Transations::INTERNAL_TREASURY_IN,
+                'in' => $versement->montant,
+                'out' => 0,
+                'balance' => $caisse_recepteur->solde,
+                'id_manager' => $connected_user->id,
+            ]);
         }
 
         return response()->json([

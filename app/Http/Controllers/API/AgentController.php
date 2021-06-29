@@ -720,6 +720,15 @@ class AgentController extends Controller
             'nom' => ['required', 'string'],
             'description' => ['nullable', 'string'],
         ]);
+
+        if(Puce::where('numero', $request->numero)->get()) {
+            return response()->json([
+                'message' => "Ce compte existe déjà dans le système",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
         if ($validator->fails()) {
             return response()->json([
                 'message' => "Le formulaire contient des champs mal renseignés",
@@ -855,6 +864,15 @@ class AgentController extends Controller
             'nom' => ['required', 'string'],
             'description' => ['nullable', 'string'],
         ]);
+
+        if(Puce::where('numero', $request->numero)->get()) {
+            return response()->json([
+                'message' => "Ce compte existe déjà dans le système",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
         if ($validator->fails()) {
             return response()->json([
                 'message' => "Le formulaire contient des champs mal renseignés",
