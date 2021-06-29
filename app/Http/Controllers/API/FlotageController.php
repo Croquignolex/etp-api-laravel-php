@@ -9,6 +9,7 @@ use App\Agent;
 use App\Caisse;
 use App\Movement;
 use App\Type_puce;
+use App\Transaction;
 use App\Enums\Roles;
 use App\Enums\Statut;
 use App\Recouvrement;
@@ -181,6 +182,18 @@ class FlotageController extends Controller
         $puce_agent->solde = $puce_agent->solde + $montant;
         $puce_agent->save();
 
+        // Garder la transaction éffectué par la GF
+        Transaction::create([
+            'type' => Transations::FLOTAGE,
+            'in' => 0,
+            'out' => $flottage->montant,
+            'operator' => $puce_etp->flote->nom,
+            'left' => $puce_etp->numero . ' (' . $puce_etp->nom . ')',
+            'right' => $puce_agent->numero . ' (' . $puce_agent->nom . ')',
+            'balance' => $puce_etp->solde,
+            'id_manager' => $connected_user->id,
+        ]);
+
         //On calcule le reste de flotte à envoyer
         $demande_flotte->reste = $demande_flotte->reste - $montant;
         $demande_flotte->statut = Statut::EFFECTUER ;
@@ -348,7 +361,7 @@ class FlotageController extends Controller
             $connected_caisse->solde = $connected_caisse->solde + $montant;
             $connected_caisse->save();
 
-            if($connected_user->hasRole([Roles::GESTION_FLOTTE])) {
+            if(!$is_collector) {
                 // Garder le mouvement de caisse éffectué par la GF
                 Movement::create([
                     'name' => $recouvrement->source_user->name,
@@ -406,6 +419,20 @@ class FlotageController extends Controller
         //On credite la puce de l'Agent
         $puce_agent->solde = $puce_agent->solde + $montant;
         $puce_agent->save();
+
+        if(!$is_collector) {
+            // Garder la transaction éffectué par la GF
+            Transaction::create([
+                'type' => Transations::FLOTAGE,
+                'in' => 0,
+                'out' => $flottage->montant,
+                'operator' => $puce_etp->flote->nom,
+                'left' => $puce_etp->numero . ' (' . $puce_etp->nom . ')',
+                'right' => $puce_agent->numero . ' (' . $puce_agent->nom . ')',
+                'balance' => $puce_etp->solde,
+                'id_manager' => $connected_user->id,
+            ]);
+        }
 
         return response()->json([
             'message' => 'Flottage effectué avec succès',
@@ -649,7 +676,7 @@ class FlotageController extends Controller
                 $connected_caisse->solde = $connected_caisse->solde + $montant;
                 $connected_caisse->save();
 
-                if($connected_user->hasRole([Roles::GESTION_FLOTTE])) {
+                if(!$is_collector) {
                     // Garder le mouvement de caisse éffectué par la GF
                     Movement::create([
                         'name' => $recouvrement->source_user->name,
@@ -706,6 +733,20 @@ class FlotageController extends Controller
 
             $puce_from->solde = $puce_from->solde - $montant;
             $puce_from->save();
+
+            if(!$is_collector) {
+                // Garder la transaction éffectué par la GF
+                Transaction::create([
+                    'type' => Transations::FLOTAGE,
+                    'in' => 0,
+                    'out' => $flottage->montant,
+                    'operator' => $puce_from->flote->nom,
+                    'left' => $puce_from->numero . ' (' . $puce_from->nom . ')',
+                    'right' => $puce->numero . ' (' . $puce->nom . ')',
+                    'balance' => $puce_from->solde,
+                    'id_manager' => $connected_user->id,
+                ]);
+            }
 
             return response()->json([
                 'message' => 'Flottage éffectué avec succès. Nouvel agent détecté et enreistré avec succès',

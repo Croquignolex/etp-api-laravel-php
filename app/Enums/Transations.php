@@ -9,11 +9,15 @@ class Transations
     const DEMANDE_FLOTTE = 'Demande de flotte';
     const DEMANDE_DESTOCK = 'Demande de déstockage';
     const APPROVISIONNEMENT = 'Approvisionnement';
+
+    const FLOTAGE = 'Flotage';
     const DESTOCKAGE = 'Déstockage';
     const RECOUVREMENT = 'Recouvrement';
     const RETOUR_FLOTTE = 'Retour flotte';
-    const TREASURY_OUT = 'Décaissement externe';
+    const FLEET_TRANSFER = 'Transfert de flotte';
+
     const TREASURY_IN = 'Encaissement externe';
+    const TREASURY_OUT = 'Décaissement externe';
 
     const TREASURY_GF_OUT = 'Décaissement GF externe';
     const TREASURY_GF_IN = 'Encaissement GF externe';

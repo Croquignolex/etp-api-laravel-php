@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Enums\Transations;
+use App\Transaction;
 use App\User;
 use App\Puce;
 use App\Type_puce;
@@ -89,6 +91,8 @@ class Flottage_rzController extends Controller
         }
 
         $connected_user = Auth::user();
+        $connected_role = $connected_user->roles->first()->name;
+
         $fom_name = $puce_from->type_puce->name ;
         $to_name = $puce_to->type_puce->name ;
 
@@ -106,6 +110,20 @@ class Flottage_rzController extends Controller
         // On retranche quand même la flotte dans la puce emettrice
         $puce_from->solde = $puce_from->solde - $montant;
         $puce_from->save();
+
+        if($connected_role === Roles::GESTION_FLOTTE) {
+            // Garder la transaction éffectué par la GF
+            Transaction::create([
+                'type' => Transations::FLEET_TRANSFER,
+                'in' => 0,
+                'out' => $flottage_rz->montant,
+                'operator' => $puce_from->flote->nom,
+                'left' => $puce_from->numero . ' (' . $puce_from->nom . ')',
+                'right' => $puce_to->numero . ' (' . $puce_to->nom . ')',
+                'balance' => $puce_from->solde,
+                'id_manager' => $connected_user->id,
+            ]);
+        }
 
         $users = User::all();
 

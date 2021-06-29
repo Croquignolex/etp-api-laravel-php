@@ -2,13 +2,15 @@
 
 namespace App\Http\Controllers\API;
 
-use App\User;
 use App\Puce;
+use App\User;
 use App\Role;
 use App\Type_puce;
 use App\Enums\Roles;
+use App\Transaction;
 use App\Enums\Statut;
 use App\Flottage_interne;
+use App\Enums\Transations;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
@@ -224,6 +226,9 @@ class Flottage_interneController extends Controller
         $type_puce_receptrice = $puce_receptrice->type_puce->name;
         $type_puce_emetrice = $puce_emetrice->type_puce->name;
 
+        $connected_user = Auth::user();
+        $connected_role = $connected_user->roles->first()->name;
+
         // Augmenter la dette si nous somme en presence d'un RZ en puce receptrice
         if ($type_puce_receptrice === Statut::PUCE_RZ) {
             $rz = $puce_receptrice->rz;
@@ -231,6 +236,19 @@ class Flottage_interneController extends Controller
                 $rz->dette = $rz->dette + $montant;
                 $rz->save();
             }
+        }
+        else if($type_puce_receptrice === Statut::FLOTTAGE && $connected_role === Roles::GESTION_FLOTTE) {
+            // Garder la transaction éffectué par la GF
+            Transaction::create([
+                'type' => Transations::FLEET_TRANSFER,
+                'in' => $transfert_flotte->montant,
+                'out' => 0,
+                'operator' => $puce_receptrice->flote->nom,
+                'left' => $puce_receptrice->numero . ' (' . $puce_receptrice->nom . ')',
+                'right' => $puce_emetrice->numero . ' (' . $puce_emetrice->nom . ')',
+                'balance' => $puce_receptrice->solde,
+                'id_manager' => $connected_user->id,
+            ]);
         }
 
         // Dimunuer la dette si nous somme en presence d'un RZ en puce emetrice

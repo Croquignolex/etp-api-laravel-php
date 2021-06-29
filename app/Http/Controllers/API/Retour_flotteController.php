@@ -4,13 +4,13 @@ namespace App\Http\Controllers\API;
 
 use App\Puce;
 use App\User;
-use App\Role;
+use App\Transaction;
 use App\Enums\Roles;
 use App\Enums\Statut;
 use App\Retour_flote;
+use App\Enums\Transations;
 use App\Approvisionnement;
 use Illuminate\Http\Request;
-use App\Events\NotificationsEvent;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
@@ -156,6 +156,20 @@ class Retour_flotteController extends Controller
                 // on augmente la dette du RZ s'il effectue le retour flotte dans sa puce
                 $connected_user->dette = $connected_user->dette + $montant;
                 $connected_user->save();
+            }
+
+            if(!$is_collector) {
+                // Garder la transaction éffectué par la GF
+                Transaction::create([
+                    'type' => Transations::RETOUR_FLOTTE,
+                    'in' => $retour_flotte->montant,
+                    'out' => 0,
+                    'operator' => $puce_flottage->flote->nom,
+                    'left' => $puce_flottage->numero . ' (' . $puce_flottage->nom . ')',
+                    'right' => $puce_agent->numero . ' (' . $puce_agent->nom . ')',
+                    'balance' => $puce_flottage->solde,
+                    'id_manager' => $connected_user->id,
+                ]);
             }
         }
 
@@ -371,7 +385,8 @@ class Retour_flotteController extends Controller
 
         $connected_user = Auth::user();
         $collector = $retour_flotte->user;
-        $is_collector = $collector->roles->first()->name === Roles::RECOUVREUR;
+        $is_collector_in_request = $collector->roles->first()->name === Roles::RECOUVREUR;
+        $is_collector = $connected_user->roles->first()->name === Roles::RECOUVREUR;
 
         //On recupère la puce de l'agent concerné et on debite
         $montant = $retour_flotte->montant;
@@ -379,11 +394,26 @@ class Retour_flotteController extends Controller
         //on credite la puce de ETP concernée
         $puce_flottage = $retour_flotte->puce_destination;
         $puce_flottage->solde = $puce_flottage->solde + $montant;
+        $puce_agent = $retour_flotte->puce_source;
 
         $puce_flottage->save();
         $retour_flotte->save();
 
-        if($is_collector) {
+        if(!$is_collector) {
+            // Garder la transaction éffectué par la GF
+            Transaction::create([
+                'type' => Transations::RETOUR_FLOTTE,
+                'in' => $retour_flotte->montant,
+                'out' => 0,
+                'operator' => $puce_flottage->flote->nom,
+                'left' => $puce_flottage->numero . ' (' . $puce_flottage->nom . ')',
+                'right' => $puce_agent->numero . ' (' . $puce_agent->nom . ')',
+                'balance' => $puce_flottage->solde,
+                'id_manager' => $connected_user->id,
+            ]);
+        }
+
+        if($is_collector_in_request) {
             // On notifie si on est en presence d'un RZ
             $message = "Retour flotte à été apprové par " . $connected_user->name;
             $collector->notify(new Notif_retour_flotte([

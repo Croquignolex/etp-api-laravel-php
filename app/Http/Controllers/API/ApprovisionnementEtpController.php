@@ -2,18 +2,19 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Enums\Transations;
-use App\Movement;
 use App\Puce;
+use App\Transaction;
 use App\User;
 use App\Role;
 use App\Agent;
 use App\Caisse;
 use App\Vendor;
+use App\Movement;
 use App\Type_puce;
 use App\Destockage;
 use App\Enums\Roles;
 use App\Enums\Statut;
+use App\Enums\Transations;
 use App\Demande_destockage;
 use Illuminate\Http\Request;
 use App\Events\NotificationsEvent;
@@ -125,6 +126,10 @@ class ApprovisionnementEtpController extends Controller
 
         if ($status === Statut::EFFECTUER)
         {
+            // Flotte ajouté dans les puce emetrice
+            $puce_receptrice->solde = $puce_receptrice->solde + $montant;
+            $puce_receptrice->save();
+
             if($user_role === Roles::GESTION_FLOTTE) {
                 // Garder le mouvement de caisse éffectué par la GF
                 Movement::create([
@@ -135,11 +140,19 @@ class ApprovisionnementEtpController extends Controller
                     'balance' => $connected_caisse->solde,
                     'id_manager' => $connected_user->id,
                 ]);
-            }
 
-            // Flotte ajouté dans les puce emetrice
-            $puce_receptrice->solde = $puce_receptrice->solde + $montant;
-            $puce_receptrice->save();
+                // Garder la transaction éffectué par la GF
+                Transaction::create([
+                    'type' => Transations::DESTOCKAGE,
+                    'in' => $destockage->montant,
+                    'out' => 0,
+                    'operator' => $puce_receptrice->flote->nom,
+                    'left' => $puce_receptrice->numero . ' (' . $puce_receptrice->nom . ')',
+                    'right' => '(' . $destockage->agent_user->name . ')',
+                    'balance' => $puce_receptrice->solde,
+                    'id_manager' => $connected_user->id,
+                ]);
+            }
 
             // Imputer la dette au fournisseur si paiement par cash direct désactivé
             if(!$cash_pay && $is_supervisor) {
@@ -402,6 +415,18 @@ class ApprovisionnementEtpController extends Controller
         // Flotte ajouté dans les puce emetrice
         $puce_receptrice->solde = $puce_receptrice->solde + $montant;
         $puce_receptrice->save();
+
+        // Garder la transaction éffectué par la GF
+        Transaction::create([
+            'type' => Transations::DESTOCKAGE,
+            'in' => $destockage->montant,
+            'out' => 0,
+            'operator' => $puce_receptrice->flote->nom,
+            'left' => $puce_receptrice->numero . ' (' . $puce_receptrice->nom . ')',
+            'right' => '(' . $destockage->agent_user->name . ')',
+            'balance' => $puce_receptrice->solde,
+            'id_manager' => $connected_user->id,
+        ]);
 
         // Baisser la dette du RZ
         $destokeur->dette = $destokeur->dette - $montant;
@@ -758,6 +783,10 @@ class ApprovisionnementEtpController extends Controller
             }
             else if($status === Statut::EFFECTUER)
             {
+                // Flotte ajouté dans les puce emetrice
+                $puce_receptrice->solde = $puce_receptrice->solde + $montant;
+                $puce_receptrice->save();
+
                 if($user_role === Roles::GESTION_FLOTTE) {
                     // Garder le mouvement de caisse éffectué par la GF
                     Movement::create([
@@ -768,11 +797,19 @@ class ApprovisionnementEtpController extends Controller
                         'balance' => $connected_caisse->solde,
                         'id_manager' => $connected_user->id,
                     ]);
-                }
 
-                // Flotte ajouté dans les puce emetrice
-                $puce_receptrice->solde = $puce_receptrice->solde + $montant;
-                $puce_receptrice->save();
+                    // Garder la transaction éffectué par la GF
+                    Transaction::create([
+                        'type' => Transations::DESTOCKAGE,
+                        'in' => $destockage->montant,
+                        'out' => 0,
+                        'operator' => $puce_receptrice->flote->nom,
+                        'left' => $puce_receptrice->numero . ' (' . $puce_receptrice->nom . ')',
+                        'right' => '(' . $destockage->agent_user->name . ')',
+                        'balance' => $puce_receptrice->solde,
+                        'id_manager' => $connected_user->id,
+                    ]);
+                }
             }
 
             return response()->json([
