@@ -442,7 +442,7 @@ class ApprovisionnementEtpController extends Controller
         ]));
 
         //Database Notification a
-        $destockage->agent->user->notify(new Notif_flottage([
+        $destockage->agent_user->notify(new Notif_flottage([
             'message' => $message,
             'data' => $destockage
         ]));
