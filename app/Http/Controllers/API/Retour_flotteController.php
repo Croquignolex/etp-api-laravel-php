@@ -158,19 +158,17 @@ class Retour_flotteController extends Controller
                 $connected_user->save();
             }
 
-            if(!$is_collector) {
-                // Garder la transaction éffectué par la GF
-                Transaction::create([
-                    'type' => Transations::RETOUR_FLOTTE,
-                    'in' => $retour_flotte->montant,
-                    'out' => 0,
-                    'operator' => $puce_flottage->flote->nom,
-                    'left' => $puce_flottage->numero . ' (' . $puce_flottage->nom . ')',
-                    'right' => $puce_agent->numero . ' (' . $puce_agent->nom . ')',
-                    'balance' => $puce_flottage->solde,
-                    'id_manager' => $connected_user->id,
-                ]);
-            }
+            // Garder la transaction éffectué par la GF
+            Transaction::create([
+                'type' => Transations::RETOUR_FLOTTE,
+                'in' => $retour_flotte->montant,
+                'out' => 0,
+                'operator' => $puce_flottage->flote->nom,
+                'left' => $puce_flottage->numero . ' (' . $puce_flottage->nom . ')',
+                'right' => $puce_agent->numero . ' (' . $puce_agent->nom . ')',
+                'balance' => $puce_flottage->solde,
+                'id_manager' => $connected_user->id,
+            ]);
         }
 
         //notification de l'agent

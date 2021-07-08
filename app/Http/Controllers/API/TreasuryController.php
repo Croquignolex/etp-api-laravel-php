@@ -93,23 +93,17 @@ class TreasuryController extends Controller
         $connected_caisse->solde = $connected_caisse->solde + $montant;
         $connected_caisse->save();
 
-        if($is_collector) {
-            // Augmenter la dette si l'opération est éffectué par un RZ
-            $connected_user->dette = $connected_user->dette + $montant;
-            $connected_user->save();
-        } else {
-            // Garder le mouvement de caisse éffectué par la GF
-            Movement::create([
-                'name' => is_null($versement->vendor)
-                    ? $versement->name
-                    : $versement->vendor->name . ' (fournisseur)',
-                'type' => Transations::TREASURY_IN,
-                'in' => $versement->amount,
-                'out' => 0,
-                'balance' => $connected_caisse->solde,
-                'id_manager' => $connected_user->id,
-            ]);
-        }
+        // Garder le mouvement de caisse éffectué par la GF
+        Movement::create([
+            'name' => is_null($versement->vendor)
+                ? $versement->name
+                : $versement->vendor->name . ' (fournisseur)',
+            'type' => Transations::TREASURY_IN,
+            'in' => $versement->amount,
+            'out' => 0,
+            'balance' => $connected_caisse->solde,
+            'id_manager' => $connected_user->id,
+        ]);
 
         // Renvoyer un message de succès
         return response()->json([
@@ -200,23 +194,22 @@ class TreasuryController extends Controller
         $connected_caisse->solde = $connected_caisse->solde - $montant;
         $connected_caisse->save();
 
+        // Garder le mouvement de caisse éffectué par la GF
+        Movement::create([
+            'name' => is_null($versement->vendor)
+                ? $versement->name
+                : $versement->vendor->name . ' (fournisseur)',
+            'type' => Transations::TREASURY_OUT,
+            'in' => 0,
+            'out' => $versement->amount,
+            'balance' => $connected_caisse->solde,
+            'id_manager' => $connected_user->id,
+        ]);
+
         if($is_collector) {
             // Augmenter la dette si l'opération est éffectué par un RZ
             $connected_user->dette = $connected_user->dette - $montant;
             $connected_user->save();
-        }
-        else {
-            // Garder le mouvement de caisse éffectué par la GF
-            Movement::create([
-                'name' => is_null($versement->vendor)
-                    ? $versement->name
-                    : $versement->vendor->name . ' (fournisseur)',
-                'type' => Transations::TREASURY_OUT,
-                'in' => 0,
-                'out' => $versement->amount,
-                'balance' => $connected_caisse->solde,
-                'id_manager' => $connected_user->id,
-            ]);
         }
 
         // Renvoyer un message de succès

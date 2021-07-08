@@ -133,22 +133,21 @@ class RecouvrementController extends Controller
         $connected_caisse->solde = $connected_caisse->solde + $montant;
         $connected_caisse->save();
 
+        // Garder le mouvement de caisse éffectué par la GF
+        Movement::create([
+            'name' => $recouvrement->source_user->name,
+            'type' => Transations::RECOUVREMENT,
+            'in' => $recouvrement->montant,
+            'out' => 0,
+            'balance' => $connected_caisse->solde,
+            'id_manager' => $connected_user->id,
+        ]);
+
         if($connected_user->hasRole([Roles::RECOUVREUR]))
         {
             // Augmenter la caisse du RZ et augmenter sa dette
             $connected_user->dette = $connected_user->dette + $montant;
             $connected_user->save();
-        }
-        else if($connected_user->hasRole([Roles::GESTION_FLOTTE])) {
-            // Garder le mouvement de caisse éffectué par la GF
-            Movement::create([
-                'name' => $recouvrement->source_user->name,
-                'type' => Transations::RECOUVREMENT,
-                'in' => $recouvrement->montant,
-                'out' => 0,
-                'balance' => $connected_caisse->solde,
-                'id_manager' => $connected_user->id,
-            ]);
         }
 
         //On calcule le reste à recouvrir

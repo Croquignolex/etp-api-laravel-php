@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Enums\Transations;
-use App\Transaction;
 use App\User;
 use App\Puce;
 use App\Type_puce;
+use App\Transaction;
 use App\Flottage_Rz;
 use App\Enums\Roles;
 use App\Enums\Statut;
 use App\Flottage_interne;
+use App\Enums\Transations;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
@@ -30,10 +30,13 @@ class Flottage_rzController extends Controller
         $this->middleware("permission:$superviseur|$ges_flotte|$rz");
     }
 
-    //creer le flottage
-    // GESTIONNAIRE DE FLOTTE
-    // SUPERVISEUR
-    // RESPONSABLE DE ZONE
+    /*
+     * Transfert de flotte
+     *
+     * GESTIONNAIRE DE FLOTTE
+     * SUPERVISEUR
+     * RESPONSABLE DE ZONE
+     */
     Public function store(Request $request)
     {
         // Valider données envoyées
@@ -111,19 +114,17 @@ class Flottage_rzController extends Controller
         $puce_from->solde = $puce_from->solde - $montant;
         $puce_from->save();
 
-        if($connected_role === Roles::GESTION_FLOTTE) {
-            // Garder la transaction éffectué par la GF
-            Transaction::create([
-                'type' => Transations::FLEET_TRANSFER,
-                'in' => 0,
-                'out' => $flottage_rz->montant,
-                'operator' => $puce_from->flote->nom,
-                'left' => $puce_from->numero . ' (' . $puce_from->nom . ')',
-                'right' => $puce_to->numero . ' (' . $puce_to->nom . ')',
-                'balance' => $puce_from->solde,
-                'id_manager' => $connected_user->id,
-            ]);
-        }
+        // Garder la transaction éffectué par la GF
+        Transaction::create([
+            'type' => Transations::FLEET_TRANSFER,
+            'in' => 0,
+            'out' => $flottage_rz->montant,
+            'operator' => $puce_from->flote->nom,
+            'left' => $puce_from->numero . ' (' . $puce_from->nom . ')',
+            'right' => $puce_to->numero . ' (' . $puce_to->nom . ')',
+            'balance' => $puce_from->solde,
+            'id_manager' => $connected_user->id,
+        ]);
 
         $users = User::all();
 

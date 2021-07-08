@@ -922,10 +922,10 @@ Route::group(['middleware' => 'auth:api'], function(){
     Route::post('factory_reset', 'API\NotificationsController@factory_reset');
 
     // Manager movements
-    Route::post('movements_gestionnaire/{id}', 'API\RapportsController@mouvements_gestionnaires')
+    Route::post('movements_utilisateur/{id}', 'API\RapportsController@mouvements_utilisateur')
         ->where('id', '[0-9]+');
 
     // Manager transactions
-    Route::post('transactions_gestionnaire/{id}', 'API\RapportsController@transactions_gestionnaires')
+    Route::post('transactions_utilisateur/{id}', 'API\RapportsController@transactions_utilisateur')
         ->where('id', '[0-9]+');
 });

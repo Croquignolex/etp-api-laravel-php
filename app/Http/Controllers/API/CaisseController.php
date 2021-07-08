@@ -206,17 +206,15 @@ class CaisseController extends Controller
         $caisse_emetteur->solde = $caisse_emetteur->solde - $montant;
         $caisse_emetteur->save();
 
-        if($connected_user->hasRole([Roles::GESTION_FLOTTE])) {
-            // Garder le mouvement de caisse éffectué par la GF
-            Movement::create([
-                'name' => $decaissement->related->name,
-                'type' => Transations::INTERNAL_TREASURY_OUT,
-                'in' => 0,
-                'out' => $decaissement->montant,
-                'balance' => $caisse_emetteur->solde,
-                'id_manager' => $connected_user->id,
-            ]);
-        }
+        // Garder le mouvement de caisse éffectué par la GF
+        Movement::create([
+            'name' => $decaissement->related->name,
+            'type' => Transations::INTERNAL_TREASURY_OUT,
+            'in' => 0,
+            'out' => $decaissement->montant,
+            'balance' => $caisse_emetteur->solde,
+            'id_manager' => $connected_user->id,
+        ]);
 
         //notification du receveur
         $message = "Décaissement éffectué par " . $connected_user->name;
@@ -465,6 +463,16 @@ class CaisseController extends Controller
         $caisse_recepteur->solde = $caisse_recepteur->solde + $montant;
         $caisse_recepteur->save();
 
+        // Garder le mouvement de caisse éffectué par la GF
+        Movement::create([
+            'name' => $versement->user->name,
+            'type' => Transations::INTERNAL_TREASURY_IN,
+            'in' => $versement->montant,
+            'out' => 0,
+            'balance' => $caisse_recepteur->solde,
+            'id_manager' => $connected_user->id,
+        ]);
+
         // Reduire la dette si emetteur RZ
         if($emetteur_role === Roles::RECOUVREUR) {
             $emetteur->dette = $emetteur->dette - $montant;
@@ -475,17 +483,6 @@ class CaisseController extends Controller
         if($recepteur_role === Roles::RECOUVREUR) {
             $connected_user->dette = $connected_user->dette + $montant;
             $connected_user->save();
-        }
-        else if($recepteur_role === Roles::GESTION_FLOTTE) {
-            // Garder le mouvement de caisse éffectué par la GF
-            Movement::create([
-                'name' => $versement->user->name,
-                'type' => Transations::INTERNAL_TREASURY_IN,
-                'in' => $versement->montant,
-                'out' => 0,
-                'balance' => $caisse_recepteur->solde,
-                'id_manager' => $connected_user->id,
-            ]);
         }
 
         return response()->json([

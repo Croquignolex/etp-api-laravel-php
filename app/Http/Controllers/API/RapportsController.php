@@ -15,7 +15,7 @@ class RapportsController extends Controller
      * Mouvements des GF
      */
     // SUPERVISEUR
-    public function mouvements_gestionnaires(Request $request, $id)
+    public function mouvements_utilisateur(Request $request, $id)
     {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
@@ -51,7 +51,7 @@ class RapportsController extends Controller
      * Transactions des GF
      */
     // SUPERVISEUR
-    public function transactions_gestionnaires(Request $request, $id)
+    public function transactions_utilisateur(Request $request, $id)
     {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
