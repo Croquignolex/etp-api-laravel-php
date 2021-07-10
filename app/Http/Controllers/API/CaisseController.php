@@ -213,7 +213,7 @@ class CaisseController extends Controller
             'in' => 0,
             'out' => $decaissement->montant,
             'balance' => $caisse_emetteur->solde,
-            'id_manager' => $connected_user->id,
+            'id_user' => $connected_user->id,
         ]);
 
         //notification du receveur
@@ -321,7 +321,7 @@ class CaisseController extends Controller
             'in' => 0,
             'out' => $decaissement->montant,
             'balance' => $connected_user_caisse->solde,
-            'id_manager' => $connected_user->id,
+            'id_user' => $connected_user->id,
         ]);
 
         //notification du receveur
@@ -385,7 +385,7 @@ class CaisseController extends Controller
             'in' => $versement->montant,
             'out' => 0,
             'balance' => $caisse_recepteur->solde,
-            'id_manager' => $connected_user->id,
+            'id_user' => $connected_user->id,
         ]);
 
         return response()->json([
@@ -470,7 +470,7 @@ class CaisseController extends Controller
             'in' => $versement->montant,
             'out' => 0,
             'balance' => $caisse_recepteur->solde,
-            'id_manager' => $connected_user->id,
+            'id_user' => $connected_user->id,
         ]);
 
         // Reduire la dette si emetteur RZ

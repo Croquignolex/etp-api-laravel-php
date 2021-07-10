@@ -242,11 +242,11 @@ class Flottage_interneController extends Controller
             'type' => Transations::FLEET_TRANSFER,
             'in' => $transfert_flotte->montant,
             'out' => 0,
-            'operator' => $puce_receptrice->flote->nom,
-            'left' => $puce_receptrice->numero . ' (' . $puce_receptrice->nom . ')',
-            'right' => $puce_emetrice->numero . ' (' . $puce_emetrice->nom . ')',
+            'id_operator' => $puce_receptrice->flote->id,
+            'id_left' => $puce_receptrice->id,
+            'id_right' => $puce_emetrice->id,
             'balance' => $puce_receptrice->solde,
-            'id_manager' => $connected_user->id,
+            'id_user' => $connected_user->id,
         ]);
 
         // Dimunuer la dette si nous somme en presence d'un RZ en puce emetrice

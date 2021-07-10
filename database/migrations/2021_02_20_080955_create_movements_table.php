@@ -20,11 +20,11 @@ class CreateMovementsTable extends Migration
             $table->double('in');
             $table->double('out');
             $table->double('balance');
-            $table->integer('id_manager')->unsigned();
+            $table->integer('id_user')->unsigned();
             $table->timestamps();
             $table->softDeletes();
 
-            $table->foreign('id_manager')
+            $table->foreign('id_user')
                 ->references('id')
                 ->on('users')
                 ->onDelete('cascade')

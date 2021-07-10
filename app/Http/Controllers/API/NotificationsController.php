@@ -104,11 +104,13 @@ class NotificationsController extends Controller
     // ADMIN
     public function factory_reset()
     {
+        DB::table('movements')->delete();
         DB::table('liquidites')->delete();
         DB::table('versements')->delete();
         DB::table('treasuries')->delete();
         DB::table('destockages')->delete();
         DB::table('flottage_rz')->delete();
+        DB::table('transactions')->delete();
         DB::table('notifications')->delete();
         DB::table('recouvrements')->delete();
         DB::table('retour_flotes')->delete();

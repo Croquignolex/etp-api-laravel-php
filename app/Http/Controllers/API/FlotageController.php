@@ -187,11 +187,11 @@ class FlotageController extends Controller
             'type' => Transations::FLOTAGE,
             'in' => 0,
             'out' => $flottage->montant,
-            'operator' => $puce_etp->flote->nom,
-            'left' => $puce_etp->numero . ' (' . $puce_etp->nom . ')',
-            'right' => $puce_agent->numero . ' (' . $puce_agent->nom . ')',
+            'id_operator' => $puce_etp->flote->id,
+            'id_left' => $puce_etp->id,
+            'id_right' => $puce_agent->id,
             'balance' => $puce_etp->solde,
-            'id_manager' => $connected_user->id,
+            'id_user' => $connected_user->id,
         ]);
 
         //On calcule le reste de flotte à envoyer
@@ -368,7 +368,7 @@ class FlotageController extends Controller
                 'in' => $recouvrement->montant,
                 'out' => 0,
                 'balance' => $connected_caisse->solde,
-                'id_manager' => $connected_user->id,
+                'id_user' => $connected_user->id,
             ]);
 
             //On calcule le reste à recouvrir
@@ -423,11 +423,11 @@ class FlotageController extends Controller
             'type' => Transations::FLOTAGE,
             'in' => 0,
             'out' => $flottage->montant,
-            'operator' => $puce_etp->flote->nom,
-            'left' => $puce_etp->numero . ' (' . $puce_etp->nom . ')',
-            'right' => $puce_agent->numero . ' (' . $puce_agent->nom . ')',
+            'id_operator' => $puce_etp->flote->id,
+            'id_left' => $puce_etp->id,
+            'id_right' => $puce_agent->id,
             'balance' => $puce_etp->solde,
-            'id_manager' => $connected_user->id,
+            'id_user' => $connected_user->id,
         ]);
 
         return response()->json([
@@ -679,7 +679,7 @@ class FlotageController extends Controller
                     'in' => $recouvrement->montant,
                     'out' => 0,
                     'balance' => $connected_caisse->solde,
-                    'id_manager' => $connected_user->id,
+                    'id_user' => $connected_user->id,
                 ]);
 
                 //On calcule le reste à recouvrir
@@ -733,11 +733,11 @@ class FlotageController extends Controller
                 'type' => Transations::FLOTAGE,
                 'in' => 0,
                 'out' => $flottage->montant,
-                'operator' => $puce_from->flote->nom,
-                'left' => $puce_from->numero . ' (' . $puce_from->nom . ')',
-                'right' => $puce->numero . ' (' . $puce->nom . ')',
+                'id_operator' => $puce_from->flote->id,
+                'id_left' => $puce_from->id,
+                'id_right' => $puce->id,
                 'balance' => $puce_from->solde,
-                'id_manager' => $connected_user->id,
+                'id_user' => $connected_user->id,
             ]);
 
             return response()->json([

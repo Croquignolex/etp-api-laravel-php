@@ -143,11 +143,11 @@ class ApprovisionnementEtpController extends Controller
                     'type' => Transations::APPROVISIONNEMENT,
                     'in' => $destockage->montant,
                     'out' => 0,
-                    'operator' => $puce_receptrice->flote->nom,
-                    'left' => $puce_receptrice->numero . ' (' . $puce_receptrice->nom . ')',
+                    'id_operator' => $puce_receptrice->flote->id,
+                    'id_left' => $puce_receptrice->id,
                     'right' => '(' . $destockage->fournisseur->name . ')',
                     'balance' => $puce_receptrice->solde,
-                    'id_manager' => $connected_user->id,
+                    'id_user' => $connected_user->id,
                 ]);
 
                 if($cash_pay) {
@@ -158,7 +158,7 @@ class ApprovisionnementEtpController extends Controller
                         'in' => 0,
                         'out' => $destockage->montant,
                         'balance' => $connected_caisse->solde,
-                        'id_manager' => $connected_user->id,
+                        'id_user' => $connected_user->id,
                     ]);
                 }
             }
@@ -170,7 +170,7 @@ class ApprovisionnementEtpController extends Controller
                     'in' => 0,
                     'out' => $destockage->montant,
                     'balance' => $connected_caisse->solde,
-                    'id_manager' => $connected_user->id,
+                    'id_user' => $connected_user->id,
                 ]);
 
                 // Garder la transaction éffectué par la GF ou RZ
@@ -178,11 +178,11 @@ class ApprovisionnementEtpController extends Controller
                     'type' => Transations::DESTOCKAGE,
                     'in' => $destockage->montant,
                     'out' => 0,
-                    'operator' => $puce_receptrice->flote->nom,
-                    'left' => $puce_receptrice->numero . ' (' . $puce_receptrice->nom . ')',
+                    'id_operator' => $puce_receptrice->flote->id,
+                    'id_left' => $puce_receptrice->id,
                     'right' => '(' . $destockage->agent_user->name . ')',
                     'balance' => $puce_receptrice->solde,
-                    'id_manager' => $connected_user->id,
+                    'id_user' => $connected_user->id,
                 ]);
             }
         }
@@ -213,7 +213,7 @@ class ApprovisionnementEtpController extends Controller
                     'in' => 0,
                     'out' => $destockage->montant,
                     'balance' => $connected_caisse->solde,
-                    'id_manager' => $connected_user->id,
+                    'id_user' => $connected_user->id,
                 ]);
             }
             else if($type === Statut::BY_DIGIT_PARTNER || $type === Statut::BY_BANK) {
@@ -236,7 +236,7 @@ class ApprovisionnementEtpController extends Controller
                     'in' => 0,
                     'out' => $destockage->montant,
                     'balance' => $connected_caisse->solde,
-                    'id_manager' => $connected_user->id,
+                    'id_user' => $connected_user->id,
                 ]);
             }
         }
@@ -466,11 +466,11 @@ class ApprovisionnementEtpController extends Controller
             'type' => Transations::DESTOCKAGE,
             'in' => $destockage->montant,
             'out' => 0,
-            'operator' => $puce_receptrice->flote->nom,
-            'left' => $puce_receptrice->numero . ' (' . $puce_receptrice->nom . ')',
+            'id_operator' => $puce_receptrice->flote->id,
+            'id_left' => $puce_receptrice->id,
             'right' => '(' . $destockage->agent_user->name . ')',
             'balance' => $puce_receptrice->solde,
-            'id_manager' => $connected_user->id,
+            'id_user' => $connected_user->id,
         ]);
 
         // Baisser la dette du RZ
@@ -532,11 +532,11 @@ class ApprovisionnementEtpController extends Controller
             'type' => Transations::APPROVISIONNEMENT,
             'in' => $destockage->montant,
             'out' => 0,
-            'operator' => $master_sim->flote->nom,
-            'left' => $master_sim->numero . ' (' . $master_sim->nom . ')',
+            'id_operator' => $master_sim->flote->id,
+            'id_left' => $master_sim->id,
             'right' => '(' . $destockage->fournisseur->name . ')',
             'balance' => $master_sim->solde,
-            'id_manager' => $connected_user->id,
+            'id_user' => $connected_user->id,
         ]);
 
         // Baisser la dette du RZ
@@ -824,7 +824,7 @@ class ApprovisionnementEtpController extends Controller
                 'in' => 0,
                 'out' => $destockage->montant,
                 'balance' => $connected_caisse->solde,
-                'id_manager' => $connected_user->id,
+                'id_user' => $connected_user->id,
             ]);
 
             //Notification
@@ -859,11 +859,11 @@ class ApprovisionnementEtpController extends Controller
                     'type' => Transations::DESTOCKAGE,
                     'in' => $destockage->montant,
                     'out' => 0,
-                    'operator' => $puce_receptrice->flote->nom,
-                    'left' => $puce_receptrice->numero . ' (' . $puce_receptrice->nom . ')',
+                    'id_operator' => $puce_receptrice->flote->id,
+                    'id_left' => $puce_receptrice->id,
                     'right' => '(' . $destockage->agent_user->name . ')',
                     'balance' => $puce_receptrice->solde,
-                    'id_manager' => $connected_user->id,
+                    'id_user' => $connected_user->id,
                 ]);
             }
 

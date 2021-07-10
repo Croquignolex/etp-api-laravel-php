@@ -119,11 +119,11 @@ class Flottage_rzController extends Controller
             'type' => Transations::FLEET_TRANSFER,
             'in' => 0,
             'out' => $flottage_rz->montant,
-            'operator' => $puce_from->flote->nom,
-            'left' => $puce_from->numero . ' (' . $puce_from->nom . ')',
-            'right' => $puce_to->numero . ' (' . $puce_to->nom . ')',
+            'id_operator' => $puce_from->flote->id,
+            'id_left' => $puce_from->id,
+            'id_right' => $puce_to->id,
             'balance' => $puce_from->solde,
-            'id_manager' => $connected_user->id,
+            'id_user' => $connected_user->id,
         ]);
 
         $users = User::all();

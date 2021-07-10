@@ -102,7 +102,7 @@ class TreasuryController extends Controller
             'in' => $versement->amount,
             'out' => 0,
             'balance' => $connected_caisse->solde,
-            'id_manager' => $connected_user->id,
+            'id_user' => $connected_user->id,
         ]);
 
         // Renvoyer un message de succès
@@ -203,7 +203,7 @@ class TreasuryController extends Controller
             'in' => 0,
             'out' => $versement->amount,
             'balance' => $connected_caisse->solde,
-            'id_manager' => $connected_user->id,
+            'id_user' => $connected_user->id,
         ]);
 
         if($is_collector) {

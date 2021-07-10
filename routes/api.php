@@ -921,11 +921,15 @@ Route::group(['middleware' => 'auth:api'], function(){
     // User factory reset
     Route::post('factory_reset', 'API\NotificationsController@factory_reset');
 
-    // Manager movements
+    // User movements
     Route::post('movements_utilisateur/{id}', 'API\RapportsController@mouvements_utilisateur')
         ->where('id', '[0-9]+');
 
-    // Manager transactions
+    // User transactions
     Route::post('transactions_utilisateur/{id}', 'API\RapportsController@transactions_utilisateur')
+        ->where('id', '[0-9]+');
+
+    // Sim transactions
+    Route::post('transactions_sim/{id}', 'API\RapportsController@transactions_puce')
         ->where('id', '[0-9]+');
 });

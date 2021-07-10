@@ -140,7 +140,7 @@ class RecouvrementController extends Controller
             'in' => $recouvrement->montant,
             'out' => 0,
             'balance' => $connected_caisse->solde,
-            'id_manager' => $connected_user->id,
+            'id_user' => $connected_user->id,
         ]);
 
         if($connected_user->hasRole([Roles::RECOUVREUR]))

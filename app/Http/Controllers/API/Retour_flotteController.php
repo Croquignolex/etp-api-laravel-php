@@ -163,11 +163,11 @@ class Retour_flotteController extends Controller
                 'type' => Transations::RETOUR_FLOTTE,
                 'in' => $retour_flotte->montant,
                 'out' => 0,
-                'operator' => $puce_flottage->flote->nom,
-                'left' => $puce_flottage->numero . ' (' . $puce_flottage->nom . ')',
-                'right' => $puce_agent->numero . ' (' . $puce_agent->nom . ')',
+                'id_operator' => $puce_flottage->flote->id,
+                'id_left' => $puce_flottage->id,
+                'id_right' => $puce_agent->id,
                 'balance' => $puce_flottage->solde,
-                'id_manager' => $connected_user->id,
+                'id_user' => $connected_user->id,
             ]);
         }
 
@@ -403,11 +403,11 @@ class Retour_flotteController extends Controller
                 'type' => Transations::RETOUR_FLOTTE,
                 'in' => $retour_flotte->montant,
                 'out' => 0,
-                'operator' => $puce_flottage->flote->nom,
-                'left' => $puce_flottage->numero . ' (' . $puce_flottage->nom . ')',
-                'right' => $puce_agent->numero . ' (' . $puce_agent->nom . ')',
+                'id_operator' => $puce_flottage->flote->id,
+                'id_left' => $puce_flottage->id,
+                'id_right' => $puce_agent->id,
                 'balance' => $puce_flottage->solde,
-                'id_manager' => $connected_user->id,
+                'id_user' => $connected_user->id,
             ]);
         }
 
