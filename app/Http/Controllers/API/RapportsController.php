@@ -131,6 +131,46 @@ class RapportsController extends Controller
         ]);
     }
 
+    /**
+     * Transactions des flote
+     */
+    // SUPERVISEUR
+    public function transactions_flote(Request $request, $id)
+    {
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [
+            'debut' => ['required', 'string'],
+            'fin' => ['required', 'string'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        $start = Carbon::createFromFormat('d/m/Y', $request->debut, 'Africa/Douala')->startOfDay();
+        $end = Carbon::createFromFormat('d/m/Y', $request->fin, 'Africa/Douala')->endOfDay();
+
+        $start->setTimezone('UTC');
+        $end->setTimezone('UTC');
+
+        $transactions = Transaction::where('id_operator', $id)
+            ->where('created_at', '>=', $start)
+            ->where('created_at', '<=', $end)
+            ->get();
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'transactions' => $this->transactionsResponse($transactions)
+            ]
+        ]);
+    }
+
     // Build transactions return data
     private function transactionsResponse($transactions)
     {
