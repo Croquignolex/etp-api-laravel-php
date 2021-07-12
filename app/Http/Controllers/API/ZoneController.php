@@ -190,6 +190,7 @@ class ZoneController extends Controller
     /**
      * modification d'une zone
      */
+    // SUPERVISOR
     public function update(Request $request, $id)
     {
         // Valider données envoyées

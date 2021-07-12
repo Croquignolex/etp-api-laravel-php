@@ -778,9 +778,8 @@ class UserController extends Controller
                 'message' => 'Responsable de zone crée avec succès',
                 'status' => true,
                 'data' => [
-                    'recouvreur' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
+                    'recouvreur' => $user->setHidden(['deleted_at', 'add_by', 'id_zone', 'password']),
                     'zone' => $user->zone,
-                    'caisse' => Caisse::where('id_user', $user->id)->first()
                 ]
             ]);
         }
