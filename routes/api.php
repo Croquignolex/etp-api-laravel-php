@@ -936,4 +936,10 @@ Route::group(['middleware' => 'auth:api'], function(){
     // Operator transactions
     Route::post('transactions_flote/{id}', 'API\RapportsController@transactions_flote')
         ->where('id', '[0-9]+');
+
+    // Personnal transactions
+    Route::post('transactions_personal', 'API\RapportsController@transactions_personnel');
+
+    // Personnal movements
+    Route::post('movements_personal', 'API\RapportsController@mouvements_personnel');
 });

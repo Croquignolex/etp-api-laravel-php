@@ -7,6 +7,7 @@ use App\Transaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 class RapportsController extends Controller
@@ -78,6 +79,90 @@ class RapportsController extends Controller
         $end->setTimezone('UTC');
 
         $transactions = Transaction::where('id_user', $id)
+            ->where('created_at', '>=', $start)
+            ->where('created_at', '<=', $end)
+            ->get();
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'transactions' => $this->transactionsResponse($transactions)
+            ]
+        ]);
+    }
+
+    /**
+     * Mouvements personnel
+     */
+    // SUPERVISEUR
+    public function mouvements_personnel(Request $request)
+    {
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [
+            'debut' => ['required', 'string'],
+            'fin' => ['required', 'string'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        $start = Carbon::createFromFormat('d/m/Y', $request->debut, 'Africa/Douala')->startOfDay();
+        $end = Carbon::createFromFormat('d/m/Y', $request->fin, 'Africa/Douala')->endOfDay();
+
+        $start->setTimezone('UTC');
+        $end->setTimezone('UTC');
+
+        $user = Auth::user();
+
+        $movements = Movement::where('id_user', $user->id)
+            ->where('created_at', '>', $start)
+            ->where('created_at', '<=', $end)
+            ->get();
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'movements' => $movements
+            ]
+        ]);
+    }
+
+    /**
+     * Transactions personnel
+     */
+    // SUPERVISEUR
+    public function transactions_personnel(Request $request)
+    {
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [
+            'debut' => ['required', 'string'],
+            'fin' => ['required', 'string'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        $start = Carbon::createFromFormat('d/m/Y', $request->debut, 'Africa/Douala')->startOfDay();
+        $end = Carbon::createFromFormat('d/m/Y', $request->fin, 'Africa/Douala')->endOfDay();
+
+        $start->setTimezone('UTC');
+        $end->setTimezone('UTC');
+
+        $user = Auth::user();
+
+        $transactions = Transaction::where('id_user', $user->id)
             ->where('created_at', '>=', $start)
             ->where('created_at', '<=', $end)
             ->get();
