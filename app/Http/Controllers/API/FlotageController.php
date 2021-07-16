@@ -214,6 +214,7 @@ class FlotageController extends Controller
      */
     // GESTIONNAIRE DE FOTTE
     // RESPONSABLE DE ZONE
+    // SUPERVISEUR
     public function flottage_express(Request $request)
     {
         // Valider données envoyées

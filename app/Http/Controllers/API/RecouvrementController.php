@@ -39,6 +39,7 @@ class RecouvrementController extends Controller
      */
     // GESTIONNAIRE DE FLOTTE
     // RESPONSABLE DE ZONE
+    // SUPERVISEUR
     public function store(Request $request)
     {
         // Valider données envoyées

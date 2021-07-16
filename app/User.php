@@ -52,6 +52,12 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
+    // Createur des utilisateurs
+    public function creator()
+    {
+        return $this->belongsTo('App\User', 'add_by');
+    }
+
     //les opérations enregistrées par un utilisateur precis
     public function operations() {
         return $this->hasMany('App\Operation', 'id_user');

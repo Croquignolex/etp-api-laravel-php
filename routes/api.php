@@ -615,6 +615,9 @@ Route::group(['middleware' => 'auth:api'], function(){
         //Creer un Retour flotte
         Route::post('retour_flotte', 'API\Retour_flotteController@retour');
 
+        //Creer un Retour flotte sans flottage prélable
+        Route::post('retour_flotte_sans_flottage', 'API\Retour_flotteController@retour_sans_flottage');
+
         //Details d'un Retour flotte
         Route::get('detail_retour_flotte/{id}', 'API\Retour_flotteController@show')
         ->where('id', '[0-9]+');

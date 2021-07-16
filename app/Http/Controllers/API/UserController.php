@@ -160,7 +160,8 @@ class UserController extends Controller
                     'role' => $user->roles->first(),
                     'zone' => $user->zone,
                     'puces' => $user->puces,
-                    'caisse' => Caisse::where('id_user', $user->id)->first()
+                    'caisse' => Caisse::where('id_user', $user->id)->first(),
+                    'createur' => $user->creator,
                 ]
             ]);
          }else{
@@ -780,6 +781,7 @@ class UserController extends Controller
                 'data' => [
                     'recouvreur' => $user->setHidden(['deleted_at', 'add_by', 'id_zone', 'password']),
                     'zone' => $user->zone,
+                    'createur' => $user->creator
                 ]
             ]);
         }
@@ -852,7 +854,8 @@ class UserController extends Controller
                 'status' => true,
                 'data' => [
                     'gestionnaire' => $user->setHidden(['deleted_at', 'add_by']),
-                    'caisse' => Caisse::where('id_user', $user->id)->first()
+                    'caisse' => Caisse::where('id_user', $user->id)->first(),
+                    'createur' => $user->creator
                 ]
             ]);
         }
@@ -925,7 +928,8 @@ class UserController extends Controller
                 'status' => true,
                 'data' => [
                     'superviseur' => $user->setHidden(['deleted_at', 'add_by']),
-                    'caisse' => Caisse::where('id_user', $user->id)->first()
+                    'caisse' => Caisse::where('id_user', $user->id)->first(),
+                    'createur' => $user->creator
                 ]
             ]);
         }
@@ -998,7 +1002,7 @@ class UserController extends Controller
                 'status' => true,
                 'data' => [
                     'administrateur' => $user->setHidden(['deleted_at', 'add_by']),
-                    'caisse' => Caisse::where('id_user', $user->id)->first()
+                    'createur' => $user->creator
                 ]
             ]);
         }
@@ -1095,7 +1099,8 @@ class UserController extends Controller
                 'recouvreur' => $collector->setHidden(['deleted_at', 'add_by', 'id_zone']),
                 'zone' => $collector->zone,
                 'puces' => $collector->puces,
-                'caisse' => Caisse::where('id_user', $collector->id)->first()
+                'caisse' => Caisse::where('id_user', $collector->id)->first(),
+                'createur' => $collector->creator
             ];
         }
 
@@ -1110,7 +1115,8 @@ class UserController extends Controller
         foreach($managers as $manager) {
             $returenedManagers[] = [
                 'gestionnaire' => $manager->setHidden(['deleted_at', 'add_by']),
-                'caisse' => Caisse::where('id_user', $manager->id)->first()
+                'caisse' => Caisse::where('id_user', $manager->id)->first(),
+                'createur' => $manager->creator
             ];
         }
 
@@ -1125,7 +1131,8 @@ class UserController extends Controller
         foreach($supervisors as $supervisor) {
             $returenedSupervisors[] = [
                 'superviseur' => $supervisor->setHidden(['deleted_at', 'add_by']),
-                'caisse' => Caisse::where('id_user', $supervisor->id)->first()
+                'caisse' => Caisse::where('id_user', $supervisor->id)->first(),
+                'createur' => $supervisor->creator
             ];
         }
 
@@ -1139,7 +1146,8 @@ class UserController extends Controller
 
         foreach($admins as $admin) {
             $returenedAdmins[] = [
-                'administrateur' => $admin->setHidden(['deleted_at', 'add_by'])
+                'administrateur' => $admin->setHidden(['deleted_at', 'add_by']),
+                'createur' => $admin->creator
             ];
         }
 
