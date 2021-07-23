@@ -105,6 +105,12 @@ class TreasuryController extends Controller
             'id_user' => $connected_user->id,
         ]);
 
+        if($is_collector) {
+            // Augmenter la dette si l'opération est éffectué par un RZ
+            $connected_user->dette = $connected_user->dette + $montant;
+            $connected_user->save();
+        }
+
         // Renvoyer un message de succès
         return response()->json([
             'message' => 'Encaissement effectué avec succès',
