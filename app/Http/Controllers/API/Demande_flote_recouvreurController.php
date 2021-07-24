@@ -23,8 +23,8 @@ class Demande_flote_recouvreurController extends Controller
      */
     function __construct()
     {
-        $superviseur = Roles::SUPERVISEUR;
         $recouvreur = Roles::RECOUVREUR;
+        $superviseur = Roles::SUPERVISEUR;
         $ges_flotte = Roles::GESTION_FLOTTE;
         $this->middleware("permission:$recouvreur|$superviseur|$ges_flotte");
     }

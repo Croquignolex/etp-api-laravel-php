@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\API;
 
+use App\User;
 use App\Puce;
 use App\Flote;
 use App\Enums\Roles;
-use App\User;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;

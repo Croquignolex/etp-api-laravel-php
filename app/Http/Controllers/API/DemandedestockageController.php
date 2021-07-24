@@ -23,8 +23,8 @@ class DemandedestockageController extends Controller
      */
     function __construct()
 	{
-        $recouvreur = Roles::RECOUVREUR;
         $agent = Roles::AGENT;
+        $recouvreur = Roles::RECOUVREUR;
         $superviseur = Roles::SUPERVISEUR;
         $ges_flotte = Roles::GESTION_FLOTTE;
         $this->middleware("permission:$recouvreur|$agent|$superviseur|$ges_flotte");

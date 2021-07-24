@@ -259,7 +259,6 @@ class Flottage_interneController extends Controller
         }
 
         $transfert_flotte->save();
-        $connected_user = Auth::user();
         $message = "Transfert de flotte Apprové par " . $connected_user->name;
 
         if($type_puce_emetrice === Statut::PUCE_RZ)

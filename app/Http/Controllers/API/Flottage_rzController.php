@@ -94,7 +94,6 @@ class Flottage_rzController extends Controller
         }
 
         $connected_user = Auth::user();
-        $connected_role = $connected_user->roles->first()->name;
 
         $fom_name = $puce_from->type_puce->name ;
         $to_name = $puce_to->type_puce->name ;

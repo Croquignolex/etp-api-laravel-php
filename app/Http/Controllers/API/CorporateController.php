@@ -6,7 +6,6 @@ use App\Puce;
 use App\Type_puce;
 use App\Corporate;
 use App\Enums\Roles;
-use App\Enums\Statut;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
