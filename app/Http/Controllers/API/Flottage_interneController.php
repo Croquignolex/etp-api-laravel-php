@@ -212,6 +212,15 @@ class Flottage_interneController extends Controller
             ]);
         }
 
+        // Vérification de la validation éffective
+        if ($transfert_flotte->statut === Statut::EFFECTUER) {
+            return response()->json([
+                'message' => "Le transfert de flotte a déjà été confirmé",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
         $montant = $transfert_flotte->montant;
         $puce_emetrice = $transfert_flotte->puce_emetrice;
         $puce_receptrice = $transfert_flotte->puce_receptrice;

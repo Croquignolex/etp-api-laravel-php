@@ -449,6 +449,15 @@ class ApprovisionnementEtpController extends Controller
             ]);
         }
 
+        // Vérification de la validation éffective
+        if ($destockage->statut === Statut::EFFECTUER) {
+            return response()->json([
+                'message' => "Le destockage a déjà été confirmé",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
         $connected_user = Auth::user();
         $montant = $destockage->montant;
         $puce_receptrice = $destockage->puce;
@@ -510,6 +519,15 @@ class ApprovisionnementEtpController extends Controller
         if (is_null($destockage)) {
             return response()->json([
                 'message' => "L'approvisionnement n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        // Vérification de la validation éffective
+        if ($destockage->statut === Statut::EFFECTUER) {
+            return response()->json([
+                'message' => "L'approvisionnement a déjà été confirmé",
                 'status' => false,
                 'data' => null
             ]);

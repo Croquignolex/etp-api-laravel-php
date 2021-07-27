@@ -496,13 +496,20 @@ class Retour_flotteController extends Controller
             ]);
         }
 
+        // Vérification de la validation éffective
+        if ($retour_flotte->statut === Statut::EFFECTUER) {
+            return response()->json([
+                'message' => "Le retour flotte a déjà été confirmé",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
         //on approuve le retour flotte
         $retour_flotte->statut = Statut::EFFECTUER;
 
         $connected_user = Auth::user();
         $collector = $retour_flotte->user;
-        $is_collector_in_request = $collector->roles->first()->name === Roles::RECOUVREUR;
-        $is_collector = $connected_user->roles->first()->name === Roles::RECOUVREUR;
 
         //On recupère la puce de l'agent concerné et on debite
         $montant = $retour_flotte->montant;
@@ -515,21 +522,19 @@ class Retour_flotteController extends Controller
         $puce_flottage->save();
         $retour_flotte->save();
 
-        if(!$is_collector) {
-            // Garder la transaction éffectué par la GF
-            Transaction::create([
-                'type' => Transations::RETOUR_FLOTTE,
-                'in' => $retour_flotte->montant,
-                'out' => 0,
-                'id_operator' => $puce_flottage->flote->id,
-                'id_left' => $puce_flottage->id,
-                'id_right' => $puce_agent->id,
-                'balance' => $puce_flottage->solde,
-                'id_user' => $connected_user->id,
-            ]);
-        }
+        // Garder la transaction éffectué par la GF
+        Transaction::create([
+            'type' => Transations::RETOUR_FLOTTE,
+            'in' => $retour_flotte->montant,
+            'out' => 0,
+            'id_operator' => $puce_flottage->flote->id,
+            'id_left' => $puce_flottage->id,
+            'id_right' => $puce_agent->id,
+            'balance' => $puce_flottage->solde,
+            'id_user' => $connected_user->id,
+        ]);
 
-        if($is_collector_in_request) {
+        if($collector) {
             // On notifie si on est en presence d'un RZ
             $message = "Retour flotte à été apprové par " . $connected_user->name;
             $collector->notify(new Notif_retour_flotte([

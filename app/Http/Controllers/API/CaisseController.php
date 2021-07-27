@@ -353,7 +353,16 @@ class CaisseController extends Controller
         //si le destockage n'existe pas
         if (is_null($versement)) {
             return response()->json([
-                'message' => "La passatioon de service n'existe pas",
+                'message' => "La passation de service n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        // Vérification de la validation éffective
+        if ($versement->statut === Statut::EFFECTUER) {
+            return response()->json([
+                'message' => "La passation de service a déjà été confirmée",
                 'status' => false,
                 'data' => null
             ]);
@@ -433,7 +442,16 @@ class CaisseController extends Controller
         //si le destockage n'existe pas
         if (is_null($versement)) {
             return response()->json([
-                'message' => "Le versement n'existe pas",
+                'message' => "L'encaissement interne n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        // Vérification de la validation éffective
+        if ($versement->statut === Statut::EFFECTUER) {
+            return response()->json([
+                'message' => "L'encaissement interne a déjà été confirmé",
                 'status' => false,
                 'data' => null
             ]);
