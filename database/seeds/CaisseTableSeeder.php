@@ -63,6 +63,24 @@ class CaisseTableSeeder extends Seeder {
 			'solde' => 0
 		));
 
+        // 'caisse5'
+        Caisse::create(array(
+            'nom' => 'Caisse COMPTABLE',
+            'description' => Null,
+            'id_user' => 7,
+            'reference' => Null,
+            'solde' => 0
+        ));
+
+        // 'caisse5'
+        Caisse::create(array(
+            'nom' => 'Caisse CONTROLLEUR',
+            'description' => Null,
+            'id_user' => 8,
+            'reference' => Null,
+            'solde' => 0
+        ));
+
 
 	}
 }

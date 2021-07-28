@@ -22,7 +22,9 @@ class PermissionTableSeeder extends Seeder
 
         App\Enums\Roles::RECOUVREUR,
 
-        App\Enums\Roles::SUPERVISEUR
+        App\Enums\Roles::SUPERVISEUR,
+        App\Enums\Roles::CONTROLLEUR,
+        App\Enums\Roles::COMPATBLE
 
         ];
 

@@ -121,6 +121,36 @@ class CreateAdminUserSeeder extends Seeder
             'add_by' => 1
         ]);
 
+        $user6 = User::create([
+
+            'name' => 'COMPTABLE RODRIGUEZ',
+
+            'email' => 'comptable@etp.com',
+
+            'phone' => '688888888',
+
+            'adresse' => 'Douala, Ndokotti',
+
+            'password' => bcrypt('123456'),
+
+            'add_by' => 1
+        ]);
+
+        $user7 = User::create([
+
+            'name' => 'CONTROLLEUR YNES',
+
+            'email' => 'controlleur@etp.com',
+
+            'phone' => '699999999',
+
+            'adresse' => 'Douala, Ndokotti',
+
+            'password' => bcrypt('123456'),
+
+            'add_by' => 1
+        ]);
+
 
         ///creation des types de puce par defaut
 
@@ -225,6 +255,8 @@ class CreateAdminUserSeeder extends Seeder
         $role3 = Role::create(['name' => App\Enums\Roles::GESTION_FLOTTE]);
         $role4 = Role::create(['name' => App\Enums\Roles::RECOUVREUR]);
         $role5 = Role::create(['name' => App\Enums\Roles::SUPERVISEUR]);
+        $role7 = Role::create(['name' => App\Enums\Roles::CONTROLLEUR]);
+        $role6 = Role::create(['name' => App\Enums\Roles::COMPATBLE]);
 
 
         //recuperer toutes les premissions
@@ -247,6 +279,8 @@ class CreateAdminUserSeeder extends Seeder
 
 
         $role4->givePermissionTo(App\Enums\Roles::RECOUVREUR);
+        $role6->givePermissionTo(App\Enums\Roles::COMPATBLE);
+        $role7->givePermissionTo(App\Enums\Roles::CONTROLLEUR);
 
 
         //Attribuer le role à l'utilisateur
@@ -264,6 +298,10 @@ class CreateAdminUserSeeder extends Seeder
 
         //Attribuer le role à l'agent2
         $user5->assignRole([$role5->id]);
+
+        //Attribuer le role à l'agent2
+        $user6->assignRole([$role6->id]);
+        $user7->assignRole([$role7->id]);
 
 		Setting::create([
 			'cards' => '[0,1,2,3,4,5,6,7,8,9]',
@@ -306,5 +344,19 @@ class CreateAdminUserSeeder extends Seeder
 			'bars' => '[0,1,2,3,4,5,6,7,8,9]',
 			'id_user' => $user4->id
 		]);
+
+        Setting::create([
+            'cards' => '[0,1,2,3,4,5,6,7,8,9]',
+            'charts' => '[0,1,2,3,4,5,6,7,8,9]',
+            'bars' => '[0,1,2,3,4,5,6,7,8,9]',
+            'id_user' => $user6->id
+        ]);
+
+        Setting::create([
+            'cards' => '[0,1,2,3,4,5,6,7,8,9]',
+            'charts' => '[0,1,2,3,4,5,6,7,8,9]',
+            'bars' => '[0,1,2,3,4,5,6,7,8,9]',
+            'id_user' => $user7->id
+        ]);
     }
 }
