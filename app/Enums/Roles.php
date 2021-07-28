@@ -13,6 +13,10 @@ class Roles
     const GESTION_FLOTTE = 'GESTIONNAIRE DE FLOTTE';
     const RECOUVREUR = 'RESPONSABLE DE ZONNE';
     const SUPERVISEUR = 'SUPERVISEUR';
+    const CONTROLLEUR = 'CONTROLLEUR';
+    const COMPATBLE = 'COMPATBLE';
+
+
     const RETOUR_RZ = 'RETOUR RZ';
     const RETOUR_AE = 'RETOUR AE';
 

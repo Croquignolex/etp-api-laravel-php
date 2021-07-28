@@ -59,6 +59,12 @@ Route::group(['middleware' => 'auth:api'], function(){
             //lister les administrateurs
             Route::get('administrateurs', 'API\UserController@administrateurs');
 
+            //lister les controlleurs
+            Route::get('controlleurs', 'API\UserController@controlleurs');
+
+            //lister les comptables
+            Route::get('comptables', 'API\UserController@comptables');
+
             //lister tous les gestionnaires
             Route::get('gestionnaires_all', 'API\UserController@gestionnaires_all');
 
@@ -95,6 +101,9 @@ Route::group(['middleware' => 'auth:api'], function(){
 
             //Creation d'un administrateur
             Route::post('create_administrateur', 'API\UserController@create_administrateur');
+
+            //Creation d'un comptable
+            Route::post('create_comptable', 'API\UserController@create_comptable');
 
             //Changer la zone d'un utilisateur
             Route::post('edit_zone_user/{id}', 'API\UserController@edit_zone_user')
