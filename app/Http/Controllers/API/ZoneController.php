@@ -24,8 +24,9 @@ class ZoneController extends Controller
         $agent = Roles::AGENT;
         $recouvreur = Roles::RECOUVREUR;
         $superviseur = Roles::SUPERVISEUR;
+        $controlleur = Roles::CONTROLLEUR;
         $ges_flotte = Roles::GESTION_FLOTTE;
-        $this->middleware("permission:$recouvreur|$superviseur|$ges_flotte|$agent");
+        $this->middleware("permission:$recouvreur|$superviseur|$ges_flotte|$agent|$controlleur");
     }
 
     /**
