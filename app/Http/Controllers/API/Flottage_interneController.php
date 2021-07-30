@@ -28,8 +28,9 @@ class Flottage_interneController extends Controller
     {
         $recouvreur = Roles::RECOUVREUR;
         $superviseur = Roles::SUPERVISEUR;
+        $controlleur = Roles::CONTROLLEUR;
         $ges_flotte = Roles::GESTION_FLOTTE;
-        $this->middleware("permission:$superviseur|$ges_flotte|$recouvreur");
+        $this->middleware("permission:$superviseur|$ges_flotte|$recouvreur|$controlleur");
     }
 
     /**
