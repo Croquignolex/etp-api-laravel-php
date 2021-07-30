@@ -18,9 +18,10 @@ class FloteController extends Controller
     function __construct()
     {
         $recouvreur = Roles::RECOUVREUR;
+        $controlleur = Roles::CONTROLLEUR;
         $superviseur = Roles::SUPERVISEUR;
         $ges_flotte = Roles::GESTION_FLOTTE;
-        $this->middleware("permission:$superviseur|$ges_flotte|$recouvreur");
+        $this->middleware("permission:$superviseur|$ges_flotte|$recouvreur|$controlleur");
     }
 
     /**
