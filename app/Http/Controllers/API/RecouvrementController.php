@@ -29,9 +29,10 @@ class RecouvrementController extends Controller
     {
         $agent = Roles::AGENT;
         $recouvreur = Roles::RECOUVREUR;
+        $controlleur = Roles::CONTROLLEUR;
         $superviseur = Roles::SUPERVISEUR;
         $ges_flotte = Roles::GESTION_FLOTTE;
-        $this->middleware("permission:$recouvreur|$superviseur|$ges_flotte|$agent");
+        $this->middleware("permission:$recouvreur|$superviseur|$ges_flotte|$agent|$controlleur");
     }
 
     /**
