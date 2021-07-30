@@ -105,6 +105,9 @@ Route::group(['middleware' => 'auth:api'], function(){
             //Creation d'un comptable
             Route::post('create_comptable', 'API\UserController@create_comptable');
 
+            //Creation d'un controlleur
+            Route::post('create_controlleur', 'API\UserController@create_controlleur');
+
             //Changer la zone d'un utilisateur
             Route::post('edit_zone_user/{id}', 'API\UserController@edit_zone_user')
             ->where('id', '[0-9]+');

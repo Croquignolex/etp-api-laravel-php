@@ -1126,6 +1126,79 @@ class UserController extends Controller
     }
 
     /**
+     * Creation d'un controlleur
+     */
+    public function create_controlleur(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required',
+            'phone' => 'required|numeric|unique:users,phone',
+            'adresse' => 'nullable',
+            'description' => 'nullable',
+            'email' => 'nullable|email',
+            'password' => 'required|string|min:6',
+        ]);
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        $role = Role::where('name', Roles::CONTROLLEUR)->first();
+
+        $input = $request->all();
+
+        $input['password'] = bcrypt($input['password']);
+        $input['add_by'] = Auth::user()->id;
+        $input['statut'] = Statut::APPROUVE;
+        $input['avatar'] = null;
+
+        $user = User::create($input);
+
+        if (isset($user)) {
+            //On crée la caisse de l'utilisateur
+            $caisse = new Caisse([
+                'nom' => 'Caisse ' . $request->name,
+                'description' => Null,
+                'id_user' => $user->id,
+                'reference' => Null,
+                'solde' => 0
+            ]);
+            $caisse->save();
+
+            //on lui donne un role
+            $user->assignRole($role);
+
+            //On lui crée un token
+            $success['token'] =  $user->createToken('MyApp')->accessToken;
+            $success['user'] =  $user;
+
+            $user->setting()->create([
+                'bars' => '[0,1,2,3,4,5,6,7,8,9,10]',
+                'charts' => '[0,1,2,3,4,5,6,7,8,9,10]',
+                'cards' => '[0,1,2,3,4,5,6,7,8,9,10]',
+            ]);
+
+            return response()->json([
+                'message' => 'Contôleur crée avec succès',
+                'status' => true,
+                'data' => [
+                    'controlleur' => $user->setHidden(['deleted_at', 'add_by']),
+                    'createur' => $user->creator
+                ]
+            ]);
+        }
+
+        return response()->json([
+            'message' => "Erreur lors de création du contôleur",
+            'status' => false,
+            'data' => null
+        ]);
+    }
+
+    /**
      * Solde de l'utilisateur connecté
      *
      * @return JsonResponse
