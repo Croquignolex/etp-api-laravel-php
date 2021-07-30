@@ -23,10 +23,11 @@ class UserController extends Controller
      */
     function __construct()
     {
-        $superviseur = Roles::SUPERVISEUR;
         $collector = Roles::RECOUVREUR;
+        $controlleur = Roles::CONTROLLEUR;
+        $superviseur = Roles::SUPERVISEUR;
         $gestionnaire_flotte = Roles::GESTION_FLOTTE;
-        $this->middleware("permission:$superviseur|$collector|$gestionnaire_flotte");
+        $this->middleware("permission:$superviseur|$collector|$gestionnaire_flotte|$controlleur");
     }
 
     /**

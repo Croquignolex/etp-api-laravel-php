@@ -20,7 +20,8 @@ class CorporateController extends Controller
     function __construct()
     {
         $superviseur = Roles::SUPERVISEUR;
-        $this->middleware("permission:$superviseur");
+        $controlleur = Roles::CONTROLLEUR;
+        $this->middleware("permission:$superviseur|$controlleur");
     }
 
     /**
