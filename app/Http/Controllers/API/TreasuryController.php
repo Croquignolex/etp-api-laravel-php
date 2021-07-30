@@ -19,10 +19,11 @@ class TreasuryController extends Controller
      */
     function __construct()
     {
-        $ges_flotte = Roles::GESTION_FLOTTE;
-        $superviseur = Roles::SUPERVISEUR;
         $responsable = Roles::RECOUVREUR;
-        $this->middleware("permission:$ges_flotte|$superviseur|$responsable");
+        $superviseur = Roles::SUPERVISEUR;
+        $controlleur = Roles::CONTROLLEUR;
+        $ges_flotte = Roles::GESTION_FLOTTE;
+        $this->middleware("permission:$ges_flotte|$superviseur|$responsable|$controlleur");
     }
 
     /**

@@ -28,9 +28,10 @@ class CaisseController extends Controller
     function __construct()
     {
         $rz = Roles::RECOUVREUR;
+        $controlleur = Roles::CONTROLLEUR;
         $superviseur = Roles::SUPERVISEUR;
         $ges_flotte = Roles::GESTION_FLOTTE;
-        $this->middleware("permission:$ges_flotte|$rz|$superviseur");
+        $this->middleware("permission:$ges_flotte|$rz|$superviseur|$controlleur");
     }
 
     /**
@@ -413,12 +414,21 @@ class CaisseController extends Controller
     public function encaissement_list()
     {
         $user = Auth::user();
+        $user_role = $user->roles->first()->name;
+        $id_watcher = ($user_role === Roles::CONTROLLEUR) || ($user_role === Roles::COMPATBLE);
 
-        $versements = Versement::where('correspondant', $user->id)
-            ->where('note', Transations::INTERNAL_TREASURY_OUT)
-            ->orderBy('statut', 'desc')
-            ->orderBy('created_at', 'desc')
-            ->paginate(9);
+        if($id_watcher) {
+            $versements = Versement::where('note', Transations::INTERNAL_TREASURY_OUT)
+                ->orderBy('statut', 'desc')
+                ->orderBy('created_at', 'desc')
+                ->paginate(9);
+        } else {
+            $versements = Versement::where('correspondant', $user->id)
+                ->where('note', Transations::INTERNAL_TREASURY_OUT)
+                ->orderBy('statut', 'desc')
+                ->orderBy('created_at', 'desc')
+                ->paginate(9);
+        }
 
         return response()->json([
             'message' => '',
@@ -544,12 +554,21 @@ class CaisseController extends Controller
     public function decaissement_list()
     {
         $user = Auth::user();
+        $user_role = $user->roles->first()->name;
+        $id_watcher = ($user_role === Roles::CONTROLLEUR) || ($user_role === Roles::COMPATBLE);
 
-        $versements = Versement::where('add_by', $user->id)
-            ->where('note', Transations::INTERNAL_TREASURY_OUT)
-            ->orderBy('statut', 'desc')
-            ->orderBy('created_at', 'desc')
-            ->paginate(9);
+        if($id_watcher) {
+            $versements = Versement::where('note', Transations::INTERNAL_TREASURY_OUT)
+                ->orderBy('statut', 'desc')
+                ->orderBy('created_at', 'desc')
+                ->paginate(9);
+        } else {
+            $versements = Versement::where('add_by', $user->id)
+                ->where('note', Transations::INTERNAL_TREASURY_OUT)
+                ->orderBy('statut', 'desc')
+                ->orderBy('created_at', 'desc')
+                ->paginate(9);
+        }
 
         return response()->json([
             'message' => '',
