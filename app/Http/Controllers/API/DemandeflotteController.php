@@ -22,11 +22,12 @@ class DemandeflotteController extends Controller
      * les conditions de lecture des methodes
      */
     function __construct(){
-        $recouvreur = Roles::RECOUVREUR;
         $agent = Roles::AGENT;
+        $recouvreur = Roles::RECOUVREUR;
+        $controlleur = Roles::CONTROLLEUR;
         $superviseur = Roles::SUPERVISEUR;
         $ges_flotte = Roles::GESTION_FLOTTE;
-        $this->middleware("permission:$recouvreur|$agent|$superviseur|$ges_flotte");
+        $this->middleware("permission:$recouvreur|$agent|$superviseur|$ges_flotte|$controlleur");
     }
 
     /**

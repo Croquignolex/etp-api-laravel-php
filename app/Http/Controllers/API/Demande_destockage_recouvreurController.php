@@ -25,8 +25,9 @@ class Demande_destockage_recouvreurController extends Controller
     {
         $recouvreur = Roles::RECOUVREUR;
         $superviseur = Roles::SUPERVISEUR;
+        $controlleur = Roles::CONTROLLEUR;
         $ges_flotte = Roles::GESTION_FLOTTE;
-        $this->middleware("permission:$recouvreur|$superviseur|$ges_flotte");
+        $this->middleware("permission:$recouvreur|$superviseur|$ges_flotte|$controlleur");
     }
 
     /**
