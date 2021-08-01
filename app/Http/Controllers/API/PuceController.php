@@ -20,11 +20,12 @@ class PuceController extends Controller
      */
      function __construct(){
          $agent = Roles::AGENT;
+         $comptable = Roles::COMPATBLE;
          $responsable = Roles::RECOUVREUR;
          $controlleur = Roles::CONTROLLEUR;
          $superviseur = Roles::SUPERVISEUR;
          $ges_flotte = Roles::GESTION_FLOTTE;
-         $this->middleware("permission:$superviseur|$ges_flotte|$responsable|$agent|$controlleur");
+         $this->middleware("permission:$superviseur|$ges_flotte|$responsable|$agent|$controlleur|$comptable");
     }
 
     /**
