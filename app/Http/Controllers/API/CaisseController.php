@@ -28,10 +28,11 @@ class CaisseController extends Controller
     function __construct()
     {
         $rz = Roles::RECOUVREUR;
+        $comptable = Roles::COMPATBLE;
         $controlleur = Roles::CONTROLLEUR;
         $superviseur = Roles::SUPERVISEUR;
         $ges_flotte = Roles::GESTION_FLOTTE;
-        $this->middleware("permission:$ges_flotte|$rz|$superviseur|$controlleur");
+        $this->middleware("permission:$ges_flotte|$rz|$superviseur|$controlleur|$comptable");
     }
 
     /**
