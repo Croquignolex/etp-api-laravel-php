@@ -16,11 +16,12 @@ class VendorController extends Controller
     function __construct()
     {
         $agent = Roles::AGENT;
+        $comptable = Roles::COMPATBLE;
         $recouvreur = Roles::RECOUVREUR;
         $superviseur = Roles::SUPERVISEUR;
         $controlleur = Roles::CONTROLLEUR;
         $ges_flotte = Roles::GESTION_FLOTTE;
-        $this->middleware("permission:$recouvreur|$superviseur|$ges_flotte|$agent|$controlleur");
+        $this->middleware("permission:$recouvreur|$superviseur|$ges_flotte|$agent|$controlleur|$comptable");
     }
 
     /**
