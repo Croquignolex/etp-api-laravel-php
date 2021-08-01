@@ -33,11 +33,12 @@ class ApprovisionnementEtpController extends Controller
     function __construct()
     {
         $agent = Roles::AGENT;
+        $comptable = Roles::COMPATBLE;
         $recouvreur = Roles::RECOUVREUR;
         $controlleur = Roles::CONTROLLEUR;
         $superviseur = Roles::SUPERVISEUR;
         $ges_flotte = Roles::GESTION_FLOTTE;
-        $this->middleware("permission:$recouvreur|$superviseur|$ges_flotte|$agent|$controlleur");
+        $this->middleware("permission:$recouvreur|$superviseur|$ges_flotte|$agent|$controlleur|$comptable");
     }
 
     /**

@@ -26,11 +26,12 @@ class Flottage_interneController extends Controller
      */
     function __construct()
     {
+        $comptable = Roles::COMPATBLE;
         $recouvreur = Roles::RECOUVREUR;
         $superviseur = Roles::SUPERVISEUR;
         $controlleur = Roles::CONTROLLEUR;
         $ges_flotte = Roles::GESTION_FLOTTE;
-        $this->middleware("permission:$superviseur|$ges_flotte|$recouvreur|$controlleur");
+        $this->middleware("permission:$superviseur|$ges_flotte|$recouvreur|$controlleur|$comptable");
     }
 
     /**
