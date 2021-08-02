@@ -80,6 +80,7 @@ class RapportsController extends Controller
         $movements = Movement::where('id_user', $id)
             ->where('created_at', '>', $start)
             ->where('created_at', '<=', $end)
+            ->where('manager', true)
             ->get();
 
         return response()->json([
