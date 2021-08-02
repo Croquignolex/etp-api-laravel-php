@@ -944,6 +944,10 @@ Route::group(['middleware' => 'auth:api'], function(){
     Route::post('transactions_utilisateur/{id}', 'API\RapportsController@transactions_utilisateur')
         ->where('id', '[0-9]+');
 
+    // User reports
+    Route::post('reports_utilisateur/{id}', 'API\RapportsController@reports_utilisateur')
+        ->where('id', '[0-9]+');
+
     // Sim transactions
     Route::post('transactions_sim/{id}', 'API\RapportsController@transactions_puce')
         ->where('id', '[0-9]+');

@@ -53,6 +53,45 @@ class RapportsController extends Controller
     }
 
     /**
+     * Raports des users
+     */
+    // COMPATABLE
+    public function reports_utilisateur(Request $request, $id)
+    {
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [
+            'journee' => ['required', 'string']
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        $start = Carbon::createFromFormat('d/m/Y', $request->journee, 'Africa/Douala')->startOfDay();
+        $end = Carbon::createFromFormat('d/m/Y', $request->journee, 'Africa/Douala')->endOfDay();
+
+        $start->setTimezone('UTC');
+        $end->setTimezone('UTC');
+
+        $movements = Movement::where('id_user', $id)
+            ->where('created_at', '>', $start)
+            ->where('created_at', '<=', $end)
+            ->get();
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'rapports' => $movements
+            ]
+        ]);
+    }
+
+    /**
      * Transactions des users
      */
     // SUPERVISEUR
