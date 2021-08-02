@@ -20,7 +20,7 @@ class CreateMovementsTable extends Migration
             $table->double('in');
             $table->double('out');
             $table->double('balance');
-            $table->boolean('manager');
+            $table->boolean('manager')->default(false);
             $table->integer('id_user')->unsigned();
             $table->timestamps();
             $table->softDeletes();
