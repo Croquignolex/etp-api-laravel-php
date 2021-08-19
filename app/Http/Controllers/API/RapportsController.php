@@ -39,7 +39,7 @@ class RapportsController extends Controller
         $end->setTimezone('UTC');
 
         $movements = Movement::where('id_user', $id)
-            ->where('created_at', '>', $start)
+            ->where('created_at', '>=', $start)
             ->where('created_at', '<=', $end)
             ->get();
 
@@ -78,7 +78,7 @@ class RapportsController extends Controller
         $end->setTimezone('UTC');
 
         $movements = Movement::where('id_user', $id)
-            ->where('created_at', '>', $start)
+            ->where('created_at', '>=', $start)
             ->where('created_at', '<=', $end)
             ->where('manager', true)
             ->get();
@@ -161,7 +161,7 @@ class RapportsController extends Controller
         $user = Auth::user();
 
         $movements = Movement::where('id_user', $user->id)
-            ->where('created_at', '>', $start)
+            ->where('created_at', '>=', $start)
             ->where('created_at', '<=', $end)
             ->get();
 

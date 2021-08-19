@@ -46,7 +46,7 @@ class LoginController extends Controller
          // si la connexion est bonne
          if ($userEnable !== null) {
              return response()->json([
-                 'message' => null,
+                 'message' => "Utilisateur reconnu",
                  'status' => true,
                  'data' => null,
              ]);
