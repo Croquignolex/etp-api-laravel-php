@@ -233,7 +233,6 @@ class RecouvrementController extends Controller
     {
         //On recupere les recouvrements
         $recoveries = Recouvrement::where('id_flottage', $id)
-            ->orderBy('statut', 'desc')
             ->orderBy('created_at', 'desc')
             ->get();
 

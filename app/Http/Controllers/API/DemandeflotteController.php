@@ -283,7 +283,6 @@ class DemandeflotteController extends Controller
     {
         $user = Auth::user();
         $demandes_flote = Demande_flote::where('id_user', $user->id)
-            ->orderBy('statut', 'desc')
             ->orderBy('created_at', 'desc')
             ->paginate(9);
 
@@ -303,9 +302,7 @@ class DemandeflotteController extends Controller
     // GESTIONNAIRE DE FLOTTE
     public function list_demandes_flote_general()
     {
-        $demandes_flote = Demande_flote::orderBy('statut', 'desc')
-            ->orderBy('created_at', 'desc')
-            ->paginate(9);
+        $demandes_flote = Demande_flote::orderBy('created_at', 'desc')->paginate(9);
 
         $demandes_flotes = $this->fleetsResponse($demandes_flote->items());
 
@@ -327,7 +324,6 @@ class DemandeflotteController extends Controller
     {
         $user = Auth::user();
         $demandes_flote = Demande_flote::where('add_by', $user->id)
-            ->orderBy('statut', 'desc')
             ->orderBy('created_at', 'desc')
             ->paginate(9);
 
@@ -349,7 +345,6 @@ class DemandeflotteController extends Controller
     {
         $user = Auth::user();
         $demandes_flote = Demande_flote::where('add_by', $user->id)
-            ->orderBy('statut', 'desc')
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -372,7 +367,6 @@ class DemandeflotteController extends Controller
     {
         $user = Auth::user();
         $demandes_flote = Demande_flote::where('id_user', $user->id)
-            ->orderBy('statut', 'desc')
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -392,9 +386,7 @@ class DemandeflotteController extends Controller
     // GESTIONNAIRE DE FLOTTE
     public function list_demandes_flote_general_all()
     {
-        $demandes_flote = Demande_flote::orderBy('statut', 'desc')
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $demandes_flote = Demande_flote::orderBy('created_at', 'desc')->get();
 
         return response()->json([
             'message' => "",

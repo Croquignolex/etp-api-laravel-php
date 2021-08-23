@@ -420,13 +420,11 @@ class CaisseController extends Controller
 
         if($id_watcher) {
             $versements = Versement::where('note', Transations::INTERNAL_TREASURY_OUT)
-                ->orderBy('statut', 'desc')
                 ->orderBy('created_at', 'desc')
                 ->paginate(9);
         } else {
             $versements = Versement::where('correspondant', $user->id)
                 ->where('note', Transations::INTERNAL_TREASURY_OUT)
-                ->orderBy('statut', 'desc')
                 ->orderBy('created_at', 'desc')
                 ->paginate(9);
         }
@@ -560,13 +558,11 @@ class CaisseController extends Controller
 
         if($id_watcher) {
             $versements = Versement::where('note', Transations::INTERNAL_TREASURY_OUT)
-                ->orderBy('statut', 'desc')
                 ->orderBy('created_at', 'desc')
                 ->paginate(9);
         } else {
             $versements = Versement::where('add_by', $user->id)
                 ->where('note', Transations::INTERNAL_TREASURY_OUT)
-                ->orderBy('statut', 'desc')
                 ->orderBy('created_at', 'desc')
                 ->paginate(9);
         }
@@ -624,12 +620,10 @@ class CaisseController extends Controller
                     $query->where('add_by', $getionnaire_id);
                     $query->orWhere('correspondant', $getionnaire_id);
                 })
-                ->orderBy('statut', 'desc')
                 ->orderBy('created_at', 'desc')
                 ->paginate(9);
         } else {
             $versements = Versement::where('note', Transations::INTERNAL_HANDOVER)
-                ->orderBy('statut', 'desc')
                 ->orderBy('created_at', 'desc')
                 ->paginate(9);
         }

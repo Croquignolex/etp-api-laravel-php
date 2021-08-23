@@ -765,9 +765,7 @@ class FlotageController extends Controller
     // GESTIONNAIRE DE FLOTTE
     public function list_all()
     {
-        $demandes_flote = Approvisionnement::orderBy('statut', 'desc')
-            ->orderBy('created_at', 'desc')
-            ->paginate(9);
+        $demandes_flote = Approvisionnement::orderBy('created_at', 'desc')->paginate(9);
 
         $demandes_flotes =  $this->fleetsResponse($demandes_flote->items());
 
@@ -789,13 +787,12 @@ class FlotageController extends Controller
         $user = Auth::user();
 
         //On recupere les Flottages
-        $flottages = Approvisionnement::orderBy('statut', 'desc')
-            ->orderBy('created_at', 'desc')
+        $flottages = Approvisionnement::orderBy('created_at', 'desc')
             ->get()
             ->filter(function(Approvisionnement $approvisionnement) use ($user) {
-            $demande_de_flotte = $approvisionnement->demande_flote;
-            return ($demande_de_flotte->user->id == $user->id);
-        });
+                $demande_de_flotte = $approvisionnement->demande_flote;
+                return ($demande_de_flotte->user->id == $user->id);
+            });
 
         $demandes_flotes =  $this->fleetsResponse($flottages);
 

@@ -328,19 +328,15 @@ class Flottage_interneController extends Controller
         if ($connected_user_role === Roles::RECOUVREUR) {
             $transfers = Flottage_interne::where('type', 'like', Statut::PUCE_RZ . '%')
                 ->orWhere('type', 'like', '%' . Statut::PUCE_RZ)
-                ->orderBy('statut', 'desc')
                 ->orderBy('created_at', 'desc')
                 ->paginate(9);
         } else if($connected_user_role === Roles::GESTION_FLOTTE) {
             $transfers = Flottage_interne::where('type', 'like', Statut::FLOTTAGE . '%')
                 ->orWhere('type', 'like', '%' . Statut::FLOTTAGE)
-                ->orderBy('statut', 'desc')
                 ->orderBy('created_at', 'desc')
                 ->paginate(9);
         } else {
-            $transfers = Flottage_interne::orderBy('statut', 'desc')
-                ->orderBy('created_at', 'desc')
-                ->paginate(9);
+            $transfers = Flottage_interne::orderBy('created_at', 'desc')->paginate(9);
         }
 
         return response()->json([

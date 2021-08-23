@@ -132,9 +132,7 @@ class Demande_destockage_recouvreurController extends Controller
     // RESPONSABLE DE ZONE
     public function list_all_status()
     {
-        $demandes_destockage = Demande_destockage::orderBy('statut', 'desc')
-            ->orderBy('created_at', 'desc')
-            ->paginate(9);
+        $demandes_destockage = Demande_destockage::orderBy('created_at', 'desc')->paginate(9);
 
         return response()->json([
             'message' => '',
@@ -153,9 +151,7 @@ class Demande_destockage_recouvreurController extends Controller
     // RESPONSABLE DE ZONE
     public function list_all_status_all()
     {
-        $demandes_destockage = Demande_destockage::orderBy('statut', 'desc')
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $demandes_destockage = Demande_destockage::orderBy('created_at', 'desc')->get();
 
         return response()->json([
             'message' => '',

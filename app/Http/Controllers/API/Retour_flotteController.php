@@ -341,9 +341,7 @@ class Retour_flotteController extends Controller
     // GESTIONNAIRE DE FLOTTE
     public function list_all()
     {
-        $recoveries = Retour_flote::orderBy('statut', 'desc')
-            ->orderBy('created_at', 'desc')
-            ->paginate(9);
+        $recoveries = Retour_flote::orderBy('created_at', 'desc')->paginate(9);
 
         return response()->json([
             'message' => '',
@@ -379,7 +377,6 @@ class Retour_flotteController extends Controller
     {
         //On recupere les retour flotte
         $recoveries = Retour_flote::where('id_approvisionnement', $id)
-            ->orderBy('statut', 'desc')
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -440,14 +437,13 @@ class Retour_flotteController extends Controller
         }
 
         // $id est le id du user directement
-        $retour_flotes = Retour_flote::orderBy('statut', 'desc')
-            ->orderBy('created_at', 'desc')
+        $retour_flotes = Retour_flote::orderBy('created_at', 'desc')
             ->get()
-            ->filter(function(Retour_flote $retour_flote) use ($user){
-            $demande_flote = $retour_flote->flotage->demande_flote;
-            $id_user = $demande_flote->id_user;
-            return $id_user == $user->id;
-        });
+            ->filter(function(Retour_flote $retour_flote) use ($user) {
+                $demande_flote = $retour_flote->flotage->demande_flote;
+                $id_user = $demande_flote->id_user;
+                return $id_user == $user->id;
+            });
 
         return response()->json([
             'message' => '',
@@ -468,7 +464,6 @@ class Retour_flotteController extends Controller
         $user = Auth::user();
 
         $recoveries = Retour_flote::where('id_user', $user->id)
-            ->orderBy('statut', 'desc')
             ->orderBy('created_at', 'desc')
             ->paginate(9);
 

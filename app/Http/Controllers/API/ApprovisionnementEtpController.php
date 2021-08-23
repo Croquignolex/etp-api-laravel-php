@@ -610,7 +610,6 @@ class ApprovisionnementEtpController extends Controller
     {
         $destockages = Destockage::where('type', Statut::BY_DIGIT_PARTNER)
             ->orWhere('type', Statut::BY_BANK)
-            ->orderBy('statut', 'desc')
             ->orderBy('created_at', 'desc')
             ->paginate(9);
 
@@ -637,7 +636,6 @@ class ApprovisionnementEtpController extends Controller
                 $query->where('type', Statut::BY_DIGIT_PARTNER);
                 $query->orWhere('type', Statut::BY_BANK);
             })
-            ->orderBy('statut', 'desc')
             ->orderBy('created_at', 'desc')
             ->paginate(9);
 
@@ -659,7 +657,6 @@ class ApprovisionnementEtpController extends Controller
     public function list_all_destockage()
     {
         $destockages = Destockage::where('type', Statut::BY_AGENT)
-            ->orderBy('statut', 'desc')
             ->orderBy('created_at', 'desc')
             ->paginate(9);
 
@@ -914,7 +911,6 @@ class ApprovisionnementEtpController extends Controller
         $user = Auth::user();
         $destockages = Destockage::where('type', Statut::BY_AGENT)
             ->where('id_recouvreur', $user->id)
-            ->orderBy('statut', 'desc')
             ->orderBy('created_at', 'desc')
             ->paginate(9);
 
@@ -936,7 +932,6 @@ class ApprovisionnementEtpController extends Controller
         $user = Auth::user();
         $destockages = Destockage::where('type', Statut::BY_AGENT)
             ->where('id_agent', $user->id)
-            ->orderBy('statut', 'desc')
             ->orderBy('created_at', 'desc')
             ->paginate(9);
 

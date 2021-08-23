@@ -211,7 +211,6 @@ class DemandedestockageController extends Controller
     {
         $user = Auth::user();
         $demandes_destockage = Demande_destockage::where('id_user', $user->id)
-            ->orderBy('statut', 'desc')
             ->orderBy('created_at', 'desc')
             ->paginate(9);
 
@@ -234,7 +233,6 @@ class DemandedestockageController extends Controller
     {
         $user = Auth::user();
         $demandes_destockage = Demande_destockage::where('id_user', $user->id)
-            ->orderBy('statut', 'desc')
             ->orderBy('created_at', 'desc')
             ->get();
 
