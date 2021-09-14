@@ -17,6 +17,7 @@ use App\Demande_flote;
 use App\FlotageAnonyme;
 use App\Enums\Transations;
 use App\Approvisionnement;
+use App\Zone;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Events\NotificationsEvent;
@@ -454,6 +455,7 @@ class FlotageController extends Controller
      */
     // GESTIONNAIRE DE FOTTE
     // RESPONSABLE DE ZONE
+    // SUPERVISEUR
     public function flottage_anonyme(Request $request)
     {
         // Valider données envoyées
@@ -463,6 +465,7 @@ class FlotageController extends Controller
             'id_puce_from' => ['required', 'numeric'],
             'direct_pay' => ['nullable', 'string'],
             'nro_puce_to' => ['required', 'string'], //le numéro de la puce qui recoit la flotte
+            'id_zone' => ['required', 'numeric'],
         ]);
 
         if ($validator->fails()) {
@@ -478,6 +481,16 @@ class FlotageController extends Controller
         if ($montant <= 0) {
             return response()->json([
                 'message' => "Montant de la transaction incohérent",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        $zone = Zone::find($request->id_zone);
+        //On verifie si la zone existe
+        if (is_null($zone)) {
+            return response()->json([
+                'message' => "La zone n'existe pas",
                 'status' => false,
                 'data' => null
             ]);
@@ -557,6 +570,7 @@ class FlotageController extends Controller
                 'password' => bcrypt(000000),
                 'phone' => $numero_agent,
                 'statut' => Statut::APPROUVE,
+                'id_zone' => $zone->id,
             ]);
             $user->save();
 

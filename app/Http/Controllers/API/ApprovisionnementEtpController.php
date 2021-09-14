@@ -16,6 +16,7 @@ use App\Transaction;
 use App\Enums\Statut;
 use App\Enums\Transations;
 use App\Demande_destockage;
+use App\Zone;
 use Illuminate\Http\Request;
 use App\Events\NotificationsEvent;
 use App\Http\Controllers\Controller;
@@ -683,6 +684,7 @@ class ApprovisionnementEtpController extends Controller
             'id_puce_to' => ['required', 'numeric'],
             'montant' => ['required', 'numeric'],
             'nro_puce_from' => ['required', 'string'],
+            'id_zone' => ['nullable', 'numeric'],
         ]);
 
         if ($validator->fails()) {
@@ -757,6 +759,16 @@ class ApprovisionnementEtpController extends Controller
                 ]);
             }
 
+            $zone = Zone::find($request->id_zone);
+            //On verifie si la zone existe
+            if (is_null($zone)) {
+                return response()->json([
+                    'message' => "La zone n'existe pas",
+                    'status' => false,
+                    'data' => null
+                ]);
+            }
+
             $nom_agent = $request->nom_agent;
 
             // Creation de l'utilisateur lié à l'agent
@@ -766,6 +778,7 @@ class ApprovisionnementEtpController extends Controller
                 'password' => bcrypt(000000),
                 'phone' => $numero_agent,
                 'statut' => Statut::APPROUVE,
+                'id_zone' => $zone->id
             ]);
             $user->save();
 
