@@ -499,6 +499,9 @@ Route::group(['middleware' => 'auth:api'], function(){
         //lister les Flottages peu importe le statut
         Route::get('list_all_flottage', 'API\FlotageController@list_all');
 
+        //lister les Flottages peu importe le statut par chaine de recherche
+        Route::get('search_list_all_flottage', 'API\FlotageController@list_search');
+
         //lister les Flottages peu importe le statut pour un agent
         Route::get('list_all_flottage_agent', 'API\FlotageController@list_all_agent')
             ->where('id', '[0-9]+');
@@ -584,8 +587,9 @@ Route::group(['middleware' => 'auth:api'], function(){
 
         // lister les destockage
         Route::get('list_destockage', 'API\ApprovisionnementEtpController@list_all_destockage');
-        Route::get('list_destockage_collector', 'API\ApprovisionnementEtpController@list_all_destockage_collector')
-            ->where('id', '[0-9]+');
+        Route::get('search_list_destockage', 'API\ApprovisionnementEtpController@search_list_all_destockage');
+        Route::get('list_destockage_collector', 'API\ApprovisionnementEtpController@list_all_destockage_collector');
+        Route::get('search_list_destockage_collector', 'API\ApprovisionnementEtpController@list_search_all_destockage_collector');
         Route::get('list_destockage_agent', 'API\ApprovisionnementEtpController@list_all_destockage_agent')
             ->where('id', '[0-9]+');
         Route::post('destockage_anonyme', 'API\ApprovisionnementEtpController@destockage_anonyme');

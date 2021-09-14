@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Approvisionnement;
 use App\Puce;
 use App\User;
 use App\Role;
@@ -672,6 +673,44 @@ class ApprovisionnementEtpController extends Controller
     }
 
     /**
+     * Lister les destockages  par chaine de recherche
+     */
+    // GESTIONNAIRE DE FLOTTE
+    public function search_list_all_destockage(Request $request)
+    {
+        $needle = mb_strtolower($request->query('needle'));
+
+        $destockages = Destockage::where('type', Statut::BY_AGENT)
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->filter(function (Destockage $destockage) use ($needle) {
+
+                $user = mb_strtolower($destockage->agent_user->name);
+                $recouvreur = mb_strtolower(User::find($destockage->id_recouvreur)->name);
+                $puce_receptrice = $destockage->puce->numero;
+                $operateur = mb_strtolower($destockage->puce->flote->nom);
+                $montant = $destockage->montant;
+
+                return (
+                    strstr($user, $needle) ||
+                    strstr($recouvreur, $needle) ||
+                    strstr($puce_receptrice, $needle) ||
+                    strstr($operateur, $needle) ||
+                    strstr($montant, $needle)
+                );
+            }
+        );
+
+        return response()->json([
+            'message' => "",
+            'status' => true,
+            'data' => [
+                'destockages' => DestockageResource::collection($destockages),
+            ]
+        ]);
+    }
+
+    /**
      * Effectuer un destockage anonyme
      */
     // GESTIONNAIRE DE FLOTTE
@@ -933,6 +972,46 @@ class ApprovisionnementEtpController extends Controller
             'data' => [
                 'destockages' => DestockageResource::collection($destockages->items()),
                 'hasMoreData' => $destockages->hasMorePages(),
+            ]
+        ]);
+    }
+
+    /**
+     * Lister les destockages par un responsable de zone par chaine de recherche
+     */
+    // RESPONSABLE DE ZONE
+    public function list_search_all_destockage_collector(Request $request)
+    {
+        $user = Auth::user();
+        $needle = mb_strtolower($request->query('needle'));
+
+        $destockages = Destockage::where('type', Statut::BY_AGENT)
+            ->where('id_recouvreur', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->filter(function (Destockage $destockage) use ($needle) {
+
+                $user = mb_strtolower($destockage->agent_user->name);
+                $recouvreur = mb_strtolower(User::find($destockage->id_recouvreur)->name);
+                $puce_receptrice = $destockage->puce->numero;
+                $operateur = mb_strtolower($destockage->puce->flote->nom);
+                $montant = $destockage->montant;
+
+                return (
+                    strstr($user, $needle) ||
+                    strstr($recouvreur, $needle) ||
+                    strstr($puce_receptrice, $needle) ||
+                    strstr($operateur, $needle) ||
+                    strstr($montant, $needle)
+                );
+            }
+        );
+
+        return response()->json([
+            'message' => "",
+            'status' => true,
+            'data' => [
+                'destockages' => DestockageResource::collection($destockages),
             ]
         ]);
     }

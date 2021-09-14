@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\User;
 use App\Puce;
+use App\Zone;
 use App\Role;
 use App\Agent;
 use App\Caisse;
@@ -17,7 +18,6 @@ use App\Demande_flote;
 use App\FlotageAnonyme;
 use App\Enums\Transations;
 use App\Approvisionnement;
-use App\Zone;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Events\NotificationsEvent;
@@ -789,6 +789,44 @@ class FlotageController extends Controller
             'data' => [
                 'flottages' => $demandes_flotes,
                 'hasMoreData' => $demandes_flote->hasMorePages(),
+            ]
+        ]);
+    }
+
+    /**
+     * Lister tous les flottages par chaine de recherche
+     */
+    // RESPONSABLE DE ZONE
+    // GESTIONNAIRE DE FLOTTE
+    // SUPERVISEUR
+    public function list_search(Request $request)
+    {
+        $needle = mb_strtolower($request->query('needle'));
+
+        $demandes_flotes = Approvisionnement::orderBy('created_at', 'desc')->get()->filter(function (Approvisionnement $approvisionnement) use ($needle) {
+
+            $user = mb_strtolower($approvisionnement->demande_flote->user->name);
+            $gestionnaire = mb_strtolower($approvisionnement->user->name);
+            $puce_receptrice = $approvisionnement->demande_flote->puce->numero;
+            $puce_emetrice = $approvisionnement->puce->numero;
+            $operateur = mb_strtolower($approvisionnement->puce->flote->nom);
+            $montant = $approvisionnement->montant;
+
+            return (
+                strstr($user, $needle) ||
+                strstr($gestionnaire, $needle) ||
+                strstr($puce_receptrice, $needle) ||
+                strstr($puce_emetrice, $needle) ||
+                strstr($operateur, $needle) ||
+                strstr($montant, $needle)
+            );
+        });
+
+        return response()->json([
+            'message' => "",
+            'status' => true,
+            'data' => [
+                'flottages' =>  $this->fleetsResponse($demandes_flotes)
             ]
         ]);
     }
