@@ -371,6 +371,7 @@ class FlotageController extends Controller
                 'type' => Transations::RECOUVREMENT,
                 'in' => $recouvrement->montant,
                 'out' => 0,
+                'manager' => false,
                 'balance' => $connected_caisse->solde,
                 'id_user' => $connected_user->id,
             ]);
@@ -695,6 +696,7 @@ class FlotageController extends Controller
                     'type' => Transations::RECOUVREMENT,
                     'in' => $recouvrement->montant,
                     'out' => 0,
+                    'manager' => false,
                     'balance' => $connected_caisse->solde,
                     'id_user' => $connected_user->id,
                 ]);

@@ -142,7 +142,7 @@ class CaisseController extends Controller
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
             'id_receveur' => ['required', 'numeric'], //id de l'utilisateur qui recoit l'argent
-            'montant' => ['required', 'Numeric'],
+            'montant' => ['required', 'numeric'],
             'raison' => ['nullable', 'string'],
         ]);
 
@@ -208,11 +208,16 @@ class CaisseController extends Controller
         $caisse_emetteur->solde = $caisse_emetteur->solde - $montant;
         $caisse_emetteur->save();
 
+        $is_manager_sender = $connected_user->roles->first()->name === Roles::GESTION_FLOTTE;
+        $is_manager_receiver = $receveur->roles->first()->name === Roles::GESTION_FLOTTE;
+        $daily_report_status = $is_manager_sender || $is_manager_receiver;
+
         // Garder le mouvement de caisse éffectué par la GF
         Movement::create([
             'name' => $decaissement->related->name,
             'type' => Transations::INTERNAL_TREASURY_OUT,
             'in' => 0,
+            'manager' => $daily_report_status,
             'out' => $decaissement->montant,
             'balance' => $caisse_emetteur->solde,
             'id_user' => $connected_user->id,
@@ -321,6 +326,7 @@ class CaisseController extends Controller
             'name' => $decaissement->related->name,
             'type' => Transations::INTERNAL_HANDOVER,
             'in' => 0,
+            'manager' => false,
             'out' => $decaissement->montant,
             'balance' => $connected_user_caisse->solde,
             'id_user' => $connected_user->id,
@@ -395,6 +401,7 @@ class CaisseController extends Controller
             'type' => Transations::INTERNAL_HANDOVER,
             'in' => $versement->montant,
             'out' => 0,
+            "manager" => false,
             'balance' => $caisse_recepteur->solde,
             'id_user' => $connected_user->id,
         ]);
@@ -490,12 +497,17 @@ class CaisseController extends Controller
         $caisse_recepteur->solde = $caisse_recepteur->solde + $montant;
         $caisse_recepteur->save();
 
+        $is_manager_sender = $connected_user->roles->first()->name === Roles::GESTION_FLOTTE;
+        $is_manager_receiver = $recepteur_role === Roles::GESTION_FLOTTE;
+        $daily_report_status = $is_manager_sender || $is_manager_receiver;
+
         // Garder le mouvement de caisse éffectué par la GF
         Movement::create([
             'name' => $versement->user->name,
             'type' => Transations::INTERNAL_TREASURY_IN,
             'in' => $versement->montant,
             'out' => 0,
+            'manager' => $daily_report_status,
             'balance' => $caisse_recepteur->solde,
             'id_user' => $connected_user->id,
         ]);

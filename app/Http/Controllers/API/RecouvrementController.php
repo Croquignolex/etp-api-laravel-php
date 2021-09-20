@@ -136,12 +136,16 @@ class RecouvrementController extends Controller
         $connected_caisse->solde = $connected_caisse->solde + $montant;
         $connected_caisse->save();
 
+        $is_manager_fleeter = $flottage->user->roles->first()->name === Roles::GESTION_FLOTTE;
+        $daily_report_status = $is_manager_fleeter;
+
         // Garder le mouvement de caisse éffectué par la GF
         Movement::create([
             'name' => $recouvrement->source_user->name,
             'type' => Transations::RECOUVREMENT,
             'in' => $recouvrement->montant,
             'out' => 0,
+            'manager' => $daily_report_status,
             'balance' => $connected_caisse->solde,
             'id_user' => $connected_user->id,
         ]);

@@ -94,6 +94,7 @@ class TreasuryController extends Controller
         $connected_caisse = $connected_user->caisse->first();
         $connected_caisse->solde = $connected_caisse->solde + $montant;
         $connected_caisse->save();
+        $daily_report_status = $is_collector;
 
         // Garder le mouvement de caisse éffectué par la GF
         Movement::create([
@@ -103,6 +104,7 @@ class TreasuryController extends Controller
             'type' => Transations::TREASURY_IN,
             'in' => $versement->amount,
             'out' => 0,
+            'manager' => $daily_report_status,
             'balance' => $connected_caisse->solde,
             'id_user' => $connected_user->id,
         ]);
@@ -201,6 +203,7 @@ class TreasuryController extends Controller
         //on credite le compte du donneur
         $connected_caisse->solde = $connected_caisse->solde - $montant;
         $connected_caisse->save();
+        $daily_report_status = $is_collector;
 
         // Garder le mouvement de caisse éffectué par la GF
         Movement::create([
@@ -209,6 +212,7 @@ class TreasuryController extends Controller
                 : $versement->vendor->name . ' (fournisseur)',
             'type' => Transations::TREASURY_OUT,
             'in' => 0,
+            'manager' => $daily_report_status,
             'out' => $versement->amount,
             'balance' => $connected_caisse->solde,
             'id_user' => $connected_user->id,
