@@ -217,6 +217,48 @@ class RapportsController extends Controller
     }
 
     /**
+     * Raports personnel
+     */
+    // RESPONSABLE DE ZONE
+    public function reports_personnel(Request $request)
+    {
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [
+            'journee' => ['required', 'string']
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        $start = Carbon::createFromFormat('d/m/Y', $request->journee, 'Africa/Douala')->startOfDay();
+        $end = Carbon::createFromFormat('d/m/Y', $request->journee, 'Africa/Douala')->endOfDay();
+
+        $start->setTimezone('UTC');
+        $end->setTimezone('UTC');
+
+        $user = Auth::user();
+
+        $movements = Movement::where('id_user', $user->id)
+            ->where('created_at', '>=', $start)
+            ->where('created_at', '<=', $end)
+            ->where('manager', true)
+            ->get();
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'rapports' => $movements
+            ]
+        ]);
+    }
+
+    /**
      * Transactions des puces
      */
     // SUPERVISEUR

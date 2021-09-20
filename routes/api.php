@@ -965,4 +965,7 @@ Route::group(['middleware' => 'auth:api'], function(){
 
     // Personnal movements
     Route::post('movements_personal', 'API\RapportsController@mouvements_personnel');
+
+    // Personnal reports
+    Route::post('reports_personal', 'API\RapportsController@reports_personnel');
 });
