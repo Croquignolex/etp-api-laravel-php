@@ -243,6 +243,66 @@ class CaisseController extends Controller
     }
 
     /**
+     * Annuler le Decaissement
+     */
+    // SUPERVISEUR
+    public function annuler_decaissement($id)
+    {
+        //si le destockage n'existe pas
+        $decaissement = Versement::find($id);
+        if (is_null($decaissement)) {
+            return response()->json([
+                'message' => "Le décaissement n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        // Vérification de la validation éffective
+        if ($decaissement->statut !== Statut::EN_COURS) {
+            return response()->json([
+                'message' => "Le décaissement a déjà été confirmé ou annulé",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        $connected_user = Auth::user();
+
+        $montant = $decaissement->montant;
+        $caisse_emetteur = $connected_user->caisse->first();
+
+        //on approuve le destockage
+        $decaissement->statut = Statut::ANNULE;
+
+        $caisse_emetteur->solde = $caisse_emetteur->solde + $montant;
+        $caisse_emetteur->save();
+
+        $is_manager_sender = $connected_user->roles->first()->name === Roles::GESTION_FLOTTE;
+        $is_manager_receiver = $decaissement->related->roles->first()->name === Roles::GESTION_FLOTTE;
+        $daily_report_status = $is_manager_sender || $is_manager_receiver;
+
+        // Garder le mouvement de caisse éffectué par la GF
+        Movement::create([
+            'name' => "(Annulation)",
+            'type' => Transations::INTERNAL_TREASURY_OUT,
+            'in' => $montant,
+            'manager' => $daily_report_status,
+            'out' => 0,
+            'balance' => $caisse_emetteur->solde,
+            'id_user' => $connected_user->id,
+        ]);
+
+        $decaissement->save();
+
+        return response()->json([
+            'message' => "Transfert de flotte annulé avec succès",
+            'status' => true,
+            'data' => null
+        ]);
+    }
+
+    /**
      * Creer une passation de service
      */
     // GESTIONNAIRE DE FLOTTE
@@ -465,9 +525,9 @@ class CaisseController extends Controller
         }
 
         // Vérification de la validation éffective
-        if ($versement->statut === Statut::EFFECTUER) {
+        if ($versement->statut !== Statut::EN_COURS) {
             return response()->json([
-                'message' => "L'encaissement interne a déjà été confirmé",
+                'message' => "L'encaissement a déjà été confirmé ou annulé",
                 'status' => false,
                 'data' => null
             ]);

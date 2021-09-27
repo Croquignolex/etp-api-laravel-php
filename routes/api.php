@@ -760,6 +760,10 @@ Route::group(['middleware' => 'auth:api'], function(){
             Route::post('approuve_flottage_interne/{id}', 'API\Flottage_interneController@approuve')
                 ->where('id', '[0-9]+');
 
+        //Annulation de la reception du transfert de flotte
+        Route::post('annuler_flottage_interne/{id}', 'API\Flottage_interneController@annuler')
+            ->where('id', '[0-9]+');
+
         //lister les Flottages d'un superviseur vers un responsable de zone precis
         Route::get('list_all_flottage_interne_by_rz/{id}', 'API\Flottage_interneController@list_all_flottage_interne_by_rz')
             ->where('id', '[0-9]+');
@@ -825,6 +829,10 @@ Route::group(['middleware' => 'auth:api'], function(){
 
         //lister tous les Decaissements
         Route::get('decaissement_list_all', 'API\CaisseController@decaissement_list_all');
+
+        //Annulation du Decaissements
+        Route::post('annuler_decaissement/{id}', 'API\CaisseController@annuler_decaissement')
+        ->where('id', '[0-9]+');
 
         /*
     //////////////////////passation de service entre les gestionnaires de flotte/////////////////////

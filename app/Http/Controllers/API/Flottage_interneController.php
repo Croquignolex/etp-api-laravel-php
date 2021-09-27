@@ -215,9 +215,9 @@ class Flottage_interneController extends Controller
         }
 
         // Vérification de la validation éffective
-        if ($transfert_flotte->statut === Statut::EFFECTUER) {
+        if ($transfert_flotte->statut !== Statut::EN_COURS) {
             return response()->json([
-                'message' => "Le transfert de flotte a déjà été confirmé",
+                'message' => "Le transfert de flotte a déjà été confirmé ou annulé",
                 'status' => false,
                 'data' => null
             ]);
@@ -270,7 +270,7 @@ class Flottage_interneController extends Controller
         }
 
         $transfert_flotte->save();
-        $message = "Transfert de flotte Apprové par " . $connected_user->name;
+        $message = "Transfert de flotte apprové par " . $connected_user->name;
 
         if($type_puce_emetrice === Statut::PUCE_RZ)
         {
@@ -310,6 +310,64 @@ class Flottage_interneController extends Controller
 
         return response()->json([
             'message' => "Transfert de flotte apprové avec succès",
+            'status' => true,
+            'data' => null
+        ]);
+    }
+
+    /**
+     * Annuler le transfert de flotte
+     */
+    // SUPERVISEUR
+    public function annuler($id)
+    {
+        //si le destockage n'existe pas
+        $transfert_flotte = Flottage_interne::find($id);
+        if (is_null($transfert_flotte)) {
+            return response()->json([
+                'message' => "Le transfert de flotte n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        // Vérification de la validation éffective
+        if ($transfert_flotte->statut !== Statut::EN_COURS) {
+            return response()->json([
+                'message' => "Le transfert de flotte a déjà été confirmé ou annulé",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        $montant = $transfert_flotte->montant;
+        $puce_emetrice = $transfert_flotte->puce_emetrice;
+
+        //on approuve le destockage
+        $transfert_flotte->statut = Statut::ANNULE;
+
+        // Traitement des flottes
+        $puce_emetrice->solde = $puce_emetrice->solde + $montant;
+        $puce_emetrice->save();
+
+        $connected_user = Auth::user();
+
+        // Garder la transaction éffectué par la GF
+        Transaction::create([
+            'type' => Transations::FLEET_TRANSFER,
+            'in' => $transfert_flotte->montant,
+            'out' => 0,
+            'id_operator' => $puce_emetrice->flote->id,
+            'id_left' => $puce_emetrice->id,
+            'right' => "(Annulation)",
+            'balance' => $puce_emetrice->solde,
+            'id_user' => $connected_user->id,
+        ]);
+
+        $transfert_flotte->save();
+
+        return response()->json([
+            'message' => "Transfert de flotte annulé avec succès",
             'status' => true,
             'data' => null
         ]);
