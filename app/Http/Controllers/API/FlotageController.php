@@ -158,11 +158,11 @@ class FlotageController extends Controller
 
         //Database Notification
         $users = User::all();
-        foreach ($users as $user)
+        foreach ($users as $_user)
         {
-            if ($user->hasRole([$role->name]))
+            if ($_user->hasRole([$role->name]))
             {
-                $user->notify(new Notif_flottage([
+                $_user->notify(new Notif_flottage([
                     'data' => $flottage,
                     'message' => $message
                 ]));
@@ -339,9 +339,9 @@ class FlotageController extends Controller
             $message = "Recouvrement d'espèces éffectué par " . $connected_user->name;
             //Database Notification
             $users = User::all();
-            foreach ($users as $user) {
-                if ($user->hasRole([Roles::SUPERVISEUR])) {
-                    $user->notify(new Notif_recouvrement([
+            foreach ($users as $_user) {
+                if ($_user->hasRole([Roles::SUPERVISEUR])) {
+                    $_user->notify(new Notif_recouvrement([
                         'data' => $recouvrement,
                         'message' => $message
                     ]));
@@ -664,9 +664,9 @@ class FlotageController extends Controller
                 $message = "Recouvrement d'espèces éffectué par " . $connected_user->name;
                 //Database Notification
                 $users = User::all();
-                foreach ($users as $user) {
-                    if ($user->hasRole([Roles::SUPERVISEUR])) {
-                        $user->notify(new Notif_recouvrement([
+                foreach ($users as $_user) {
+                    if ($_user->hasRole([Roles::SUPERVISEUR])) {
+                        $_user->notify(new Notif_recouvrement([
                             'data' => $recouvrement,
                             'message' => $message
                         ]));

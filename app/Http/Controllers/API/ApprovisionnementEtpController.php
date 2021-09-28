@@ -197,9 +197,9 @@ class ApprovisionnementEtpController extends Controller
                 $message = "Déstockage éffectué par " . $connected_user->name;
                 //Database Notification
                 $users = User::all();
-                foreach ($users as $user) {
-                    if ($user->hasRole([ Roles::GESTION_FLOTTE])) {
-                        $user->notify(new Notif_destockage([
+                foreach ($users as $_user) {
+                    if ($_user->hasRole([ Roles::GESTION_FLOTTE])) {
+                        $_user->notify(new Notif_destockage([
                             'data' => $destockage,
                             'message' => $message
                         ]));
@@ -227,9 +227,9 @@ class ApprovisionnementEtpController extends Controller
                 $message = "Approvisionnment éffectué par " . $connected_user->name;
                 //Database Notification
                 $users = User::all();
-                foreach ($users as $user) {
-                    if ($user->hasRole([Roles::SUPERVISEUR])) {
-                        $user->notify(new Notif_destockage([
+                foreach ($users as $_user) {
+                    if ($_user->hasRole([Roles::SUPERVISEUR])) {
+                        $_user->notify(new Notif_destockage([
                             'data' => $destockage,
                             'message' => $message
                         ]));
@@ -342,11 +342,11 @@ class ApprovisionnementEtpController extends Controller
 
                 //Database Notification
                 $users = User::all();
-                foreach ($users as $user) {
+                foreach ($users as $_user) {
 
-                    if ($user->hasRole([$role->name])) {
+                    if ($_user->hasRole([$role->name])) {
 
-                        $user->notify(new Notif_destockage([
+                        $_user->notify(new Notif_destockage([
                             'data' => $demande,
                             'message' => "Une demande en cours de traitement"
                         ]));
@@ -415,11 +415,11 @@ class ApprovisionnementEtpController extends Controller
 
                 //Database Notification
                 $users = User::all();
-                foreach ($users as $user) {
+                foreach ($users as $_user) {
 
-                    if ($user->hasRole([$role->name])) {
+                    if ($_user->hasRole([$role->name])) {
 
-                        $user->notify(new Notif_destockage([
+                        $_user->notify(new Notif_destockage([
                             'data' => $demande,
                             'message' => "Une demande Revoquée"
                         ]));
@@ -907,9 +907,9 @@ class ApprovisionnementEtpController extends Controller
                 $message = "Déstockage éffectué par " . $connected_user->name;
                 //Database Notification
                 $users = User::all();
-                foreach ($users as $user) {
-                    if ($user->hasRole([Roles::GESTION_FLOTTE])) {
-                        $user->notify(new Notif_destockage([
+                foreach ($users as $_user) {
+                    if ($_user->hasRole([Roles::GESTION_FLOTTE])) {
+                        $_user->notify(new Notif_destockage([
                             'data' => $destockage,
                             'message' => $message
                         ]));

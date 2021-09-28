@@ -1259,8 +1259,8 @@ class UserController extends Controller
         $caisses = [];
         $n = 1;
 
-        foreach ($recouvreurs as $recouvreurs) {
-            $user = $recouvreurs;
+        foreach ($recouvreurs as $_recouvreurs) {
+            $user = $_recouvreurs;
             $caisse = Caisse::where('id_user', $user->id)->first();
             $caisses[] = ["user $n" => $user, "caisse $n" => $caisse];
             $n = $n + 1;

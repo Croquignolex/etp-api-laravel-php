@@ -133,11 +133,11 @@ class Flottage_interneController extends Controller
 
             //Database Notification
             $users = User::all();
-            foreach ($users as $user) {
+            foreach ($users as $_user) {
 
-                if ($user->hasRole([$role->name])) {
+                if ($_user->hasRole([$role->name])) {
 
-                    $user->notify(new Notif_flottage([
+                    $_user->notify(new Notif_flottage([
                         'data' => $flottage_interne,
                         'message' => "Nouveau flottage Interne"
                     ]));
@@ -285,9 +285,9 @@ class Flottage_interneController extends Controller
         {
             $users = User::all();
             // Notifier tous les superviseur
-            foreach ($users as $user) {
-                if ($user->hasRole([ Roles::GESTION_FLOTTE])) {
-                    $user->notify(new Notif_destockage([
+            foreach ($users as $_user) {
+                if ($_user->hasRole([ Roles::GESTION_FLOTTE])) {
+                    $_user->notify(new Notif_destockage([
                         'data' => $transfert_flotte,
                         'message' => $message
                     ]));
@@ -298,9 +298,9 @@ class Flottage_interneController extends Controller
         {
             $users = User::all();
             // Notifier tous les gestionnaires de flottes
-            foreach ($users as $user) {
-                if ($user->hasRole([Roles::SUPERVISEUR])) {
-                    $user->notify(new Notif_destockage([
+            foreach ($users as $_user) {
+                if ($_user->hasRole([Roles::SUPERVISEUR])) {
+                    $_user->notify(new Notif_destockage([
                         'data' => $transfert_flotte,
                         'message' => $message
                     ]));
@@ -597,11 +597,11 @@ class Flottage_interneController extends Controller
 
             //Database Notification
             $users = User::all();
-            foreach ($users as $user) {
+            foreach ($users as $_user) {
 
-                if ($user->hasRole([$role->name]) || $user->hasRole([$role2->name])) {
+                if ($_user->hasRole([$role->name]) || $_user->hasRole([$role2->name])) {
 
-                    $user->notify(new Notif_flottage([
+                    $_user->notify(new Notif_flottage([
                         'data' => $flottage_interne,
                         'message' => "Nouveau flottage Interne"
                     ]));

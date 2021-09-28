@@ -95,9 +95,9 @@ class DemandeflotteController extends Controller
         //Database Notification
         $message = "Nouvelle demande de flotte éffectué par " . $connected_user->name;
         $users = User::all();
-        foreach ($users as $user) {
-            if ($user->hasRole([Roles::GESTION_FLOTTE])) {
-                $user->notify(new Notif_demande_flotte([
+        foreach ($users as $_user) {
+            if ($_user->hasRole([Roles::GESTION_FLOTTE])) {
+                $_user->notify(new Notif_demande_flotte([
                     'data' => $demande_flote,
                     'message' => $message
                 ]));
@@ -160,11 +160,11 @@ class DemandeflotteController extends Controller
 
             //Database Notification
             $users = User::all();
-            foreach ($users as $user) {
+            foreach ($users as $_user) {
 
-                if ($user->hasRole([$role->name])) {
+                if ($_user->hasRole([$role->name])) {
 
-                    $user->notify(new Notif_demande_flotte([
+                    $_user->notify(new Notif_demande_flotte([
                         'data' => $demande_flote,
                         'message' => "Modification d'une emande de flotte"
                     ]));
@@ -234,11 +234,11 @@ class DemandeflotteController extends Controller
 
             //Database Notification
             $users = User::all();
-            foreach ($users as $user) {
+            foreach ($users as $_user) {
 
-                if ($user->hasRole([$role->name])) {
+                if ($_user->hasRole([$role->name])) {
 
-                    $user->notify(new Notif_demande_flotte([
+                    $_user->notify(new Notif_demande_flotte([
                         'data' => $demande_flote,
                         'message' => "Modification d'une emande de flotte"
                     ]));
@@ -485,11 +485,11 @@ class DemandeflotteController extends Controller
 
             //Database Notification
             $users = User::all();
-            foreach ($users as $user) {
+            foreach ($users as $_user) {
 
-                if ($user->hasRole([$role->name])) {
+                if ($_user->hasRole([$role->name])) {
 
-                    $user->notify(new Notif_demande_flotte([
+                    $_user->notify(new Notif_demande_flotte([
                         'data' => $demande_floteDB,
                         'message' => "Annulation d'une emande de flotte"
                     ]));

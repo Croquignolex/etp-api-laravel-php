@@ -138,18 +138,18 @@ class Flottage_rzController extends Controller
                ]));
            }
        } else if($to_name === Statut::FLOTTAGE) {
-           foreach ($users as $user) {
-               if ($user->hasRole([Roles::GESTION_FLOTTE])) {
-                   $user->notify(new Notif_flottage([
+           foreach ($users as $_user) {
+               if ($_user->hasRole([Roles::GESTION_FLOTTE])) {
+                   $_user->notify(new Notif_flottage([
                        'data' => $flottage_rz,
                        'message' => $message
                    ]));
                }
            }
        } else if($to_name === Statut::FLOTTAGE_SECONDAIRE) {
-           foreach ($users as $user) {
-               if ($user->hasRole([Roles::SUPERVISEUR])) {
-                   $user->notify(new Notif_flottage([
+           foreach ($users as $_user) {
+               if ($_user->hasRole([Roles::SUPERVISEUR])) {
+                   $_user->notify(new Notif_flottage([
                        'data' => $flottage_rz,
                        'message' => $message
                    ]));

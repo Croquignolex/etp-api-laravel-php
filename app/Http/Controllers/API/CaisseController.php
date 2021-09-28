@@ -788,11 +788,11 @@ class CaisseController extends Controller
             //Database Notification
             $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
             $users = User::all();
-            foreach ($users as $user) {
+            foreach ($users as $_user) {
 
-                if ($user->hasRole([$role->name])) {
+                if ($_user->hasRole([$role->name])) {
 
-                    $user->notify(new Recouvrement([
+                    $_user->notify(new Recouvrement([
                         'data' => $operation,
                         'message' => "Nouvelle depence faite par un client"
                     ]));
@@ -932,11 +932,11 @@ class CaisseController extends Controller
             //Database Notification
             $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
             $users = User::all();
-            foreach ($users as $user) {
+            foreach ($users as $_user) {
 
-                if ($user->hasRole([$role->name])) {
+                if ($_user->hasRole([$role->name])) {
 
-                    $user->notify(new Recouvrement([
+                    $_user->notify(new Recouvrement([
                         'data' => $operation,
                         'message' => "Nouvelle depence faite par un client"
                     ]));

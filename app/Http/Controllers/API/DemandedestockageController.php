@@ -95,9 +95,9 @@ class DemandedestockageController extends Controller
         //Database Notification
         $message = "Nouvelle demande de déstockage éffectué par " . $connected_user->name;
         $users = User::all();
-        foreach ($users as $user) {
-            if ($user->hasRole([Roles::RECOUVREUR])) {
-                $user->notify(new Notif_demande_destockage([
+        foreach ($users as $_user) {
+            if ($_user->hasRole([Roles::RECOUVREUR])) {
+                $_user->notify(new Notif_demande_destockage([
                     'data' => $demande_destockage,
                     'message' => $message
                 ]));
@@ -165,11 +165,11 @@ class DemandedestockageController extends Controller
 
             //Database Notification
             $users = User::all();
-            foreach ($users as $user) {
+            foreach ($users as $_user) {
 
-                if ($user->hasRole([$role->name])) {
+                if ($_user->hasRole([$role->name])) {
 
-                    $user->notify(new Notif_demande_destockage([
+                    $_user->notify(new Notif_demande_destockage([
                         'data' => $demande_destockage,
                         'message' => "Une demande de Destockage modifiée"
                     ]));
@@ -328,11 +328,11 @@ class DemandedestockageController extends Controller
 
             //Database Notification
             $users = User::all();
-            foreach ($users as $user) {
+            foreach ($users as $_user) {
 
-                if ($user->hasRole([$role->name])) {
+                if ($_user->hasRole([$role->name])) {
 
-                    $user->notify(new Notif_demande_destockage([
+                    $_user->notify(new Notif_demande_destockage([
                         'data' => $demandes_destockage,
                         'message' => "Une demande de Destockage Annulée"
                     ]));
