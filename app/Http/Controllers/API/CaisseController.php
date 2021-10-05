@@ -246,6 +246,7 @@ class CaisseController extends Controller
      * Annuler le Decaissement
      */
     // SUPERVISEUR
+    // GESTIONNAIRE DE FLOTTE
     public function annuler_decaissement($id)
     {
         //si le destockage n'existe pas

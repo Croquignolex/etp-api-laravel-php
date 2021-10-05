@@ -319,6 +319,7 @@ class Flottage_interneController extends Controller
      * Annuler le transfert de flotte
      */
     // SUPERVISEUR
+    // GESTIONNAIRE DE FLOTTE
     public function annuler($id)
     {
         //si le destockage n'existe pas
