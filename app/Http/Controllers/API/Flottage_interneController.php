@@ -319,6 +319,7 @@ class Flottage_interneController extends Controller
      * Annuler le transfert de flotte
      */
     // SUPERVISEUR
+    // RESPONSABLE DE ZONE
     // GESTIONNAIRE DE FLOTTE
     public function annuler($id)
     {

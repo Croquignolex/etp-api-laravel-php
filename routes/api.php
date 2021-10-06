@@ -850,6 +850,10 @@ Route::group(['middleware' => 'auth:api'], function(){
         //lister toutes les passation de service
         Route::post('approuve_passation/{id}', 'API\CaisseController@approuve_passation')
         ->where('id', '[0-9]+');
+
+        //lister annuler une passation de service
+        Route::post('annuler_passation/{id}', 'API\CaisseController@annule_passation')
+        ->where('id', '[0-9]+');
     /*
     //////////////////////Attribuer une puce à un responsable de zonne/////////////////////
     */

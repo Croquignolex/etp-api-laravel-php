@@ -246,6 +246,7 @@ class CaisseController extends Controller
      * Annuler le Decaissement
      */
     // SUPERVISEUR
+    // RESPONSABLE DE ZONE
     // GESTIONNAIRE DE FLOTTE
     public function annuler_decaissement($id)
     {
@@ -297,7 +298,7 @@ class CaisseController extends Controller
         $decaissement->save();
 
         return response()->json([
-            'message' => "Transfert de flotte annulé avec succès",
+            'message' => "Décaissement interne annulé avec succès",
             'status' => true,
             'data' => null
         ]);
@@ -429,9 +430,9 @@ class CaisseController extends Controller
         }
 
         // Vérification de la validation éffective
-        if ($versement->statut === Statut::EFFECTUER) {
+        if ($versement->statut !== Statut::EN_COURS) {
             return response()->json([
-                'message' => "La passation de service a déjà été confirmée",
+                'message' => "La passation de service a déjà été confirmée ou annulée",
                 'status' => false,
                 'data' => null
             ]);
@@ -469,6 +470,62 @@ class CaisseController extends Controller
 
         return response()->json([
             'message' => "Passation de service confirmé avec succès",
+            'status' => true,
+            'data' => null
+        ]);
+    }
+
+    /**
+     * Annuler la passation de service
+     */
+    // GESTIONNAIRE DE FLOTTE
+    public function annule_passation($id)
+    {
+        $versement = Versement::find($id);
+        //si le destockage n'existe pas
+        if (is_null($versement)) {
+            return response()->json([
+                'message' => "La passation de service n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        // Vérification de la validation éffective
+        if ($versement->statut !== Statut::EN_COURS) {
+            return response()->json([
+                'message' => "La passation de service a déjà été confirmée ou annulée",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        $connected_user = Auth::user();
+
+        $montant = $versement->montant;
+        $caisse_emetteur = $connected_user->caisse->first();
+
+        //on approuve le destockage
+        $versement->statut = Statut::ANNULE;
+
+        $caisse_emetteur->solde = $caisse_emetteur->solde + $montant;
+        $caisse_emetteur->save();
+
+        // Garder le mouvement de caisse éffectué par la GF
+        Movement::create([
+            'name' => "(Annulation)",
+            'type' => Transations::INTERNAL_HANDOVER,
+            'in' => $montant,
+            'manager' => false,
+            'out' => 0,
+            'balance' => $caisse_emetteur->solde,
+            'id_user' => $connected_user->id,
+        ]);
+
+        $versement->save();
+
+        return response()->json([
+            'message' => "Passation de service annulée avec succès",
             'status' => true,
             'data' => null
         ]);
