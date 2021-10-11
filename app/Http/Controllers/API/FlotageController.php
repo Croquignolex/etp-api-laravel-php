@@ -365,13 +365,15 @@ class FlotageController extends Controller
             $connected_caisse->solde = $connected_caisse->solde + $montant;
             $connected_caisse->save();
 
+            $daily_report_status = !$is_collector;
+
             // Garder le mouvement de caisse éffectué par la GF
             Movement::create([
                 'name' => $recouvrement->source_user->name,
                 'type' => Transations::RECOUVREMENT,
                 'in' => $recouvrement->montant,
                 'out' => 0,
-                'manager' => false,
+                'manager' => $daily_report_status,
                 'balance' => $connected_caisse->solde,
                 'id_user' => $connected_user->id,
             ]);
@@ -690,13 +692,15 @@ class FlotageController extends Controller
                 $connected_caisse->solde = $connected_caisse->solde + $montant;
                 $connected_caisse->save();
 
+                $daily_report_status = !$is_collector;
+
                 // Garder le mouvement de caisse éffectué par la GF
                 Movement::create([
                     'name' => $recouvrement->source_user->name,
                     'type' => Transations::RECOUVREMENT,
                     'in' => $recouvrement->montant,
                     'out' => 0,
-                    'manager' => false,
+                    'manager' => $daily_report_status,
                     'balance' => $connected_caisse->solde,
                     'id_user' => $connected_user->id,
                 ]);

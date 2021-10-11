@@ -159,7 +159,7 @@ class ApprovisionnementEtpController extends Controller
                         'name' => $destockage->fournisseur->name,
                         'type' => Transations::APPROVISIONNEMENT,
                         'in' => 0,
-                        'manager' => false,
+                        'manager' => true,
                         'out' => $destockage->montant,
                         'balance' => $connected_caisse->solde,
                         'id_user' => $connected_user->id,
