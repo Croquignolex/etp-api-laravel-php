@@ -261,9 +261,18 @@ class CaisseController extends Controller
         }
 
         // Vérification de la validation éffective
-        if ($decaissement->statut !== Statut::EN_COURS) {
+        if ($decaissement->statut === Statut::ANNULE) {
             return response()->json([
-                'message' => "Le décaissement a déjà été confirmé ou annulé",
+                'message' => "Le décaissement a déjà été annulé",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        // Vérification de la validation éffective
+        if ($decaissement->statut === Statut::EFFECTUER) {
+            return response()->json([
+                'message' => "Le décaissement a déjà été confirmé",
                 'status' => false,
                 'data' => null
             ]);
@@ -430,9 +439,18 @@ class CaisseController extends Controller
         }
 
         // Vérification de la validation éffective
-        if ($versement->statut !== Statut::EN_COURS) {
+        if ($versement->statut === Statut::ANNULE) {
             return response()->json([
-                'message' => "La passation de service a déjà été confirmée ou annulée",
+                'message' => "La passation de service a déjà été annulé",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        // Vérification de la validation éffective
+        if ($versement->statut === Statut::EFFECTUER) {
+            return response()->json([
+                'message' => "La passation de service a déjà été confirmé",
                 'status' => false,
                 'data' => null
             ]);
@@ -492,9 +510,18 @@ class CaisseController extends Controller
         }
 
         // Vérification de la validation éffective
-        if ($versement->statut !== Statut::EN_COURS) {
+        if ($versement->statut === Statut::ANNULE) {
             return response()->json([
-                'message' => "La passation de service a déjà été confirmée ou annulée",
+                'message' => "La passation de service a déjà été annulé",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        // Vérification de la validation éffective
+        if ($versement->statut === Statut::EFFECTUER) {
+            return response()->json([
+                'message' => "La passation de service a déjà été confirmé",
                 'status' => false,
                 'data' => null
             ]);
@@ -583,9 +610,18 @@ class CaisseController extends Controller
         }
 
         // Vérification de la validation éffective
-        if ($versement->statut !== Statut::EN_COURS) {
+        if ($versement->statut === Statut::ANNULE) {
             return response()->json([
-                'message' => "L'encaissement a déjà été confirmé ou annulé",
+                'message' => "L'encaissement a déjà été annulé",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        // Vérification de la validation éffective
+        if ($versement->statut === Statut::EFFECTUER) {
+            return response()->json([
+                'message' => "L'encaissement a déjà été confirmé",
                 'status' => false,
                 'data' => null
             ]);

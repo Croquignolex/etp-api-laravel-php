@@ -215,9 +215,18 @@ class Flottage_interneController extends Controller
         }
 
         // Vérification de la validation éffective
-        if ($transfert_flotte->statut !== Statut::EN_COURS) {
+        if ($transfert_flotte->statut === Statut::ANNULE) {
             return response()->json([
-                'message' => "Le transfert de flotte a déjà été confirmé ou annulé",
+                'message' => "Le transfert de flotte a déjà été annulé",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        // Vérification de la validation éffective
+        if ($transfert_flotte->statut === Statut::EFFECTUER) {
+            return response()->json([
+                'message' => "Le transfert de flotte a déjà été confirmé",
                 'status' => false,
                 'data' => null
             ]);
@@ -334,9 +343,18 @@ class Flottage_interneController extends Controller
         }
 
         // Vérification de la validation éffective
-        if ($transfert_flotte->statut !== Statut::EN_COURS) {
+        if ($transfert_flotte->statut === Statut::ANNULE) {
             return response()->json([
-                'message' => "Le transfert de flotte a déjà été confirmé ou annulé",
+                'message' => "Le transfert de flotte a déjà été annulé",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        // Vérification de la validation éffective
+        if ($transfert_flotte->statut === Statut::EFFECTUER) {
+            return response()->json([
+                'message' => "Le transfert de flotte a déjà été confirmé",
                 'status' => false,
                 'data' => null
             ]);

@@ -776,6 +776,84 @@ class FlotageController extends Controller
     }
 
     /**
+     * Annuler le flottage
+     */
+    // SUPERVISEUR
+    // RESPONSABLE DE ZONE
+    // GESTIONNAIRE DE FLOTTE
+    public function annuler_flottage($id)
+    {
+        //si le destockage n'existe pas
+        $flottage = Approvisionnement::find($id);
+        if (is_null($flottage)) {
+            return response()->json([
+                'message' => "Le flottage n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        // Vérification de la validation éffective
+        if ($flottage->statut === Statut::ANNULE) {
+            return response()->json([
+                'message' => "Le flottage a déjà été annulé",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        // Vérification de la validation éffective
+        if ($flottage->statut === Statut::EFFECTUER) {
+            return response()->json([
+                'message' => "Le flottage a déjà été confirmé",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        $montant = $flottage->montant;
+        $puce_flottage = $flottage->puce;
+        $puce_agent = $flottage->demande_flote->puce;
+
+        //on approuve le flottage
+        $flottage->statut = Statut::ANNULE;
+
+        // Traitement des flottes
+        $puce_flottage->solde = $puce_flottage->solde + $montant;
+        $puce_flottage->save();
+
+        $puce_agent->solde = $puce_agent->solde - $montant;
+        $puce_agent->save();
+
+        $connected_user = Auth::user();
+        $is_collector = $connected_user->roles->first()->name === Roles::RECOUVREUR;
+        if($is_collector) {
+            $connected_user->dette = $connected_user->dette + $montant;
+            $connected_user->save();
+        }
+
+        // Garder la transaction éffectué par la GF
+        Transaction::create([
+            'type' => Transations::FLOTAGE,
+            'in' => $flottage->montant,
+            'out' => 0,
+            'id_operator' => $puce_flottage->flote->id,
+            'id_left' => $puce_flottage->id,
+            'right' => "(Annulation)",
+            'balance' => $puce_flottage->solde,
+            'id_user' => $connected_user->id,
+        ]);
+
+        $flottage->save();
+
+        return response()->json([
+            'message' => "Flottage annulé avec succès",
+            'status' => true,
+            'data' => null
+        ]);
+    }
+
+    /**
      * Lister tous les flottages
      */
     // GESTIONNAIRE DE FLOTTE

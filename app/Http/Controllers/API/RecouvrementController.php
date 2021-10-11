@@ -78,6 +78,24 @@ class RecouvrementController extends Controller
             ]);
         }
 
+        // Vérification de la validation éffective
+        if ($flottage->statut === Statut::ANNULE) {
+            return response()->json([
+                'message' => "Le flottage a déjà été annulé",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        // Vérification de la validation éffective
+        if ($flottage->statut === Statut::EFFECTUER) {
+            return response()->json([
+                'message' => "Le flottage a déjà été confirmé",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
         //On verifi que le montant n'est pas supperieur au montant demandé
         if ($flottage->reste < $montant) {
             return response()->json([

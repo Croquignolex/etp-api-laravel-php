@@ -558,6 +558,10 @@ Route::group(['middleware' => 'auth:api'], function(){
         Route::get('list_flottage_anonyme', 'API\FlotageController@list_flottage_anonyme')
             ->where('id', '[0-9]+');
 
+        //Annulation du Flottage
+        Route::post('annuler_flottage/{id}', 'API\FlotageController@annuler_flottage')
+            ->where('id', '[0-9]+');
+
    /*
     //////////////////////Approvisionnement des Puces de ETP/////////////////////
     */
