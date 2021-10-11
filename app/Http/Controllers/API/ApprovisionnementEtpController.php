@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Approvisionnement;
 use App\Puce;
+use App\Zone;
 use App\User;
 use App\Role;
 use App\Agent;
@@ -17,7 +17,6 @@ use App\Transaction;
 use App\Enums\Statut;
 use App\Enums\Transations;
 use App\Demande_destockage;
-use App\Zone;
 use Illuminate\Http\Request;
 use App\Events\NotificationsEvent;
 use App\Http\Controllers\Controller;
@@ -458,9 +457,18 @@ class ApprovisionnementEtpController extends Controller
         }
 
         // Vérification de la validation éffective
+        if ($destockage->statut === Statut::ANNULE) {
+            return response()->json([
+                'message' => "L'approvisionnement a déjà été annulé",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        // Vérification de la validation éffective
         if ($destockage->statut === Statut::EFFECTUER) {
             return response()->json([
-                'message' => "Le destockage a déjà été confirmé",
+                'message' => "L'approvisionnement a déjà été confirmé",
                 'status' => false,
                 'data' => null
             ]);
@@ -517,6 +525,71 @@ class ApprovisionnementEtpController extends Controller
     }
 
     /**
+     * Annuler le déstockage
+     */
+    // RESPONSABLE DE ZONE
+    public function annuler_destockage($id)
+    {
+        $destockage = Destockage::find($id);
+        //si le destockage n'existe pas
+        if (is_null($destockage)) {
+            return response()->json([
+                'message' => "Le destockage n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        // Vérification de la validation éffective
+        if ($destockage->statut === Statut::ANNULE) {
+            return response()->json([
+                'message' => "Le destockage a déjà été annulé",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        // Vérification de la validation éffective
+        if ($destockage->statut === Statut::EFFECTUER) {
+            return response()->json([
+                'message' => "Le destockage a déjà été confirmé",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        $montant = $destockage->montant;
+        $connected_user = Auth::user();
+        $connected_caisse = $connected_user->caisse->first();
+
+        //on approuve le flottage
+        $destockage->statut = Statut::ANNULE;
+
+        // Traitement des flottes
+        $connected_caisse->solde = $connected_caisse->solde + $montant;
+        $connected_caisse->save();
+
+        // Garder le mouvement de caisse éffectué par le RZ
+        Movement::create([
+            'name' => "(Annulation)",
+            'type' => Transations::DESTOCKAGE,
+            'in' => $montant,
+            'manager' => false,
+            'out' => 0,
+            'balance' => $connected_caisse->solde,
+            'id_user' => $connected_user->id,
+        ]);
+
+        $destockage->save();
+
+        return response()->json([
+            'message' => "Déstockage annulé avec succès",
+            'status' => true,
+            'data' => null
+        ]);
+    }
+
+    /**
      * Approuver un approvisionnement
      */
     // SUPERVISEUR
@@ -527,6 +600,15 @@ class ApprovisionnementEtpController extends Controller
         if (is_null($destockage)) {
             return response()->json([
                 'message' => "L'approvisionnement n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        // Vérification de la validation éffective
+        if ($destockage->statut === Statut::ANNULE) {
+            return response()->json([
+                'message' => "L'approvisionnement a déjà été annulé",
                 'status' => false,
                 'data' => null
             ]);
@@ -580,6 +662,71 @@ class ApprovisionnementEtpController extends Controller
 
         return response()->json([
             'message' => "Approvisionnement apprové avec succès",
+            'status' => true,
+            'data' => null
+        ]);
+    }
+
+    /**
+     * Annuler le approvisionnement
+     */
+    // RESPONSABLE DE ZONE
+    public function annuler_approvisionnement($id)
+    {
+        //si le destockage n'existe pas
+        $destockage = Destockage::find($id);
+        if (is_null($destockage)) {
+            return response()->json([
+                'message' => "L'approvisionnement n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        // Vérification de la validation éffective
+        if ($destockage->statut === Statut::ANNULE) {
+            return response()->json([
+                'message' => "L'approvisionnement a déjà été annulé",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        // Vérification de la validation éffective
+        if ($destockage->statut === Statut::EFFECTUER) {
+            return response()->json([
+                'message' => "L'approvisionnement a déjà été confirmé",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        $montant = $destockage->montant;
+        $connected_user = Auth::user();
+        $connected_caisse = $connected_user->caisse->first();
+
+        //on approuve le flottage
+        $destockage->statut = Statut::ANNULE;
+
+        // Traitement des flottes
+        $connected_caisse->solde = $connected_caisse->solde + $montant;
+        $connected_caisse->save();
+
+        // Garder le mouvement de caisse éffectué par le RZ
+        Movement::create([
+            'name' => "(Annulation)",
+            'type' => Transations::APPROVISIONNEMENT,
+            'in' => $montant,
+            'manager' => true,
+            'out' => 0,
+            'balance' => $connected_caisse->solde,
+            'id_user' => $connected_user->id,
+        ]);
+
+        $destockage->save();
+
+        return response()->json([
+            'message' => "Approvisionnement annulé avec succès",
             'status' => true,
             'data' => null
         ]);

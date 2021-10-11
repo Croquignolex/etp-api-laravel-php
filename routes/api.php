@@ -577,6 +577,10 @@ Route::group(['middleware' => 'auth:api'], function(){
         //Confirmation par le gestionnaire de flotte, elle atteste avoir recu la flotte
         Route::post('approuve_destockage/{id}', 'API\ApprovisionnementEtpController@approuve')
             ->where('id', '[0-9]+');
+        //Annulation approvisionement
+        Route::post('annuler_destockage/{id}', 'API\ApprovisionnementEtpController@annuler_destockage')
+            ->where('id', '[0-9]+');
+
         //Confirmation par le gestionnaire de flotte, elle atteste avoir recu l'approviionnement
         Route::post('approuve_approvisionnement/{id}', 'API\ApprovisionnementEtpController@approuve_approvisionnement')
             ->where('id', '[0-9]+');
@@ -584,6 +588,11 @@ Route::group(['middleware' => 'auth:api'], function(){
         //Details d'un approvisionnement
         Route::get('detail_destockage/{id}', 'API\ApprovisionnementEtpController@detail')
         ->where('id', '[0-9]+');
+
+        //Annulation approvisionement
+        Route::post('annuler_approvisionnement/{id}', 'API\ApprovisionnementEtpController@annuler_approvisionnement')
+            ->where('id', '[0-9]+');
+
 
         //lister les approvisionnement
         Route::get('list_approvisionnement', 'API\ApprovisionnementEtpController@list_all');
@@ -818,9 +827,9 @@ Route::group(['middleware' => 'auth:api'], function(){
         //lister toutes les Encaissements
         Route::get('encaissement_list_all', 'API\CaisseController@encaissement_list_all');
 
-        /*
-    //////////////////////Décaissement (la gestionnaire de flotte donne de l'argent à un responsable de zonne)/////////////////////
-    */
+    /*
+//////////////////////Décaissement (la gestionnaire de flotte donne de l'argent à un responsable de zonne)/////////////////////
+*/
         //creer un Decaissement
         Route::post('decaissement', 'API\CaisseController@decaissement');
 
