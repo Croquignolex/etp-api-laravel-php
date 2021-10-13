@@ -410,10 +410,6 @@ Route::group(['middleware' => 'auth:api'], function(){
             //lister mes demandes de destockages peu importe le statut
             Route::get('list_all_demandes_destockage_all', 'API\DemandedestockageController@list_all_status_all');
 
-            //pour un Agent
-			Route::post('annuler_demandes_destockage_agent/{id}', 'API\Demande_destockage_recouvreurController@annuler')
-			->where('id', '[0-9]+');
-
 			//Details d'une demande de destockage
             Route::post('modifier_demandes_destockage_agent/{id}', 'API\Demande_destockage_recouvreurController@modifier')
             ->where('id', '[0-9]+');

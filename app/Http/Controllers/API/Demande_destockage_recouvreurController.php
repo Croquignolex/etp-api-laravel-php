@@ -99,7 +99,7 @@ class Demande_destockage_recouvreurController extends Controller
         $message = "Nouvelle demande de déstockage éffectué par " . $connected_user->name . " pour " . $agent_user->name;
         $users = User::all();
         foreach ($users as $_user) {
-            if ($_user->hasRole([Roles::RECOUVREUR]) && ($user->id !== $connected_user->id)) {
+            if ($_user->hasRole([Roles::RECOUVREUR]) && ($_user->id !== $connected_user->id)) {
                 $_user->notify(new Notif_demande_destockage([
                     'data' => $demande_destockage,
                     'message' => $message
@@ -192,75 +192,6 @@ class Demande_destockage_recouvreurController extends Controller
             return response()->json(
                 [
                     'message' => 'ecette demande destockage n existe pas',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
-        }
-    }
-
-	/**
-     * //Annuler une demande de destockage
-     */
-    public function annuler(Request $request, $id)
-    {
-		$demande_destockageDB = Demande_destockage::find($id);
-		$demande_destockageDB->statut = \App\Enums\Statut::ANNULE;
-
-        // creation de La demande
-        if ($demande_destockageDB->save()) {
-			//On recupere les 'demande de flotte'
-//			$demandes_destockage = Demande_destockage::where('add_by', Auth::user()->id)->get();
-            // tous lister car le responsable de zone peut voir toutes les démande de déstockage et agir en conséquence
-            $demandes_destockage = Demande_destockage::all();
-			$demandes_destockages = [];
-
-			foreach($demandes_destockage as $demande_destockage) {
-				//recuperer l'utilisateur concerné
-				$user = $demande_destockage->user;
-
-				//recuperer l'agent concerné
-				$agent = Agent::where('id_user', $user->id)->first();
-
-                //recuperer le demandeur
-                $demandeur = User::find($demande_destockage->add_by);
-
-				$demandes_destockages[] = ['demande' => $demande_destockage, 'demandeur' => $demandeur, 'agent' => $agent, 'user' => $user, 'puce' => $demande_destockage->puce];
-            }
-
-            //Broadcast Notification
-            $role = Role::where('name', Roles::RECOUVREUR)->first();
-            $event = new NotificationsEvent($role->id, ['message' => 'Une demande de Destockage Annulée']);
-            broadcast($event)->toOthers();
-
-
-            //Database Notification
-            $users = User::all();
-            foreach ($users as $_user) {
-
-                if ($_user->hasRole([$role->name])) {
-
-                    $_user->notify(new Notif_demande_destockage([
-                        'data' => $demande_destockageDB,
-                        'message' => "Une demande de Destockage Annulée"
-                    ]));
-
-                }
-            }
-
-            // Renvoyer un message de succès
-            return response()->json(
-                [
-                    'message' => 'Demande de déstockage annulée',
-                    'status' => true,
-                    'data' => ['demandes' => $demandes_destockages]
-                ]
-            );
-        } else {
-            // Renvoyer une erreur
-            return response()->json(
-                [
-                    'message' => 'erreur lors de la demande',
                     'status' => false,
                     'data' => null
                 ]
@@ -371,6 +302,24 @@ class Demande_destockage_recouvreurController extends Controller
 
         $demande_destockage = Demande_destockage::find($id);
         $reste = $demande_destockage->reste;
+
+        // Vérification de la validation éffective
+        if ($demande_destockage->statut === Statut::ANNULE) {
+            return response()->json([
+                'message' => "La demande de déstockage a déjà été annulée",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        // Vérification de la validation éffective
+        if ($demande_destockage->statut === Statut::EFFECTUER) {
+            return response()->json([
+                'message' => "La demande de déstockage a déjà été confirmée",
+                'status' => false,
+                'data' => null
+            ]);
+        }
 
         if($reste < $montant) {
             return response()->json([
