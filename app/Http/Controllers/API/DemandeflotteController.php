@@ -455,65 +455,43 @@ class DemandeflotteController extends Controller
      */
     public function annuler(Request $request, $id)
     {
-		$demande_floteDB = Demande_flote::find($id);
-		$demande_floteDB->statut = \App\Enums\Statut::ANNULE;
-
-        // creation de La demande
-        if ($demande_floteDB->save()) {
-			//On recupere les 'demande de flotte'
-			$demandes_flote = Demande_flote::where('id_user', Auth::user()->id)->get();
-
-			$demandes_flotes = [];
-
-			foreach($demandes_flote as $demande_flote) {
-				//recuperer l'utilisateur concerné
-				$user = $demande_flote->user;
-
-				//recuperer l'agent concerné
-				$agent = Agent::where('id_user', $user->id)->first();
-
-				//recuperer le demandeur
-				$demandeur = User::Find($demande_flote->add_by);
-
-				$demandes_flotes[] = ['demande' => $demande_flote, 'demandeur' => $demandeur, 'agent' => $agent, 'user' => $user, 'puce' => $demande_flote->puce];
-            }
-
-            ////Broadcast Notification
-            $role = Role::where('name', Roles::GESTION_FLOTTE)->first();
-            $event = new NotificationsEvent($role->id, ['message' => "Annulation d'une emande de flotte"]);
-            broadcast($event)->toOthers();
-
-            //Database Notification
-            $users = User::all();
-            foreach ($users as $_user) {
-
-                if ($_user->hasRole([$role->name])) {
-
-                    $_user->notify(new Notif_demande_flotte([
-                        'data' => $demande_floteDB,
-                        'message' => "Annulation d'une emande de flotte"
-                    ]));
-                }
-            }
-
-            // Renvoyer un message de succès
-            return response()->json(
-                [
-                    'message' => 'Demande de Flote annulée',
-                    'status' => true,
-                    'data' => ['demandes' => $demandes_flotes]
-                ]
-            );
-        } else {
-            // Renvoyer une erreur
-            return response()->json(
-                [
-                    'message' => 'erreur lors de la demande',
-                    'status' => false,
-                    'data' => null
-                ]
-            );
+        $demande_flotte = Demande_flote::find($id);
+        //si le destockage n'existe pas
+        if (is_null($demande_flotte)) {
+            return response()->json([
+                'message' => "La demande de flotte n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
         }
+
+        // Vérification de la validation éffective
+        if ($demande_flotte->statut === Statut::ANNULE) {
+            return response()->json([
+                'message' => "La demande de flotte a déjà été annulée",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        // Vérification de la validation éffective
+        if ($demande_flotte->statut === Statut::EFFECTUER) {
+            return response()->json([
+                'message' => "La demande de flotte a déjà été confirmée",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        //on approuve le flottage
+        $demande_flotte->statut = Statut::ANNULE;
+        $demande_flotte->save();
+
+        return response()->json([
+            'message' => "Demande de flotte annulée avec succès",
+            'status' => true,
+            'data' => null
+        ]);
     }
 
     // Build fleets return data

@@ -86,6 +86,24 @@ class FlotageController extends Controller
             ]);
         }
 
+        // Vérification de la validation éffective
+        if ($demande_flotte->statut === Statut::ANNULE) {
+            return response()->json([
+                'message' => "La demande de flotte a déjà été annulée",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        // Vérification de la validation éffective
+        if ($demande_flotte->statut === Statut::EFFECTUER) {
+            return response()->json([
+                'message' => "La demande de flotte a déjà été confirmée",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
         //On verifi que le montant n'est pas supperieur au montant demandé
         if ($demande_flotte->reste < $montant) {
             return response()->json([
