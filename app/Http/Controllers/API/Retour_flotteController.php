@@ -512,6 +512,15 @@ class Retour_flotteController extends Controller
         }
 
         // Vérification de la validation éffective
+        if ($retour_flotte->statut === Statut::ANNULE) {
+            return response()->json([
+                'message' => "Le retour flotte a déjà été annulé",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        // Vérification de la validation éffective
         if ($retour_flotte->statut === Statut::EFFECTUER) {
             return response()->json([
                 'message' => "Le retour flotte a déjà été confirmé",
@@ -560,6 +569,69 @@ class Retour_flotteController extends Controller
 
         return response()->json([
             'message' => 'Retour flotte apprové avec succès',
+            'status' => true,
+            'data' => null
+        ]);
+    }
+
+    /**
+     * Annuler le retour flotte
+     */
+    // RESPONSABLE DE ZONE
+    public function annuler_retour_flotte($id)
+    {
+        $retour_flotte = Retour_flote::find($id);
+        //si le destockage n'existe pas
+        if (is_null($retour_flotte)) {
+            return response()->json([
+                'message' => "Le retour flotte n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        // Vérification de la validation éffective
+        if ($retour_flotte->statut === Statut::ANNULE) {
+            return response()->json([
+                'message' => "Le retour flotte a déjà été annulé",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        // Vérification de la validation éffective
+        if ($retour_flotte->statut === Statut::EFFECTUER) {
+            return response()->json([
+                'message' => "Le retour flotte a déjà été confirmé",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        $montant = $retour_flotte->montant;
+        $flottage = $retour_flotte->flotage;
+        $puce_agent = $retour_flotte->puce_source;
+
+        //on approuve le flottage
+        $retour_flotte->statut = Statut::ANNULE;
+
+        //On recupère la puce de l'agent concerné et on debite
+        $puce_agent->solde = $puce_agent->solde + $montant;
+        $puce_agent->save();
+
+        //On calcule le reste à recouvrir
+        $flottage->reste = $flottage->reste + $montant;
+
+        //On change le statut du flottage
+        if ($flottage->reste === $flottage->montant) $flottage->statut = Statut::EN_ATTENTE ;
+        else $flottage->statut = Statut::EN_COURS ;
+
+        //Enregistrer les oppérations
+        $flottage->save();
+        $retour_flotte->save();
+
+        return response()->json([
+            'message' => "Retour flotte annulé avec succès",
             'status' => true,
             'data' => null
         ]);

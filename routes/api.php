@@ -673,6 +673,10 @@ Route::group(['middleware' => 'auth:api'], function(){
         Route::post('approuve_retour_flotte/{id}', 'API\Retour_flotteController@approuve')
         ->where('id', '[0-9]+');
 
+        //Annulation du retour flotte
+        Route::post('annuler_retour_flotte/{id}', 'API\CaisseController@annuler_retour_flotte')
+            ->where('id', '[0-9]+');
+
          /*//////////////////////gestion des corporates/////////////////////*/
 
         //liste des corporates
