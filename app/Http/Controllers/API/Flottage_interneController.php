@@ -325,6 +325,86 @@ class Flottage_interneController extends Controller
     }
 
     /**
+     * Approuver le transfert de flotte groupee
+     */
+    // GESTIONNAIRE DE FLOTTE
+    // SUPERVISEUR
+    // RESPONSABLE DE ZONE
+    public function approuve_groupee(Request $request)
+    {
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [
+            'ids' => ['required']
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        foreach ($request->ids as $id){
+            $transfert_flotte = Flottage_interne::find($id);
+            $montant = $transfert_flotte->montant;
+            $puce_emetrice = $transfert_flotte->puce_emetrice;
+            $puce_receptrice = $transfert_flotte->puce_receptrice;
+
+            //on approuve le destockage
+            $transfert_flotte->statut = Statut::EFFECTUER;
+
+            // Traitement des flottes
+            $puce_receptrice->solde = $puce_receptrice->solde + $montant;
+            $puce_receptrice->save();
+
+            $type_puce_receptrice = $puce_receptrice->type_puce->name;
+            $type_puce_emetrice = $puce_emetrice->type_puce->name;
+
+            $connected_user = Auth::user();
+
+            // Augmenter la dette si nous somme en presence d'un RZ en puce receptrice
+            if ($type_puce_receptrice === Statut::PUCE_RZ) {
+                $rz = $puce_receptrice->rz;
+                if(!is_null($rz)) {
+                    $rz->dette = $rz->dette + $montant;
+                    $rz->save();
+                }
+            }
+
+            // Garder la transaction éffectué par la GF
+            Transaction::create([
+                'type' => Transations::FLEET_TRANSFER,
+                'in' => $transfert_flotte->montant,
+                'out' => 0,
+                'id_operator' => $puce_receptrice->flote->id,
+                'id_left' => $puce_receptrice->id,
+                'id_right' => $puce_emetrice->id,
+                'balance' => $puce_receptrice->solde,
+                'id_user' => $connected_user->id,
+            ]);
+
+            // Dimunuer la dette si nous somme en presence d'un RZ en puce emetrice
+            if ($type_puce_emetrice === Statut::PUCE_RZ) {
+                $rz = $puce_emetrice->rz;
+                if(!is_null($rz)) {
+                    $rz->dette = $rz->dette - $montant;
+                    $rz->save();
+                }
+            }
+
+            $transfert_flotte->save();
+        }
+
+
+        return response()->json([
+            'message' => "Transfert de flotte groupé apprové avec succès",
+            'status' => true,
+            'data' => null
+        ]);
+    }
+
+    /**
      * Annuler le transfert de flotte
      */
     // SUPERVISEUR
@@ -423,6 +503,42 @@ class Flottage_interneController extends Controller
             'data' => [
                 'flottages' => $this->transfersResponse($transfers->items()),
                 'hasMoreData' => $transfers->hasMorePages(),
+            ]
+        ]);
+    }
+
+    /**
+     * Lister tous les flottages interne groupee
+     */
+    // GESTIONNAIRE DE FLOTTE
+    // SUPERVISEUR
+    // RESPONSABLE DE ZONE
+    public function list_all_groupee()
+    {
+        $connected_user_role = Auth::user()->roles->first()->name;
+
+        if ($connected_user_role === Roles::RECOUVREUR) {
+            $transfers = Flottage_interne::where('type', 'like', '%' . Statut::PUCE_RZ)
+                ->where('statut', Statut::EN_COURS)
+                ->orderBy('created_at', 'desc')
+                ->get();
+        } else if($connected_user_role === Roles::GESTION_FLOTTE) {
+            $transfers = Flottage_interne::where('type', 'like', '%' . Statut::FLOTTAGE)
+                ->where('statut', Statut::EN_COURS)
+                ->orderBy('created_at', 'desc')
+                ->get();
+        } else {
+            $transfers = Flottage_interne::where('type', 'like', '%' . Statut::FLOTTAGE_SECONDAIRE)
+                ->where('statut', Statut::EN_COURS)
+                ->orderBy('created_at', 'desc')
+                ->get();
+        }
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'flottages' => $this->transfersResponse($transfers),
             ]
         ]);
     }

@@ -277,19 +277,17 @@ class FlotageController extends Controller
         //La gestionnaire concernée
         $connected_user = Auth::user();
 
-        //On debite la puce de ETP
-        $puce_etp->solde = $puce_etp->solde - $montant;
-        $puce_etp->save();
-
         foreach ($request->ids_demande_flotte as $id){
             // Data
             $demande_flotte = Demande_flote::find($id);
             $puce_agent = Puce::find($demande_flotte->id_puce);
 
+            $montant_flottage = $demande_flotte->montant;
+
             // Nouveau flottage
             $flottage = new Approvisionnement([
-                'reste' => $demande_flotte->montant,
-                'montant' => $demande_flotte->montant,
+                'reste' => $montant_flottage,
+                'montant' => $montant_flottage,
                 'from' => $puce_etp->id,
                 'statut' => Statut::EN_ATTENTE,
                 'id_user' => $connected_user->id,
@@ -298,8 +296,12 @@ class FlotageController extends Controller
             $flottage->save();
 
             //On credite la puce de l'Agent
-            $puce_agent->solde = $puce_agent->solde + $demande_flotte->montant;
+            $puce_agent->solde = $puce_agent->solde + $montant_flottage;
             $puce_agent->save();
+
+            //On debite la puce de ETP
+            $puce_etp->solde = $puce_etp->solde - $montant_flottage;
+            $puce_etp->save();
 
             // Garder la transaction éffectué par la GF
             Transaction::create([

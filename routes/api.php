@@ -765,6 +765,9 @@ Route::group(['middleware' => 'auth:api'], function(){
         //lister les Flottages Interne
         Route::get('list_all_flottage_interne', 'API\Flottage_interneController@list_all');
 
+        //lister les Flottages Interne groupee
+        Route::get('list_all_flottage_interne_groupee', 'API\Flottage_interneController@list_all_groupee');
+
         //Creer un Flottage de la gestionnaire de flotte vers Responsable de zonne
         Route::post('flottage_rz', 'API\Flottage_rzController@store');
 
@@ -776,8 +779,11 @@ Route::group(['middleware' => 'auth:api'], function(){
         Route::get('list_all_flottage_rz', 'API\Flottage_rzController@list_all');
 
         //Confirmation de la reception du transfert de flotte
-            Route::post('approuve_flottage_interne/{id}', 'API\Flottage_interneController@approuve')
-                ->where('id', '[0-9]+');
+            Route::post('approuve_flottage_interne_groupee', 'API\Flottage_interneController@approuve_groupee');
+
+        //Confirmation de la reception du transfert de flotte groupe
+        Route::post('approuve_flottage_interne/{id}', 'API\Flottage_interneController@approuve')
+            ->where('id', '[0-9]+');
 
         //Annulation de la reception du transfert de flotte
         Route::post('annuler_flottage_interne/{id}', 'API\Flottage_interneController@annuler')
