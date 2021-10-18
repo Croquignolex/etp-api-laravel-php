@@ -373,6 +373,9 @@ Route::group(['middleware' => 'auth:api'], function(){
             //lister mes demandes de flotes (gestionnaire de flotte ou les admin)
             Route::get('list_demandes_flote_general', 'API\DemandeflotteController@list_demandes_flote_general');
 
+            //lister mes demandes de flotes groupee (gestionnaire de flotte ou les admin)
+            Route::get('list_demandes_flote_general_groupee', 'API\DemandeflotteController@list_demandes_flote_general_groupee');
+
             //lister toutes mes demandes de flotes (gestionnaire de flotte ou les admin)
             Route::get('list_demandes_flote_general_all', 'API\DemandeflotteController@list_demandes_flote_general_all');
 
@@ -508,6 +511,9 @@ Route::group(['middleware' => 'auth:api'], function(){
 
         //Creer un Flottage
         Route::post('flottage', 'API\FlotageController@store');
+
+        //Creer un Flottage groupee
+        Route::post('flottage_groupee', 'API\FlotageController@store_groupe');
 
         //lister les Flottages relatifs à une demande precise
         Route::get('list_flottage/{id}', 'API\FlotageController@list_flottage')

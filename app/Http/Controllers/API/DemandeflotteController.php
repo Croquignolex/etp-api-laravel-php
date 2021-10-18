@@ -317,6 +317,25 @@ class DemandeflotteController extends Controller
     }
 
     /**
+     * Lister mes demandes de flotes (gestionnaire de flotte ou les admin)
+     */
+    // GESTIONNAIRE DE FLOTTE
+    public function list_demandes_flote_general_groupee()
+    {
+        $demandes_flote = Demande_flote::where('statut', Statut::EN_ATTENTE)->orderBy('created_at', 'desc')->get();
+
+        $demandes_flotes = $this->fleetsResponse($demandes_flote);
+
+        return response()->json([
+            'message' => "",
+            'status' => true,
+            'data' => [
+                'demandes' => $demandes_flotes
+            ]
+        ]);
+    }
+
+    /**
      * lister mes demandes de flotes responsable de zone
      */
     // RESPONSABLE DE ZONE

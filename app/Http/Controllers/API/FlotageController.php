@@ -233,6 +233,105 @@ class FlotageController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
+    // GESTIONNAIRE DE FLOTTE
+    public function store_groupe(Request $request)
+    {
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [
+            'montant' => ['required', 'numeric'],
+            'ids_demande_flotte' => ['required'],
+            'id_puce' => ['required', 'numeric']
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        // Data
+        $montant = $request->montant;
+        $puce_etp = Puce::find($request->id_puce);
+        $type_puce = Type_puce::find($puce_etp->type)->name;
+
+        // capacité de flottage de la puce emetrice
+        if($type_puce !== Statut::FLOTTAGE) {
+            return response()->json([
+                'message' => "Cette puce n'est pas capable d'effectuer un flottage",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        // Solde flotte insufisant
+        if($puce_etp->solde < $montant) {
+            return response()->json([
+                'message' => "Solde flotte insufisant dans cette puce de flottage",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        //La gestionnaire concernée
+        $connected_user = Auth::user();
+
+        //On debite la puce de ETP
+        $puce_etp->solde = $puce_etp->solde - $montant;
+        $puce_etp->save();
+
+        foreach ($request->ids_demande_flotte as $id){
+            // Data
+            $demande_flotte = Demande_flote::find($id);
+            $puce_agent = Puce::find($demande_flotte->id_puce);
+
+            // Nouveau flottage
+            $flottage = new Approvisionnement([
+                'reste' => $demande_flotte->montant,
+                'montant' => $demande_flotte->montant,
+                'from' => $puce_etp->id,
+                'statut' => Statut::EN_ATTENTE,
+                'id_user' => $connected_user->id,
+                'id_demande_flote' => $demande_flotte->id,
+            ]);
+            $flottage->save();
+
+            //On credite la puce de l'Agent
+            $puce_agent->solde = $puce_agent->solde + $demande_flotte->montant;
+            $puce_agent->save();
+
+            // Garder la transaction éffectué par la GF
+            Transaction::create([
+                'type' => Transations::FLOTAGE,
+                'in' => 0,
+                'out' => $flottage->montant,
+                'id_operator' => $puce_etp->flote->id,
+                'id_left' => $puce_etp->id,
+                'id_right' => $puce_agent->id,
+                'balance' => $puce_etp->solde,
+                'id_user' => $connected_user->id,
+            ]);
+
+            //On calcule le reste de flotte à envoyer
+            $demande_flotte->reste = 0;
+            $demande_flotte->statut = Statut::EFFECTUER ;
+            $demande_flotte->source = $puce_etp->id;
+            $demande_flotte->save();
+        }
+
+        // Renvoyer un message de succès
+        return response()->json([
+            'message' => "Flottage groupée effectué avec succès",
+            'status' => true,
+            'data' => null
+        ]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
     // GESTIONNAIRE DE FOTTE
     // RESPONSABLE DE ZONE
     // SUPERVISEUR
