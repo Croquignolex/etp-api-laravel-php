@@ -869,12 +869,18 @@ Route::group(['middleware' => 'auth:api'], function(){
         //lister les passation de service
         Route::get('passations_list', 'API\CaisseController@passations_list');
 
+        //lister les passation de service groupee
+        Route::get('passations_list_groupee', 'API\CaisseController@passations_list_groupee');
+
         //lister toutes les passation de service
         Route::get('passations_list_all', 'API\CaisseController@passations_list_all');
 
         //lister toutes les passation de service
         Route::post('approuve_passation/{id}', 'API\CaisseController@approuve_passation')
         ->where('id', '[0-9]+');
+
+        //lister toutes les passation de service groupee
+        Route::post('approuve_passation_groupee', 'API\CaisseController@approuve_passation_groupee');
 
         //lister annuler une passation de service
         Route::post('annuler_passation/{id}', 'API\CaisseController@annule_passation')

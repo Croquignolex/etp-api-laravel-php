@@ -494,6 +494,58 @@ class CaisseController extends Controller
     }
 
     /**
+     * Confirmer la passation de service groupee
+     */
+    // GESTIONNAIRE DE FLOTTE
+    public function approuve_passation_groupee(Request $request)
+    {
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [
+            'ids' => ['required']
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        foreach ($request->ids as $id){
+            $versement = Versement::find($id);
+            //on approuve le destockage
+            $versement->statut = Statut::EFFECTUER;
+            $versement->save();
+            $connected_user = Auth::user();
+
+            $caisse_recepteur = $connected_user->caisse->first();
+            $montant = $versement->montant;
+
+            //on credite le compte de la gestionnaire de flotte
+            $caisse_recepteur->solde = $caisse_recepteur->solde + $montant;
+            $caisse_recepteur->save();
+
+            // Garder le mouvement de caisse éffectué par la GF
+            Movement::create([
+                'name' => $versement->user->name,
+                'type' => Transations::INTERNAL_HANDOVER,
+                'in' => $versement->montant,
+                'out' => 0,
+                "manager" => true,
+                'balance' => $caisse_recepteur->solde,
+                'id_user' => $connected_user->id,
+            ]);
+        }
+
+        return response()->json([
+            'message' => "Passation due service groupée confirmé avec succès",
+            'status' => true,
+            'data' => null
+        ]);
+    }
+
+    /**
      * Annuler la passation de service
      */
     // GESTIONNAIRE DE FLOTTE
@@ -800,6 +852,30 @@ class CaisseController extends Controller
             'data' => [
                 'versements' => $this->handoverResponse($versements->items()),
                 'hasMoreData' => $versements->hasMorePages(),
+            ]
+        ]);
+    }
+
+    /**
+     * Lister les passations de service groupee
+     */
+    // GESTIONNAIRE DE FLOTTE
+    public function passations_list_groupee()
+    {
+        $connected_user = Auth::user();
+
+        $getionnaire_id = $connected_user->id;
+        $versements = Versement::where('note', Transations::INTERNAL_HANDOVER)
+            ->where('correspondant', $getionnaire_id)
+            ->where('statut', Statut::EN_COURS)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'versements' => $this->handoverResponse($versements),
             ]
         ]);
     }
