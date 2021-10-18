@@ -579,6 +579,10 @@ Route::group(['middleware' => 'auth:api'], function(){
         //Confirmation par le gestionnaire de flotte, elle atteste avoir recu la flotte
         Route::post('approuve_destockage/{id}', 'API\ApprovisionnementEtpController@approuve')
             ->where('id', '[0-9]+');
+
+        //Confirmation par le gestionnaire de flotte, elle atteste avoir recu la flotte groupee
+        Route::post('approuve_destockage_groupee', 'API\ApprovisionnementEtpController@approuve_groupee');
+
         //Annulation approvisionement
         Route::post('annuler_destockage/{id}', 'API\ApprovisionnementEtpController@annuler_destockage')
             ->where('id', '[0-9]+');
@@ -606,6 +610,7 @@ Route::group(['middleware' => 'auth:api'], function(){
 
         // lister les destockage
         Route::get('list_destockage', 'API\ApprovisionnementEtpController@list_all_destockage');
+        Route::get('list_destockage_groupee', 'API\ApprovisionnementEtpController@list_all_destockage_groupee');
         Route::get('search_list_destockage', 'API\ApprovisionnementEtpController@search_list_all_destockage');
         Route::get('list_destockage_collector', 'API\ApprovisionnementEtpController@list_all_destockage_collector');
         Route::get('search_list_destockage_collector', 'API\ApprovisionnementEtpController@list_search_all_destockage_collector');

@@ -525,6 +525,72 @@ class ApprovisionnementEtpController extends Controller
     }
 
     /**
+     * Approuver une demande de destockage groupee
+     */
+    // GESTIONNAIRE DE FLOTTE
+    public function approuve_groupee(Request $request)
+    {
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [
+            'ids' => ['required']
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        foreach ($request->ids as $id){
+            $destockage = Destockage::find($id);
+
+            if(
+                !is_null($destockage) &&
+                $destockage->statut !== Statut::ANNULE &&
+                $destockage->statut !== Statut::EFFECTUER
+            ) {
+                $connected_user = Auth::user();
+                $montant = $destockage->montant;
+                $puce_receptrice = $destockage->puce;
+                $destokeur = $destockage->user;
+
+                //on approuve le destockage
+                $destockage->statut = Statut::EFFECTUER;
+
+                // Flotte ajouté dans les puce emetrice
+                $puce_receptrice->solde = $puce_receptrice->solde + $montant;
+                $puce_receptrice->save();
+
+                // Garder la transaction éffectué par la GF
+                Transaction::create([
+                    'type' => Transations::DESTOCKAGE,
+                    'in' => $destockage->montant,
+                    'out' => 0,
+                    'id_operator' => $puce_receptrice->flote->id,
+                    'id_left' => $puce_receptrice->id,
+                    'right' => '(' . $destockage->agent_user->name . ')',
+                    'balance' => $puce_receptrice->solde,
+                    'id_user' => $connected_user->id,
+                ]);
+
+                // Baisser la dette du RZ
+                $destokeur->dette = $destokeur->dette - $montant;
+                $destokeur->save();
+
+                $destockage->save();
+            }
+        }
+
+        return response()->json([
+            'message' => "Déstockage groupé apprové avec succès",
+            'status' => true,
+            'data' => null
+        ]);
+    }
+
+    /**
      * Annuler le déstockage
      */
     // RESPONSABLE DE ZONE
@@ -909,6 +975,27 @@ class ApprovisionnementEtpController extends Controller
             'data' => [
                 'destockages' => DestockageResource::collection($destockages->items()),
                 'hasMoreData' => $destockages->hasMorePages(),
+            ]
+        ]);
+    }
+
+    // BY_AGENT
+    /**
+     * Lister les destockages groupee
+     */
+    // GESTIONNAIRE DE FLOTTE
+    public function list_all_destockage_groupee()
+    {
+        $destockages = Destockage::where('type', Statut::BY_AGENT)
+            ->where('statut', Statut::EN_COURS)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'message' => "",
+            'status' => true,
+            'data' => [
+                'destockages' => DestockageResource::collection($destockages)
             ]
         ]);
     }
