@@ -668,6 +668,73 @@ class ApprovisionnementEtpController extends Controller
     }
 
     /**
+     * Approuver un approvisionnement groupee
+     */
+    // SUPERVISEUR
+    public function approuve_approvisionnement_groupee(Request $request)
+    {
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [
+            'ids' => ['required']
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        foreach ($request->ids as $id){
+            //si le destockage n'existe pas
+            $destockage = Destockage::find($id);
+
+            if(
+                !is_null($destockage) &&
+                $destockage->statut !== Statut::ANNULE &&
+                $destockage->statut !== Statut::EFFECTUER
+            ) {
+                $connected_user = Auth::user();
+                $montant = $destockage->montant;
+                $master_sim = $destockage->puce;
+                $approvisionneur = $destockage->user;
+
+                //on approuve le destockage
+                $destockage->statut = Statut::EFFECTUER;
+
+                // Augmenter la flotte dans la master sim
+                $master_sim->solde = $master_sim->solde + $montant;
+                $master_sim->save();
+
+                // Garder la transaction éffectué par le SU
+                Transaction::create([
+                    'type' => Transations::APPROVISIONNEMENT,
+                    'in' => $destockage->montant,
+                    'out' => 0,
+                    'id_operator' => $master_sim->flote->id,
+                    'id_left' => $master_sim->id,
+                    'right' => '(' . $destockage->fournisseur->name . ')',
+                    'balance' => $master_sim->solde,
+                    'id_user' => $connected_user->id,
+                ]);
+
+                // Baisser la dette du RZ
+                $approvisionneur->dette = $approvisionneur->dette - $montant;
+                $approvisionneur->save();
+
+                $destockage->save();
+            }
+        }
+
+        return response()->json([
+            'message' => "Approvisionnement groupé apprové avec succès",
+            'status' => true,
+            'data' => null
+        ]);
+    }
+
+    /**
      * Annuler le approvisionnement
      */
     // RESPONSABLE DE ZONE
@@ -772,6 +839,29 @@ class ApprovisionnementEtpController extends Controller
             'data' => [
                 'destockages' => DestockageResource::collection($destockages->items()),
                 'hasMoreData' => $destockages->hasMorePages(),
+            ]
+        ]);
+    }
+
+    /**
+     * Lister les approvisionnements groupee
+     */
+    // SUPERVISEUR
+    public function list_all_groupee()
+    {
+        $destockages = Destockage::where('statut', Statut::EN_COURS)
+            ->where(function($query) {
+                $query->where('type', Statut::BY_DIGIT_PARTNER);
+                $query->orWhere('type', Statut::BY_BANK);
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'message' => "",
+            'status' => true,
+            'data' => [
+                'destockages' => DestockageResource::collection($destockages),
             ]
         ]);
     }

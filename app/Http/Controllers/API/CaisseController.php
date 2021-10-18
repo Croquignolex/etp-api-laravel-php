@@ -514,28 +514,36 @@ class CaisseController extends Controller
 
         foreach ($request->ids as $id){
             $versement = Versement::find($id);
-            //on approuve le destockage
-            $versement->statut = Statut::EFFECTUER;
-            $versement->save();
-            $connected_user = Auth::user();
 
-            $caisse_recepteur = $connected_user->caisse->first();
-            $montant = $versement->montant;
+            if(
+                !is_null($versement) &&
+                $versement->statut !== Statut::ANNULE &&
+                $versement->statut !== Statut::EFFECTUER
+            ) {
+                //on approuve le destockage
+                $versement->statut = Statut::EFFECTUER;
+                $connected_user = Auth::user();
 
-            //on credite le compte de la gestionnaire de flotte
-            $caisse_recepteur->solde = $caisse_recepteur->solde + $montant;
-            $caisse_recepteur->save();
+                $caisse_recepteur = $connected_user->caisse->first();
+                $montant = $versement->montant;
 
-            // Garder le mouvement de caisse éffectué par la GF
-            Movement::create([
-                'name' => $versement->user->name,
-                'type' => Transations::INTERNAL_HANDOVER,
-                'in' => $versement->montant,
-                'out' => 0,
-                "manager" => true,
-                'balance' => $caisse_recepteur->solde,
-                'id_user' => $connected_user->id,
-            ]);
+                //on credite le compte de la gestionnaire de flotte
+                $caisse_recepteur->solde = $caisse_recepteur->solde + $montant;
+                $caisse_recepteur->save();
+
+                // Garder le mouvement de caisse éffectué par la GF
+                Movement::create([
+                    'name' => $versement->user->name,
+                    'type' => Transations::INTERNAL_HANDOVER,
+                    'in' => $versement->montant,
+                    'out' => 0,
+                    "manager" => true,
+                    'balance' => $caisse_recepteur->solde,
+                    'id_user' => $connected_user->id,
+                ]);
+
+                $versement->save();
+            }
         }
 
         return response()->json([

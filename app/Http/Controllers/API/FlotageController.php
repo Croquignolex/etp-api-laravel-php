@@ -280,46 +280,53 @@ class FlotageController extends Controller
         foreach ($request->ids_demande_flotte as $id){
             // Data
             $demande_flotte = Demande_flote::find($id);
-            $puce_agent = Puce::find($demande_flotte->id_puce);
 
-            $montant_flottage = $demande_flotte->montant;
+            if(
+                !is_null($demande_flotte) &&
+                $demande_flotte->statut !== Statut::ANNULE &&
+                $demande_flotte->statut !== Statut::EFFECTUER
+            ) {
+                $puce_agent = Puce::find($demande_flotte->id_puce);
 
-            // Nouveau flottage
-            $flottage = new Approvisionnement([
-                'reste' => $montant_flottage,
-                'montant' => $montant_flottage,
-                'from' => $puce_etp->id,
-                'statut' => Statut::EN_ATTENTE,
-                'id_user' => $connected_user->id,
-                'id_demande_flote' => $demande_flotte->id,
-            ]);
-            $flottage->save();
+                $montant_flottage = $demande_flotte->montant;
 
-            //On credite la puce de l'Agent
-            $puce_agent->solde = $puce_agent->solde + $montant_flottage;
-            $puce_agent->save();
+                // Nouveau flottage
+                $flottage = new Approvisionnement([
+                    'reste' => $montant_flottage,
+                    'montant' => $montant_flottage,
+                    'from' => $puce_etp->id,
+                    'statut' => Statut::EN_ATTENTE,
+                    'id_user' => $connected_user->id,
+                    'id_demande_flote' => $demande_flotte->id,
+                ]);
+                $flottage->save();
 
-            //On debite la puce de ETP
-            $puce_etp->solde = $puce_etp->solde - $montant_flottage;
-            $puce_etp->save();
+                //On credite la puce de l'Agent
+                $puce_agent->solde = $puce_agent->solde + $montant_flottage;
+                $puce_agent->save();
 
-            // Garder la transaction éffectué par la GF
-            Transaction::create([
-                'type' => Transations::FLOTAGE,
-                'in' => 0,
-                'out' => $flottage->montant,
-                'id_operator' => $puce_etp->flote->id,
-                'id_left' => $puce_etp->id,
-                'id_right' => $puce_agent->id,
-                'balance' => $puce_etp->solde,
-                'id_user' => $connected_user->id,
-            ]);
+                //On debite la puce de ETP
+                $puce_etp->solde = $puce_etp->solde - $montant_flottage;
+                $puce_etp->save();
 
-            //On calcule le reste de flotte à envoyer
-            $demande_flotte->reste = 0;
-            $demande_flotte->statut = Statut::EFFECTUER ;
-            $demande_flotte->source = $puce_etp->id;
-            $demande_flotte->save();
+                // Garder la transaction éffectué par la GF
+                Transaction::create([
+                    'type' => Transations::FLOTAGE,
+                    'in' => 0,
+                    'out' => $flottage->montant,
+                    'id_operator' => $puce_etp->flote->id,
+                    'id_left' => $puce_etp->id,
+                    'id_right' => $puce_agent->id,
+                    'balance' => $puce_etp->solde,
+                    'id_user' => $connected_user->id,
+                ]);
+
+                //On calcule le reste de flotte à envoyer
+                $demande_flotte->reste = 0;
+                $demande_flotte->statut = Statut::EFFECTUER ;
+                $demande_flotte->source = $puce_etp->id;
+                $demande_flotte->save();
+            }
         }
 
         // Renvoyer un message de succès

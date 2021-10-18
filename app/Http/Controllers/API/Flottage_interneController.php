@@ -347,53 +347,60 @@ class Flottage_interneController extends Controller
 
         foreach ($request->ids as $id){
             $transfert_flotte = Flottage_interne::find($id);
-            $montant = $transfert_flotte->montant;
-            $puce_emetrice = $transfert_flotte->puce_emetrice;
-            $puce_receptrice = $transfert_flotte->puce_receptrice;
 
-            //on approuve le destockage
-            $transfert_flotte->statut = Statut::EFFECTUER;
+            if(
+                !is_null($transfert_flotte) &&
+                $transfert_flotte->statut !== Statut::ANNULE &&
+                $transfert_flotte->statut !== Statut::EFFECTUER
+            ) {
+                $montant = $transfert_flotte->montant;
+                $puce_emetrice = $transfert_flotte->puce_emetrice;
+                $puce_receptrice = $transfert_flotte->puce_receptrice;
 
-            // Traitement des flottes
-            $puce_receptrice->solde = $puce_receptrice->solde + $montant;
-            $puce_receptrice->save();
+                //on approuve le destockage
+                $transfert_flotte->statut = Statut::EFFECTUER;
 
-            $type_puce_receptrice = $puce_receptrice->type_puce->name;
-            $type_puce_emetrice = $puce_emetrice->type_puce->name;
+                // Traitement des flottes
+                $puce_receptrice->solde = $puce_receptrice->solde + $montant;
+                $puce_receptrice->save();
 
-            $connected_user = Auth::user();
+                $type_puce_receptrice = $puce_receptrice->type_puce->name;
+                $type_puce_emetrice = $puce_emetrice->type_puce->name;
 
-            // Augmenter la dette si nous somme en presence d'un RZ en puce receptrice
-            if ($type_puce_receptrice === Statut::PUCE_RZ) {
-                $rz = $puce_receptrice->rz;
-                if(!is_null($rz)) {
-                    $rz->dette = $rz->dette + $montant;
-                    $rz->save();
+                $connected_user = Auth::user();
+
+                // Augmenter la dette si nous somme en presence d'un RZ en puce receptrice
+                if ($type_puce_receptrice === Statut::PUCE_RZ) {
+                    $rz = $puce_receptrice->rz;
+                    if(!is_null($rz)) {
+                        $rz->dette = $rz->dette + $montant;
+                        $rz->save();
+                    }
                 }
-            }
 
-            // Garder la transaction éffectué par la GF
-            Transaction::create([
-                'type' => Transations::FLEET_TRANSFER,
-                'in' => $transfert_flotte->montant,
-                'out' => 0,
-                'id_operator' => $puce_receptrice->flote->id,
-                'id_left' => $puce_receptrice->id,
-                'id_right' => $puce_emetrice->id,
-                'balance' => $puce_receptrice->solde,
-                'id_user' => $connected_user->id,
-            ]);
+                // Garder la transaction éffectué par la GF
+                Transaction::create([
+                    'type' => Transations::FLEET_TRANSFER,
+                    'in' => $transfert_flotte->montant,
+                    'out' => 0,
+                    'id_operator' => $puce_receptrice->flote->id,
+                    'id_left' => $puce_receptrice->id,
+                    'id_right' => $puce_emetrice->id,
+                    'balance' => $puce_receptrice->solde,
+                    'id_user' => $connected_user->id,
+                ]);
 
-            // Dimunuer la dette si nous somme en presence d'un RZ en puce emetrice
-            if ($type_puce_emetrice === Statut::PUCE_RZ) {
-                $rz = $puce_emetrice->rz;
-                if(!is_null($rz)) {
-                    $rz->dette = $rz->dette - $montant;
-                    $rz->save();
+                // Dimunuer la dette si nous somme en presence d'un RZ en puce emetrice
+                if ($type_puce_emetrice === Statut::PUCE_RZ) {
+                    $rz = $puce_emetrice->rz;
+                    if(!is_null($rz)) {
+                        $rz->dette = $rz->dette - $montant;
+                        $rz->save();
+                    }
                 }
-            }
 
-            $transfert_flotte->save();
+                $transfert_flotte->save();
+            }
         }
 
 
