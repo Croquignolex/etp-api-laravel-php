@@ -841,9 +841,15 @@ Route::group(['middleware' => 'auth:api'], function(){
         //lister les Encaissements
         Route::get('encaissement_list', 'API\CaisseController@encaissement_list');
 
+        //lister les Encaissements groupee
+        Route::get('encaissement_list_groupee', 'API\CaisseController@encaissement_list_groupee');
+
         //confirmer l'encaissement RZ par GF
         Route::post('approuve_encaissement/{id}', 'API\CaisseController@approuve_encaissement')
             ->where('id', '[0-9]+');
+
+        //confirmer l'encaissement RZ par GF groupee
+        Route::post('approuve_encaissement_groupee', 'API\CaisseController@approuve_encaissement_groupee');
 
         //lister toutes les Encaissements
         Route::get('encaissement_list_all', 'API\CaisseController@encaissement_list_all');
