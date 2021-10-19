@@ -986,6 +986,8 @@ class FlotageController extends Controller
     /**
      * Lister tous les flottages
      */
+    // SUPERVISEUR
+    // RESPONSABLE DE ZONE
     // GESTIONNAIRE DE FLOTTE
     public function list_all()
     {
@@ -999,6 +1001,32 @@ class FlotageController extends Controller
             'data' => [
                 'flottages' => $demandes_flotes,
                 'hasMoreData' => $demandes_flote->hasMorePages(),
+            ]
+        ]);
+    }
+
+    /**
+     * Lister tous les flottages groupee
+     */
+    // SUPERVISEUR
+    // RESPONSABLE DE ZONE
+    // GESTIONNAIRE DE FLOTTE
+    public function list_all_groupee()
+    {
+        $demandes_flote = Approvisionnement::where(function($query) {
+                $query->where('statut', Statut::EN_COURS);
+                $query->orWhere('statut', Statut::EN_ATTENTE);
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $demandes_flotes = $this->fleetsResponse($demandes_flote);
+
+        return response()->json([
+            'message' => "",
+            'status' => true,
+            'data' => [
+                'flottages' => $demandes_flotes,
             ]
         ]);
     }

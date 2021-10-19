@@ -216,6 +216,132 @@ class Retour_flotteController extends Controller
     }
 
     /**
+     * Retour de flotte groupee
+     */
+    // GESTIONNAIRE DE FLOTTE
+    // RESPONSABLE DE ZONE
+    // SUPERVISEUR
+    public function retour_groupee(Request $request)
+    {
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [
+            'puce_agent' => ['required', 'numeric'],
+            'puce_flottage' => ['required', 'numeric'],
+            'ids_flottage' => ['required'],
+            'montant' => ['required', 'numeric'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        //Coherence du montant de la transaction
+        $montant = $request->montant;
+        if ($montant <= 0) {
+            return response()->json([
+                'message' => "Montant de la transaction incohérent",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        $puce_agent = Puce::find($request->puce_agent);
+        $puce_flottage = Puce::find($request->puce_flottage);
+        //On verifi que le montant n'est pas supperieur au montant demandé
+        if ($puce_agent == null || $puce_flottage == null) {
+            return response()->json([
+                'message' => "L'une des puces n'existe pas",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        //On verifi si les puce passée appartien à au meme oppérateur de flotte
+        if ($puce_flottage->flote->id != $puce_agent->flote->id) {
+            return response()->json([
+                'message' => "Les deux puces ne sont pas du même opérateur",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        foreach ($request->ids_flottage as $id){
+            //On verifi si le flottage passée existe réellement
+            $flottage = Approvisionnement::find($id);
+
+            if(
+                !is_null($flottage) &&
+                $flottage->statut !== Statut::ANNULE &&
+                $flottage->statut !== Statut::EFFECTUER
+            ) {
+                $connected_user = Auth::user();
+                $type_puce = $puce_flottage->type_puce->name;
+                $is_collector = $connected_user->roles->first()->name === Roles::RECOUVREUR;
+                $status = ($is_collector && ($type_puce !== Statut::PUCE_RZ)) ? Statut::EN_COURS : Statut::EFFECTUER;
+
+                $montant_retour = $flottage->reste;
+
+                //initier le retour flotte
+                $retour_flotte = new Retour_flote([
+                    'id_user' => $connected_user->id,
+                    'montant' => $montant_retour,
+                    'reste' => $montant_retour,
+                    'id_approvisionnement' => $flottage->id,
+                    'statut' => $status,
+                    'user_destination' => $puce_flottage->id,
+                    'user_source' => $puce_agent->id
+                ]);
+                $retour_flotte->save();
+
+                //On recupère la puce de l'agent concerné et on debite
+                $puce_agent->solde = $puce_agent->solde - $montant_retour;
+                $puce_agent->save();
+
+                if($status === Statut::EFFECTUER) {
+                    //on credite la puce de ETP concernée
+                    $puce_flottage->solde = $puce_flottage->solde + $montant_retour;
+                    $puce_flottage->save();
+
+                    if($is_collector && $type_puce === Statut::PUCE_RZ) {
+                        // on augmente la dette du RZ s'il effectue le retour flotte dans sa puce
+                        $connected_user->dette = $connected_user->dette + $montant_retour;
+                        $connected_user->save();
+                    }
+
+                    // Garder la transaction éffectué par la GF
+                    Transaction::create([
+                        'type' => Transations::RETOUR_FLOTTE,
+                        'in' => $retour_flotte->montant,
+                        'out' => 0,
+                        'id_operator' => $puce_flottage->flote->id,
+                        'id_left' => $puce_flottage->id,
+                        'id_right' => $puce_agent->id,
+                        'balance' => $puce_flottage->solde,
+                        'id_user' => $connected_user->id,
+                    ]);
+                }
+
+                //On calcule le reste à recouvrir
+                $flottage->reste = 0;
+                $flottage->statut = Statut::EFFECTUER;
+
+                //Enregistrer les oppérations
+                $flottage->save();
+            }
+        }
+
+        return response()->json([
+            'message' => 'Retour flotte groupé effectué avec succès',
+            'status' => true,
+            'data' => null
+        ]);
+    }
+
+    /**
      * Retour de flotte sans flottage prélable
      */
     // GESTIONNAIRE DE FLOTTE

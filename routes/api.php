@@ -498,6 +498,9 @@ Route::group(['middleware' => 'auth:api'], function(){
         //lister les Flottages peu importe le statut
         Route::get('list_all_flottage', 'API\FlotageController@list_all');
 
+        //lister les Flottages peu importe le statut groupee
+        Route::get('list_all_flottage_groupee', 'API\FlotageController@list_all_groupee');
+
         //lister les Flottages peu importe le statut par chaine de recherche
         Route::get('search_list_all_flottage', 'API\FlotageController@list_search');
 
@@ -623,6 +626,9 @@ Route::group(['middleware' => 'auth:api'], function(){
         //Creer un Recouvrement
         Route::post('recouvrement', 'API\RecouvrementController@store');
 
+        //Creer un Recouvrement groupee
+        Route::post('recouvrement_groupee', 'API\RecouvrementController@store_groupee');
+
         //Details d'un Recouvrement
         Route::get('detail_recouvrement/{id}', 'API\RecouvrementController@show')
         ->where('id', '[0-9]+');
@@ -653,6 +659,9 @@ Route::group(['middleware' => 'auth:api'], function(){
     //////////////////////Retour de flote/////////////////////
     */
         //Creer un Retour flotte
+        Route::post('retour_flotte_groupee', 'API\Retour_flotteController@retour_groupee');
+
+        //Creer un Retour flotte groupee
         Route::post('retour_flotte', 'API\Retour_flotteController@retour');
 
         //Creer un Retour flotte sans flottage prélable
