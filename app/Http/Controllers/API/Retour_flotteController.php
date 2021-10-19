@@ -372,6 +372,25 @@ class Retour_flotteController extends Controller
     }
 
     /**
+     * Lister les retour flotte groupee
+     */
+    // GESTIONNAIRE DE FLOTTE
+    public function list_all_groupee()
+    {
+        $recoveries = Retour_flote::where("statut", Statut::EN_COURS)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'message' => '',
+            'status' => true,
+            'data' => [
+                'recouvrements' => $this->recoveriesResponse($recoveries),
+            ]
+        ]);
+    }
+
+    /**
      * //lister tous les retour flotte
      */
     public function list_all_all()
@@ -569,6 +588,70 @@ class Retour_flotteController extends Controller
 
         return response()->json([
             'message' => 'Retour flotte apprové avec succès',
+            'status' => true,
+            'data' => null
+        ]);
+    }
+
+    /**
+     * Approuver un retour flotte groupee
+     */
+    // GESTIONNAIRE DE FLOTTE
+    public function approuve_groupee(Request $request)
+    {
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [
+            'ids' => ['required']
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        foreach ($request->ids as $id){
+            $retour_flotte = Retour_flote::find($id);
+
+            if(
+                !is_null($retour_flotte) &&
+                $retour_flotte->statut !== Statut::ANNULE &&
+                $retour_flotte->statut !== Statut::EFFECTUER
+            ) {
+                //on approuve le retour flotte
+                $retour_flotte->statut = Statut::EFFECTUER;
+
+                $connected_user = Auth::user();
+
+                //On recupère la puce de l'agent concerné et on debite
+                $montant = $retour_flotte->montant;
+
+                //on credite la puce de ETP concernée
+                $puce_flottage = $retour_flotte->puce_destination;
+                $puce_flottage->solde = $puce_flottage->solde + $montant;
+                $puce_agent = $retour_flotte->puce_source;
+
+                $puce_flottage->save();
+                $retour_flotte->save();
+
+                // Garder la transaction éffectué par la GF
+                Transaction::create([
+                    'type' => Transations::RETOUR_FLOTTE,
+                    'in' => $retour_flotte->montant,
+                    'out' => 0,
+                    'id_operator' => $puce_flottage->flote->id,
+                    'id_left' => $puce_flottage->id,
+                    'id_right' => $puce_agent->id,
+                    'balance' => $puce_flottage->solde,
+                    'id_user' => $connected_user->id,
+                ]);
+            }
+        }
+
+        return response()->json([
+            'message' => 'Retour flotte groupé approuvé avec succès',
             'status' => true,
             'data' => null
         ]);

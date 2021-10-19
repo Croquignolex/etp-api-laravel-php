@@ -665,6 +665,9 @@ Route::group(['middleware' => 'auth:api'], function(){
         //lister les Retour flotte peu importe le statut
         Route::get('list_all_retour_flotte', 'API\Retour_flotteController@list_all');
 
+        //lister les Retour flotte peu importe le statut groupee
+        Route::get('list_all_retour_flotte_groupee', 'API\Retour_flotteController@list_all_groupee');
+
         //lister tous les Retour flotte peu importe le statut
         Route::get('list_all_retour_flotte_all', 'API\Retour_flotteController@list_all_all');
 
@@ -687,6 +690,9 @@ Route::group(['middleware' => 'auth:api'], function(){
         //Confirmation par le gestionnaire de flotte, elle atteste avoir recu la flotte
         Route::post('approuve_retour_flotte/{id}', 'API\Retour_flotteController@approuve')
         ->where('id', '[0-9]+');
+
+        //Confirmation par le gestionnaire de flotte, elle atteste avoir recu la flotte groupee
+        Route::post('approuve_retour_flotte_groupee', 'API\Retour_flotteController@approuve_groupee');
 
         //Annulation du retour flotte
         Route::post('annuler_retour_flotte/{id}', 'API\Retour_flotteController@annuler_retour_flotte')
