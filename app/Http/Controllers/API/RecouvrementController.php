@@ -228,69 +228,81 @@ class RecouvrementController extends Controller
             //On verifi si le flottage passée existe réellement
             $flottage = Approvisionnement::find($id);
 
-            if(
-                !is_null($flottage) &&
-                $flottage->statut !== Statut::ANNULE &&
-                $flottage->statut !== Statut::EFFECTUER
-            ) {
-                $user = $flottage->demande_flote->user;
+            $montant_retour = $montant;
 
-                $montant_retour = $flottage->reste;
-
-                //Caisse de l'agent concerné
-                $caisse = $user->caisse->first();
-                $connected_user = Auth::user();
-
-                // Nouveau recouvrement
-                $recouvrement = new Recouvrement([
-                    'id_user' => $connected_user->id,
-                    'type_transaction' => Statut::RECOUVREMENT,
-                    'montant' => $montant_retour,
-                    'reste' => $montant_retour,
-                    'id_flottage' => $flottage->id,
-                    'statut' => Statut::EFFECTUER,
-                    'user_destination' => $connected_user->id,
-                    'user_source' => $user->id
-                ]);
-                $recouvrement->save();
-
-                //On credite la caisse de l'Agent pour le remboursement de la flotte recu, ce qui implique qu'il rembource ses detes à ETP
-                $caisse->solde = $caisse->solde - $montant_retour;
-                $caisse->save();
-
-                //la caisse de l'utilisateur connecté
-                $connected_caisse = $connected_user->caisse->first();
-                // Augmenter la caisse
-                $connected_caisse->solde = $connected_caisse->solde + $montant_retour;
-                $connected_caisse->save();
-
-                $is_manager_fleeter = $flottage->user->roles->first()->name === Roles::GESTION_FLOTTE;
-                $daily_report_status = $is_manager_fleeter;
-
-                // Garder le mouvement de caisse éffectué par la GF
-                Movement::create([
-                    'name' => $recouvrement->source_user->name,
-                    'type' => Transations::RECOUVREMENT,
-                    'in' => $recouvrement->montant,
-                    'out' => 0,
-                    'manager' => $daily_report_status,
-                    'balance' => $connected_caisse->solde,
-                    'id_user' => $connected_user->id,
-                ]);
-
-                if($connected_user->hasRole([Roles::RECOUVREUR]))
-                {
-                    // Augmenter la caisse du RZ et augmenter sa dette
-                    $connected_user->dette = $connected_user->dette + $montant_retour;
-                    $connected_user->save();
+            if($montant != 0)
+            {
+                if($montant > $flottage->reste) {
+                    $montant_retour = $flottage->reste;
                 }
 
-                //On calcule le reste à recouvrir
-                $flottage->reste = 0;
-                $flottage->statut = Statut::EFFECTUER;
+                $montant = $montant - $montant_retour;
 
-                //Enregistrer les oppérations
-                $flottage->save();
+                if(
+                    !is_null($flottage) &&
+                    $flottage->statut !== Statut::ANNULE &&
+                    $flottage->statut !== Statut::EFFECTUER
+                ) {
+                    $user = $flottage->demande_flote->user;
+
+                    //Caisse de l'agent concerné
+                    $caisse = $user->caisse->first();
+                    $connected_user = Auth::user();
+
+                    // Nouveau recouvrement
+                    $recouvrement = new Recouvrement([
+                        'id_user' => $connected_user->id,
+                        'type_transaction' => Statut::RECOUVREMENT,
+                        'montant' => $montant_retour,
+                        'reste' => $montant_retour,
+                        'id_flottage' => $flottage->id,
+                        'statut' => Statut::EFFECTUER,
+                        'user_destination' => $connected_user->id,
+                        'user_source' => $user->id
+                    ]);
+                    $recouvrement->save();
+
+                    //On credite la caisse de l'Agent pour le remboursement de la flotte recu, ce qui implique qu'il rembource ses detes à ETP
+                    $caisse->solde = $caisse->solde - $montant_retour;
+                    $caisse->save();
+
+                    //la caisse de l'utilisateur connecté
+                    $connected_caisse = $connected_user->caisse->first();
+                    // Augmenter la caisse
+                    $connected_caisse->solde = $connected_caisse->solde + $montant_retour;
+                    $connected_caisse->save();
+
+                    $is_manager_fleeter = $flottage->user->roles->first()->name === Roles::GESTION_FLOTTE;
+                    $daily_report_status = $is_manager_fleeter;
+
+                    // Garder le mouvement de caisse éffectué par la GF
+                    Movement::create([
+                        'name' => $recouvrement->source_user->name,
+                        'type' => Transations::RECOUVREMENT,
+                        'in' => $recouvrement->montant,
+                        'out' => 0,
+                        'manager' => $daily_report_status,
+                        'balance' => $connected_caisse->solde,
+                        'id_user' => $connected_user->id,
+                    ]);
+
+                    if($connected_user->hasRole([Roles::RECOUVREUR]))
+                    {
+                        // Augmenter la caisse du RZ et augmenter sa dette
+                        $connected_user->dette = $connected_user->dette + $montant_retour;
+                        $connected_user->save();
+                    }
+
+                    //On calcule le reste à recouvrir
+                    $flottage->reste = $flottage->reste - $montant_retour;
+
+                    //On change le statut du flottage
+                    if ($flottage->reste == 0) $flottage->statut = Statut::EFFECTUER ;
+                    else $flottage->statut = Statut::EN_COURS ;
+
+                    //Enregistrer les oppérations
+                    $flottage->save();
+                }
             }
         }
 

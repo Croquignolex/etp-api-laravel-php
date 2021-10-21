@@ -273,64 +273,75 @@ class Retour_flotteController extends Controller
             //On verifi si le flottage passée existe réellement
             $flottage = Approvisionnement::find($id);
 
-            if(
-                !is_null($flottage) &&
-                $flottage->statut !== Statut::ANNULE &&
-                $flottage->statut !== Statut::EFFECTUER
-            ) {
-                $connected_user = Auth::user();
-                $type_puce = $puce_flottage->type_puce->name;
-                $is_collector = $connected_user->roles->first()->name === Roles::RECOUVREUR;
-                $status = ($is_collector && ($type_puce !== Statut::PUCE_RZ)) ? Statut::EN_COURS : Statut::EFFECTUER;
+            $montant_retour = $montant;
 
-                $montant_retour = $flottage->reste;
-
-                //initier le retour flotte
-                $retour_flotte = new Retour_flote([
-                    'id_user' => $connected_user->id,
-                    'montant' => $montant_retour,
-                    'reste' => $montant_retour,
-                    'id_approvisionnement' => $flottage->id,
-                    'statut' => $status,
-                    'user_destination' => $puce_flottage->id,
-                    'user_source' => $puce_agent->id
-                ]);
-                $retour_flotte->save();
-
-                //On recupère la puce de l'agent concerné et on debite
-                $puce_agent->solde = $puce_agent->solde - $montant_retour;
-                $puce_agent->save();
-
-                if($status === Statut::EFFECTUER) {
-                    //on credite la puce de ETP concernée
-                    $puce_flottage->solde = $puce_flottage->solde + $montant_retour;
-                    $puce_flottage->save();
-
-                    if($is_collector && $type_puce === Statut::PUCE_RZ) {
-                        // on augmente la dette du RZ s'il effectue le retour flotte dans sa puce
-                        $connected_user->dette = $connected_user->dette + $montant_retour;
-                        $connected_user->save();
-                    }
-
-                    // Garder la transaction éffectué par la GF
-                    Transaction::create([
-                        'type' => Transations::RETOUR_FLOTTE,
-                        'in' => $retour_flotte->montant,
-                        'out' => 0,
-                        'id_operator' => $puce_flottage->flote->id,
-                        'id_left' => $puce_flottage->id,
-                        'id_right' => $puce_agent->id,
-                        'balance' => $puce_flottage->solde,
-                        'id_user' => $connected_user->id,
-                    ]);
+            if($montant != 0) {
+                if ($montant > $flottage->reste) {
+                    $montant_retour = $flottage->reste;
                 }
 
-                //On calcule le reste à recouvrir
-                $flottage->reste = 0;
-                $flottage->statut = Statut::EFFECTUER;
+                $montant = $montant - $montant_retour;
 
-                //Enregistrer les oppérations
-                $flottage->save();
+                if(
+                    !is_null($flottage) &&
+                    $flottage->statut !== Statut::ANNULE &&
+                    $flottage->statut !== Statut::EFFECTUER
+                ) {
+                    $connected_user = Auth::user();
+                    $type_puce = $puce_flottage->type_puce->name;
+                    $is_collector = $connected_user->roles->first()->name === Roles::RECOUVREUR;
+                    $status = ($is_collector && ($type_puce !== Statut::PUCE_RZ)) ? Statut::EN_COURS : Statut::EFFECTUER;
+
+                    //initier le retour flotte
+                    $retour_flotte = new Retour_flote([
+                        'id_user' => $connected_user->id,
+                        'montant' => $montant_retour,
+                        'reste' => $montant_retour,
+                        'id_approvisionnement' => $flottage->id,
+                        'statut' => $status,
+                        'user_destination' => $puce_flottage->id,
+                        'user_source' => $puce_agent->id
+                    ]);
+                    $retour_flotte->save();
+
+                    //On recupère la puce de l'agent concerné et on debite
+                    $puce_agent->solde = $puce_agent->solde - $montant_retour;
+                    $puce_agent->save();
+
+                    if($status === Statut::EFFECTUER) {
+                        //on credite la puce de ETP concernée
+                        $puce_flottage->solde = $puce_flottage->solde + $montant_retour;
+                        $puce_flottage->save();
+
+                        if($is_collector && $type_puce === Statut::PUCE_RZ) {
+                            // on augmente la dette du RZ s'il effectue le retour flotte dans sa puce
+                            $connected_user->dette = $connected_user->dette + $montant_retour;
+                            $connected_user->save();
+                        }
+
+                        // Garder la transaction éffectué par la GF
+                        Transaction::create([
+                            'type' => Transations::RETOUR_FLOTTE,
+                            'in' => $retour_flotte->montant,
+                            'out' => 0,
+                            'id_operator' => $puce_flottage->flote->id,
+                            'id_left' => $puce_flottage->id,
+                            'id_right' => $puce_agent->id,
+                            'balance' => $puce_flottage->solde,
+                            'id_user' => $connected_user->id,
+                        ]);
+                    }
+
+                    //On calcule le reste à recouvrir
+                    $flottage->reste = $flottage->reste - $montant_retour;
+
+                    //On change le statut du flottage
+                    if ($flottage->reste == 0) $flottage->statut = Statut::EFFECTUER ;
+                    else $flottage->statut = Statut::EN_COURS ;
+
+                    //Enregistrer les oppérations
+                    $flottage->save();
+                }
             }
         }
 
