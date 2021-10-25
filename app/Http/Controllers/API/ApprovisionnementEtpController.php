@@ -459,7 +459,7 @@ class ApprovisionnementEtpController extends Controller
         // Vérification de la validation éffective
         if ($destockage->statut === Statut::ANNULE) {
             return response()->json([
-                'message' => "L'approvisionnement a déjà été annulé",
+                'message' => "Le destockage a déjà été annulé",
                 'status' => false,
                 'data' => null
             ]);
@@ -468,7 +468,7 @@ class ApprovisionnementEtpController extends Controller
         // Vérification de la validation éffective
         if ($destockage->statut === Statut::EFFECTUER) {
             return response()->json([
-                'message' => "L'approvisionnement a déjà été confirmé",
+                'message' => "Le destockage a déjà été confirmé",
                 'status' => false,
                 'data' => null
             ]);
