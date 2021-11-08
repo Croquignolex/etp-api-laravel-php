@@ -13,7 +13,7 @@ class Movement extends Model
     use SoftDeletes;
 
     protected $dates = ['deleted_at'];
-    protected $fillable = array('id', 'name', 'type', 'in', 'out', 'balance', 'id_user', 'manager');
-    protected $visible = array('name', 'type', 'in', 'out', 'balance', 'created_at', 'manager');
+    protected $fillable = array('id', 'name', 'reason', 'type', 'in', 'out', 'balance', 'id_user', 'manager');
+    protected $visible = array('name', 'reason', 'type', 'in', 'out', 'balance', 'created_at', 'manager');
 }
 

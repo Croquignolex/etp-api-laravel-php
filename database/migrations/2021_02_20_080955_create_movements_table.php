@@ -17,6 +17,7 @@ class CreateMovementsTable extends Migration
             $table->increments('id');
             $table->string('name');
             $table->string('type');
+            $table->text('reason')->nullable();
             $table->double('in');
             $table->double('out');
             $table->double('balance');
