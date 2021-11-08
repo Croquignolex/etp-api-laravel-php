@@ -704,7 +704,7 @@ class FlotageController extends Controller
             $user = new User([
                 'add_by' => $connected_user->id,
                 'name' => $nom_agent,
-                'password' => bcrypt(000000),
+                'password' => bcrypt("000000"),
                 'phone' => $numero_agent,
                 'statut' => Statut::APPROUVE,
                 'id_zone' => $zone->id,

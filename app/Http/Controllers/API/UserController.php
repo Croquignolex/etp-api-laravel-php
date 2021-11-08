@@ -73,27 +73,6 @@ class UserController extends Controller
             );
         }
 
-        /*if (isset($request->id_zone)) {
-            foreach ($request->id_zone as $zone) {
-                // on verifie si la zone est définie
-
-                    if (!Zone::Find($zone)) {
-                        return response()->json(
-                            [
-                                'message' => 'une zone au moins parmi les zones entrée n est défini',
-                                'status' => false,
-                                'data' => null
-                            ]
-                        );
-                    }
-
-            }
-        }*/
-
-        // Convert base 64 image to normal image for the server and the data base
-        //$server_image_name_path = ImageFromBase64::imageFromBase64AndSave($request->input('base_64_image'),
-            //'images/avatars/');
-
         $input = $request->all();
         $input['password'] = bcrypt($input['password']);
         //$input['avatar'] = $server_image_name_path;
@@ -212,6 +191,32 @@ class UserController extends Controller
                 'data' => null
             ]);
         }
+    }
+
+    /**
+     * // Réinitialiser le mot de passe d'un utilisateur
+     */
+    public function user_password_reset($id)
+    {
+        $userDB = User::find($id);
+
+        if ($userDB == null) {
+            // Renvoyer un message d'erreur
+            return response()->json([
+                'message' => "Utilisateur introuvable",
+                'status' => true,
+                'data' => null
+            ]);
+        }
+
+        $userDB->password = bcrypt("000000");
+        $userDB->save();
+
+        return response()->json([
+            'message' => "Mot de passe de l'utilisateur réinitialisé avec succès",
+            'status' => true,
+            'data' => null
+        ]);
     }
 
     /**

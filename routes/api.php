@@ -83,6 +83,10 @@ Route::group(['middleware' => 'auth:api'], function(){
             Route::post('edit_role_user/{id}', 'API\UserController@edit_role_user')
             ->where('id', '[0-9]+');
 
+            // Réinitialiser le mot de passe d'un utilisateur
+            Route::post('user_password_reset/{id}', 'API\UserController@user_password_reset')
+                ->where('id', '[0-9]+');
+
             //Creation d'un utilisateur
             Route::post('register', 'API\UserController@register');
 
