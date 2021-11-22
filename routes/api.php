@@ -1013,6 +1013,25 @@ Route::group(['middleware' => 'auth:api'], function(){
     //lister tous les Flottages anonymes
     Route::get('list_flottage_anonyme_rz', 'API\FlotageAnonymeRZController@list_flottage_anonyme');
 
+    // --------------------------------- Agency
+
+    // Agencies list
+    Route::get('agencies', 'API\AgencyController@list');
+
+    // All agencies list
+    Route::get('all_agencies', 'API\AgencyController@list_all');
+
+    // Add new agency
+    Route::post('new_agency', 'API\AgencyController@store');
+
+    // Edit a agencies
+    Route::post('edit_agency/{id}', 'API\AgencyController@update')
+        ->where('id', '[0-9]+');
+
+    // Show a agency details
+    Route::get('show_agency/{id}', 'API\AgencyController@show')
+        ->where('id', '[0-9]+');
+
     // ------------------------------ Other features
     // User factory reset
     Route::post('factory_reset', 'API\NotificationsController@factory_reset');
