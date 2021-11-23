@@ -13,12 +13,12 @@ class Agency extends Model
     use SoftDeletes;
 
     protected $dates = ['deleted_at'];
-    protected $fillable = array('id', 'name', 'id_user', 'description');
-    protected $visible = array('id', 'name', 'id_user', 'description', 'created_at');
+    protected $fillable = array('id', 'name', 'id_manager', 'description');
+    protected $visible = array('id', 'name', 'id_manager', 'description', 'created_at');
 
-    public function user()
+    public function manager()
     {
-        return $this->belongsTo('App\User', 'id_user');
+        return $this->belongsTo('App\User', 'id_manager');
     }
 }
 

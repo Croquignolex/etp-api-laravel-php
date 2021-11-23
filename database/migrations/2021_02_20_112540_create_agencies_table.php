@@ -17,11 +17,11 @@ class CreateAgenciesTable extends Migration
             $table->increments('id');
             $table->string('name');
             $table->text('description')->nullable();
-            $table->integer('id_user')->unsigned()->nullable();
+            $table->integer('id_manager')->unsigned()->nullable();
             $table->timestamps();
             $table->softDeletes();
 
-            $table->foreign('id_user')
+            $table->foreign('id_manager')
                 ->references('id')
                 ->on('users')
                 ->onDelete('set null')
