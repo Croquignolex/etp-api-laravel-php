@@ -187,6 +187,23 @@ Route::group(['middleware' => 'auth:api'], function(){
         Route::post('delete_puce_agent/{id}', 'API\AgentController@delete_puce')
         ->where('id', '[0-9]+');
 
+
+    /*
+     /////////////////////GESTION DES RESOURCES///////////////////////////
+    */
+
+    //Creer un resource
+    Route::post('create_resource', 'API\ResourceController@store');
+
+    //liste des Agents
+    Route::get('list_resources', 'API\ResourceController@list');
+
+    //liste de tous les Agents
+    Route::get('list_resources_all', 'API\ResourceController@list_all');
+
+    //Search agents by needle
+    Route::get('search_resources', 'API\ResourceController@list_search');
+
     /*
       ///////////////GESTION DES ROLES DES UTILISATEURS///////////////////
     */

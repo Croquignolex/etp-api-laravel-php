@@ -1287,7 +1287,7 @@ class UserController extends Controller
 
         foreach($collectors as $collector) {
             $returenedCollectors[] = [
-                'recouvreur' => $collector->setHidden(['deleted_at', 'add_by', 'id_zone']),
+                'recouvreur' => $collector,
                 'zone' => $collector->zone,
                 'puces' => $collector->puces,
                 'caisse' => Caisse::where('id_user', $collector->id)->first(),
@@ -1305,7 +1305,7 @@ class UserController extends Controller
 
         foreach($managers as $manager) {
             $returenedManagers[] = [
-                'gestionnaire' => $manager->setHidden(['deleted_at', 'add_by']),
+                'gestionnaire' => $manager,
                 'caisse' => Caisse::where('id_user', $manager->id)->first(),
                 'createur' => $manager->creator
             ];
@@ -1321,7 +1321,7 @@ class UserController extends Controller
 
         foreach($supervisors as $supervisor) {
             $returenedSupervisors[] = [
-                'superviseur' => $supervisor->setHidden(['deleted_at', 'add_by']),
+                'superviseur' => $supervisor,
                 'caisse' => Caisse::where('id_user', $supervisor->id)->first(),
                 'createur' => $supervisor->creator
             ];
@@ -1337,7 +1337,7 @@ class UserController extends Controller
 
         foreach($admins as $admin) {
             $returenedAdmins[] = [
-                'administrateur' => $admin->setHidden(['deleted_at', 'add_by']),
+                'administrateur' => $admin,
                 'createur' => $admin->creator
             ];
         }
@@ -1352,7 +1352,7 @@ class UserController extends Controller
 
         foreach($overseers as $overseer) {
             $returnedOverseers[] = [
-                'controlleur' => $overseer->setHidden(['deleted_at', 'add_by']),
+                'controlleur' => $overseer,
                 'createur' => $overseer->creator
             ];
         }
@@ -1367,7 +1367,7 @@ class UserController extends Controller
 
         foreach($accountants as $accountant) {
             $returnedAccountants[] = [
-                'comptable' => $accountant->setHidden(['deleted_at', 'add_by']),
+                'comptable' => $accountant,
                 'createur' => $accountant->creator
             ];
         }
