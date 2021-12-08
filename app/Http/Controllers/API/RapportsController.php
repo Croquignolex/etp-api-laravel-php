@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Enums\Statut;
+use App\Flottage_interne;
 use App\Movement;
 use App\Transaction;
+use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use App\Http\Controllers\Controller;
@@ -83,11 +86,48 @@ class RapportsController extends Controller
             ->where('manager', true)
             ->get();
 
+        $tranfert_flottes_emis = Flottage_interne::where('id_user', $id)
+            ->where('statut', Statut::EFFECTUER)
+            ->where('created_at', '>=', $start)
+            ->where('created_at', '<=', $end)
+            ->where(function($query) {
+                $query->where('type', Statut::PUCE_RZ . '->' . Statut::FLOTTAGE_SECONDAIRE);
+                $query->orWhere('type', Statut::PUCE_RZ . '->' . Statut::FLOTTAGE);
+            })
+            ->get()
+            ->sum('montant');
+
+        $tranfert_flottes_recus = Flottage_interne::where('statut', Statut::EFFECTUER)
+            ->where('created_at', '>=', $start)
+            ->where('created_at', '<=', $end)
+            ->where(function($query) {
+                $query->where('type', Statut::FLOTTAGE_SECONDAIRE . '->' . Statut::PUCE_RZ);
+                $query->orWhere('type', Statut::FLOTTAGE . '->' . Statut::PUCE_RZ);
+            })
+            ->get()
+            ->filter(function (Flottage_interne $Flottage_interne) use ($id) {
+                $user = User::find($id);
+                $puces = $user->puces;
+                $flag = false;
+
+                foreach ($puces as $puce) {
+                    if($Flottage_interne->puce_receptrice->id === $puce->id) {
+                        $flag = true;
+                    }
+                }
+
+                return $flag;
+            })
+            ->sum('montant');
+
+        $ecarts = $tranfert_flottes_recus - $tranfert_flottes_emis;
+
         return response()->json([
             'message' => '',
             'status' => true,
             'data' => [
-                'rapports' => $movements
+                'rapports' => $movements,
+                'ecarts' => $ecarts
             ]
         ]);
     }

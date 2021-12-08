@@ -739,7 +739,7 @@ class CaisseController extends Controller
         $caisse_recepteur->solde = $caisse_recepteur->solde + $montant;
         $caisse_recepteur->save();
 
-        $is_manager_sender = $connected_user->roles->first()->name === Roles::GESTION_FLOTTE;
+        $is_manager_sender = $emetteur->roles->first()->name === Roles::GESTION_FLOTTE;
         $is_manager_receiver = $recepteur_role === Roles::GESTION_FLOTTE;
         $daily_report_status = $is_manager_sender || $is_manager_receiver;
 
@@ -819,7 +819,7 @@ class CaisseController extends Controller
                 $caisse_recepteur->solde = $caisse_recepteur->solde + $montant;
                 $caisse_recepteur->save();
 
-                $is_manager_sender = $connected_user->roles->first()->name === Roles::GESTION_FLOTTE;
+                $is_manager_sender = $emetteur->roles->first()->name === Roles::GESTION_FLOTTE;
                 $is_manager_receiver = $recepteur_role === Roles::GESTION_FLOTTE;
                 $daily_report_status = $is_manager_sender || $is_manager_receiver;
 
