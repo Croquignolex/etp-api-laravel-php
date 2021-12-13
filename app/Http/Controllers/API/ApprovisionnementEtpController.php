@@ -216,7 +216,7 @@ class ApprovisionnementEtpController extends Controller
                     'name' => $destockage->agent_user->name,
                     'type' => Transations::DESTOCKAGE,
                     'in' => 0,
-                    'manager' => false,
+                    'manager' => true,
                     'out' => $destockage->montant,
                     'balance' => $connected_caisse->solde,
                     'id_user' => $connected_user->id,
@@ -441,7 +441,7 @@ class ApprovisionnementEtpController extends Controller
     }
 
     /**
-     * Approuver une demande de destockage
+     * Approuver destockage
      */
     // GESTIONNAIRE DE FLOTTE
     public function approuve($id)
@@ -525,7 +525,7 @@ class ApprovisionnementEtpController extends Controller
     }
 
     /**
-     * Approuver une demande de destockage groupee
+     * Approuver destockage groupee
      */
     // GESTIONNAIRE DE FLOTTE
     public function approuve_groupee(Request $request)
