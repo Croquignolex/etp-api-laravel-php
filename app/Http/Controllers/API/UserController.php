@@ -433,9 +433,6 @@ class UserController extends Controller
 
     /**
      * supprimer un utilisateur
-     *
-     * @param $id
-     * @return JsonResponse
      */
     public function delete($id)
     {
@@ -761,8 +758,7 @@ class UserController extends Controller
             'adresse' => 'nullable',
             'id_zone' => ['required'],
             'description' => 'nullable',
-            'email' => 'nullable|email',
-            'password' => 'required|string|min:6',
+            'email' => 'nullable|email'
         ]);
         if ($validator->fails()) {
             return response()->json([
@@ -776,7 +772,7 @@ class UserController extends Controller
 
         $input = $request->all();
 
-        $input['password'] = bcrypt($input['password']);
+        $input['password'] = bcrypt("000000");
         $input['add_by'] = Auth::user()->id;
         $input['statut'] = Statut::APPROUVE;
         $input['avatar'] = null;
@@ -848,8 +844,7 @@ class UserController extends Controller
             'phone' => 'required|numeric|unique:users,phone',
             'adresse' => 'nullable',
             'description' => 'nullable',
-            'email' => 'nullable|email',
-            'password' => 'required|string|min:6',
+            'email' => 'nullable|email'
         ]);
         if ($validator->fails()) {
             return response()->json([
@@ -863,7 +858,7 @@ class UserController extends Controller
 
         $input = $request->all();
 
-        $input['password'] = bcrypt($input['password']);
+        $input['password'] = bcrypt("000000");
         $input['add_by'] = Auth::user()->id;
         $input['statut'] = Statut::APPROUVE;
         $input['avatar'] = null;
@@ -937,7 +932,7 @@ class UserController extends Controller
 
         $input = $request->all();
 
-        $input['password'] = bcrypt($input['password']);
+        $input['password'] = bcrypt("000000");
         $input['add_by'] = Auth::user()->id;
         $input['statut'] = Statut::APPROUVE;
         $input['avatar'] = null;
@@ -996,8 +991,7 @@ class UserController extends Controller
             'phone' => 'required|numeric|unique:users,phone',
             'adresse' => 'nullable',
             'description' => 'nullable',
-            'email' => 'nullable|email',
-            'password' => 'required|string|min:6',
+            'email' => 'nullable|email'
         ]);
         if ($validator->fails()) {
             return response()->json([
@@ -1011,7 +1005,7 @@ class UserController extends Controller
 
         $input = $request->all();
 
-        $input['password'] = bcrypt($input['password']);
+        $input['password'] = bcrypt("000000");
         $input['add_by'] = Auth::user()->id;
         $input['statut'] = Statut::APPROUVE;
         $input['avatar'] = null;
@@ -1070,7 +1064,6 @@ class UserController extends Controller
             'adresse' => 'nullable',
             'description' => 'nullable',
             'email' => 'nullable|email',
-            'password' => 'required|string|min:6',
         ]);
         if ($validator->fails()) {
             return response()->json([
@@ -1084,7 +1077,7 @@ class UserController extends Controller
 
         $input = $request->all();
 
-        $input['password'] = bcrypt($input['password']);
+        $input['password'] = bcrypt("000000");
         $input['add_by'] = Auth::user()->id;
         $input['statut'] = Statut::APPROUVE;
         $input['avatar'] = null;
@@ -1143,7 +1136,6 @@ class UserController extends Controller
             'adresse' => 'nullable',
             'description' => 'nullable',
             'email' => 'nullable|email',
-            'password' => 'required|string|min:6',
         ]);
         if ($validator->fails()) {
             return response()->json([
@@ -1157,7 +1149,7 @@ class UserController extends Controller
 
         $input = $request->all();
 
-        $input['password'] = bcrypt($input['password']);
+        $input['password'] = bcrypt("000000");
         $input['add_by'] = Auth::user()->id;
         $input['statut'] = Statut::APPROUVE;
         $input['avatar'] = null;
@@ -1253,7 +1245,7 @@ class UserController extends Controller
     }
 
     /**
-     * //Recuperer le solde de tous les responsables de zonnes
+     * //Recuperer le solde de tous les responsables de zones
      *
      * @return JsonResponse
      */

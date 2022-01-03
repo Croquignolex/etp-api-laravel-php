@@ -144,8 +144,15 @@ Route::group(['middleware' => 'auth:api'], function(){
         //Creer un Agent
         Route::post('create_agent', 'API\AgentController@store');
 
+        //Creer un Resource
+        Route::post('create_resource', 'API\ResourceController@store');
+
         //details d'un Agent
         Route::get('show_agent/{id}', 'API\AgentController@show')
+        ->where('id', '[0-9]+');
+
+        //details d'un Resource
+        Route::get('show_resource/{id}', 'API\ResourceController@show')
         ->where('id', '[0-9]+');
 
         //Changer la CNI
@@ -160,6 +167,9 @@ Route::group(['middleware' => 'auth:api'], function(){
 
         //liste des Agents
         Route::get('list_agents', 'API\AgentController@list');
+
+        //liste des Resources
+        Route::get('list_resources', 'API\ResourceController@list');
 
         //liste de tous les Agents
         Route::get('list_agents_all', 'API\AgentController@list_all');
@@ -179,6 +189,10 @@ Route::group(['middleware' => 'auth:api'], function(){
 		Route::post('edit_zone_agent/{id}', 'API\AgentController@edit_zone_agent')
 		->where('id', '[0-9]+');
 
+        //Changer la agency d'un agent
+        Route::post('edit_agency_agent/{id}', 'API\ResourceController@edit_agency_agent')
+        ->where('id', '[0-9]+');
+
 		// ajouter une puce à un agent
         Route::post('ajouter_puce_agent/{id}', 'API\AgentController@ajouter_puce')
         ->where('id', '[0-9]+');
@@ -193,7 +207,7 @@ Route::group(['middleware' => 'auth:api'], function(){
     */
 
     //Creer un resource
-    Route::post('create_resource', 'API\ResourceController@store');
+    /*Route::post('create_resource', 'API\ResourceController@store');
 
     //liste des Agents
     Route::get('list_resources', 'API\ResourceController@list');
@@ -202,7 +216,7 @@ Route::group(['middleware' => 'auth:api'], function(){
     Route::get('list_resources_all', 'API\ResourceController@list_all');
 
     //Search agents by needle
-    Route::get('search_resources', 'API\ResourceController@list_search');
+    Route::get('search_resources', 'API\ResourceController@list_search');*/
 
     /*
       ///////////////GESTION DES ROLES DES UTILISATEURS///////////////////
@@ -479,7 +493,7 @@ Route::group(['middleware' => 'auth:api'], function(){
         Route::post('delete_zone/{id}', 'API\ZoneController@destroy')
         ->where('id', '[0-9]+');
 
-        //Attribuer une zonne à un utilisateur
+        //Attribuer une zone à un utilisateur
         Route::post('give_zone', 'API\ZoneController@give_zone');
 
 		// ajouter une puce à une flotte
@@ -502,7 +516,7 @@ Route::group(['middleware' => 'auth:api'], function(){
         Route::post('ajouter_recouvreur_zone/{id}', 'API\ZoneController@ajouter_recouvreur')
         ->where('id', '[0-9]+');
 
-        // Modifier le responsable d'une zonne
+        // Modifier le responsable d'une zone
         Route::post('edit_responsable_zone/{id}', 'API\ZoneController@edit_responsable_zone')
         ->where('id', '[0-9]+');
 
@@ -546,12 +560,12 @@ Route::group(['middleware' => 'auth:api'], function(){
         //Creer un Flottage pour un agent present à l'agence
         Route::post('flottage_express', 'API\FlotageController@flottage_express');
 
-        ///// un responsable de zonne sert la flotte à un Agent un Agent
+        ///// un responsable de zone sert la flotte à un Agent un Agent
 
         //Creer un Flottage d'un responsaple de zone vers un Agent
         Route::post('flottage_by_rz', 'API\Flottage_rzController@flottage_by_rz');
 
-            //lister les Flottages d'un responsable de zonne
+            //lister les Flottages d'un responsable de zone
         Route::get('list_flottage_rz_by_rz', 'API\Flottage_rzController@list_flottage_rz_by_rz')
             ->where('id', '[0-9]+');
 
@@ -594,7 +608,7 @@ Route::group(['middleware' => 'auth:api'], function(){
         //traitement d'une demande de destockage (juste pour signaler au système que je traite totalement ou en partie une demande)
         Route::post('traiter_demande', 'API\ApprovisionnementEtpController@traiter_demande');
 
-        //revoquer une demande. elle est effectuée par un responsable de zonne
+        //revoquer une demande. elle est effectuée par un responsable de zone
         Route::post('revoque_demande', 'API\ApprovisionnementEtpController@revoque_demande');
 
         //Approvisionnement.  faite par le responsable de zone, l'Approvisionnement est de 3 types. par un Agant, le digital partner ou la banque
@@ -813,14 +827,14 @@ Route::group(['middleware' => 'auth:api'], function(){
         //lister les Flottages Interne groupee
         Route::get('list_all_flottage_interne_groupee', 'API\Flottage_interneController@list_all_groupee');
 
-        //Creer un Flottage de la gestionnaire de flotte vers Responsable de zonne
+        //Creer un Flottage de la gestionnaire de flotte vers Responsable de zone
         Route::post('flottage_rz', 'API\Flottage_rzController@store');
 
-        //Details d'un Flottage de la gestionnaire de flotte vers Responsable de zonne
+        //Details d'un Flottage de la gestionnaire de flotte vers Responsable de zone
         Route::get('detail_flottage_rz/{id}', 'API\Flottage_rzController@show')
             ->where('id', '[0-9]+');
 
-        //lister les Flottages de la gestionnaire de flotte vers Responsable de zonne
+        //lister les Flottages de la gestionnaire de flotte vers Responsable de zone
         Route::get('list_all_flottage_rz', 'API\Flottage_rzController@list_all');
 
         //Confirmation de la reception du transfert de flotte
@@ -859,12 +873,12 @@ Route::group(['middleware' => 'auth:api'], function(){
         //Recuperer le solde de tous les agents
         Route::get('agents_soldes', 'API\UserController@agents_soldes');
 
-        //Recuperer le solde de tous les responsables de zonnes
+        //Recuperer le solde de tous les responsables de zones
         Route::get('rz_soldes', 'API\UserController@rz_soldes');
 
 
         /*
-    //////////////////////Encaissement (la gestionnaire de flotte recoit de l'argent d'un agent ou d'un responsable de zonne)/////////////////////
+    //////////////////////Encaissement (la gestionnaire de flotte recoit de l'argent d'un agent ou d'un responsable de zone)/////////////////////
     */
 
         //creer un Encaissement
@@ -891,7 +905,7 @@ Route::group(['middleware' => 'auth:api'], function(){
         Route::get('encaissement_list_all', 'API\CaisseController@encaissement_list_all');
 
     /*
-//////////////////////Décaissement (la gestionnaire de flotte donne de l'argent à un responsable de zonne)/////////////////////
+//////////////////////Décaissement (la gestionnaire de flotte donne de l'argent à un responsable de zone)/////////////////////
 */
         //creer un Decaissement
         Route::post('decaissement', 'API\CaisseController@decaissement');
@@ -937,13 +951,13 @@ Route::group(['middleware' => 'auth:api'], function(){
         Route::post('annuler_passation/{id}', 'API\CaisseController@annule_passation')
         ->where('id', '[0-9]+');
     /*
-    //////////////////////Attribuer une puce à un responsable de zonne/////////////////////
+    //////////////////////Attribuer une puce à un responsable de zone/////////////////////
     */
-        // ajouter une puce à un responsable de zonne
+        // ajouter une puce à un responsable de zone
         Route::post('ajouter_puce_rz/{id}', 'API\AgentController@ajouter_puce_rz')
         ->where('id', '[0-9]+');
 
-		// supprimer une puce depuis un responsable de zonne
+		// supprimer une puce depuis un responsable de zone
         Route::post('delete_puce_rz/{id}', 'API\AgentController@delete_puce_rz')
         ->where('id', '[0-9]+');
 

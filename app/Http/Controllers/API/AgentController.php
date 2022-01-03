@@ -35,20 +35,13 @@ class AgentController extends Controller
                 'phone' => 'required|numeric',
                 'adresse' => 'nullable',
                 'description' => 'nullable',
-                //'poste' => ['nullable', 'string', 'max:255'],
-                'email' => 'nullable|email',
-                'password' => 'required|string|min:6',
+                'email' => 'nullable|string',
                 'id_zone' => ['nullable', 'Numeric'],
 
             //Agent informations
                 'base_64_image' => 'nullable',
                 'base_64_image_back' => 'nullable',
-                'document' => 'nullable|file|max:10000',
-                'reference' => ['nullable', 'string', 'max:255'],
-                //'taux_commission' => ['nullable', 'Numeric'],
-                'ville' => ['nullable', 'string', 'max:255'],
-                'pays' => ['nullable', 'string', 'max:255'],
-                //'point_de_vente' => ['nullable', 'string', 'max:255']
+                'document' => 'nullable|file|max:10000'
         ]);
 
 
@@ -76,7 +69,7 @@ class AgentController extends Controller
             // on verifie si la zone est définie
             if (!Zone::find($request->id_zone)) {
                 return response()->json([
-                    'message' => "La zonne n'est pas definie",
+                    'message' => "La zone n'est pas definie",
                     'status' => false,
                     'data' => null
                 ]);
@@ -89,9 +82,7 @@ class AgentController extends Controller
                 $phone = $request->phone;
                 $adresse = $request->adresse;
                 $description = $request->description;
-                //$poste = $request->poste;
                 $email = $request->email;
-                $password = bcrypt($request->password);
                 $id_zone = $request->id_zone;
 
                  $role = Role::where('name', Roles::AGENT)->first();
@@ -102,13 +93,6 @@ class AgentController extends Controller
                 if ($request->hasFile('document') && $request->file('document')->isValid()) {
                     $dossier = $request->document->store('files/dossier/agents');
                 }
-                $reference = $request->reference;
-                //$taux_commission = $request->taux_commission;
-                $ville = $request->ville;
-                $pays = $request->pays;
-                //$point_de_vente = $request->point_de_vente;
-                //$puce_name = $request->puce_name;
-                //$puce_number = $request->puce_number;
 
                 $img_cni = null;
                 if ($request->hasFile('base_64_image') && $request->file('base_64_image')->isValid()) {
@@ -129,7 +113,7 @@ class AgentController extends Controller
                 'avatar' => null,
                 'name' => $name,
                 'email' => $email,
-                'password' => $password,
+                'password' => bcrypt("000000"),
                 'phone' => $phone,
                 'statut' => Statut::APPROUVE,
                 'adresse' => $adresse,
@@ -142,15 +126,13 @@ class AgentController extends Controller
             //On crée la caisse de l'utilisateur
             $caisse = new Caisse([
                 'nom' => 'Caisse ' . $request->name,
-                'description' => Null,
                 'id_user' => $user->id,
-                'reference' => Null,
                 'solde' => 0
             ]);
             $caisse->save();
 
             $user->assignRole($role);
-            //$user = User::find($user->id);
+
             //info user à renvoyer
                 $success['token'] =  $user->createToken('MyApp')-> accessToken;
                 $success['user'] =  $user;
@@ -168,18 +150,12 @@ class AgentController extends Controller
                     'img_cni' => $img_cni,
                     'dossier' => $dossier,
                     'img_cni_back' => $img_cni_back,
-                    'reference' => $reference,
-                    //'taux_commission' => $taux_commission,
-                    'ville' => $ville,
-                    //'point_de_vente' => $point_de_vente,
-                    //'puce_name' => $puce_name,
-                    //'puce_number' => $puce_number,
-                    'pays' => $pays
+                    'reference' => Statut::AGENT,
+                    'ville' => "Douala",
+                    'pays' => "CAMAEROUN"
                 ]);
 
                 if ($agent->save()) {
-
-                    //$success['agent'] =  $agent;
 
                     // Renvoyer un message de succès
                     return response()->json([
@@ -263,7 +239,7 @@ class AgentController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:255'],
             'adresse' => ['nullable', 'string', 'max:255'],
-			'email' => 'nullable|email',
+			'email' => ['nullable', 'string', 'max:255'],
         ]);
         if ($validator->fails()) {
             return response()->json([
@@ -381,7 +357,9 @@ class AgentController extends Controller
      */
     public function list()
     {
-        $agents = Agent::orderBy('created_at', 'desc')->paginate(6);
+        $agents = Agent::where('reference', Statut::AGENT)
+            ->orderBy('created_at', 'desc')
+            ->paginate(6);
 
         $agents_response =  $this->agentsResponse($agents->items());
 
@@ -849,7 +827,7 @@ class AgentController extends Controller
     }
 
     /**
-     * // ajouter une puce à un responsable de zonne
+     * // ajouter une puce à un responsable de zone
      * @param Request $request
      * @param $id
      * @return JsonResponse
@@ -881,11 +859,11 @@ class AgentController extends Controller
             ]);
         }
 
-        //si l'utilisateur n'est pas responsable de zonne'
+        //si l'utilisateur n'est pas responsable de zone'
         $rz = User::find($id);
         if (is_null($rz)) {
             return response()->json([
-                'message' => "Vous devez choisir un Responsable de zonne qui existe",
+                'message' => "Vous devez choisir un Responsable de zone qui existe",
                 'status' => false,
                 'data' => null
             ]);
@@ -893,7 +871,7 @@ class AgentController extends Controller
 
         if (!($rz->hasRole([Roles::RECOUVREUR]))) {
             return response()->json([
-                'message' => "Vous devez choisir un Responsable de zonne",
+                'message' => "Vous devez choisir un Responsable de zone",
                 'status' => false,
                 'data' => null
             ]);
@@ -946,7 +924,7 @@ class AgentController extends Controller
     }
 
     /**
-     * retirrer une puce à un responsable de zonne
+     * retirrer une puce à un responsable de zone
      * @param Request $request
      * @param $id
      * @return JsonResponse

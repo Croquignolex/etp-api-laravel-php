@@ -530,7 +530,7 @@ class FlotageController extends Controller
         else
         {
             $message = "Flottage éffectué par " . $connected_user->name;
-            //noifier les responsables de zonne
+            //noifier les responsables de zone
             $users = User::all();
             foreach ($users as $_user) {
                 if ($_user->hasRole([Roles::RECOUVREUR])) {
@@ -857,7 +857,7 @@ class FlotageController extends Controller
             else
             {
                 $message = "Flottage éffectué par " . $connected_user->name;
-                //noifier les responsables de zonne
+                //noifier les responsables de zone
                 $users = User::all();
                 foreach ($users as $_user) {
                     if ($_user->hasRole([Roles::RECOUVREUR])) {

@@ -233,7 +233,7 @@ class Flottage_rzController extends Controller
             ]);
         }
 
-        //On se rassure que le la puce du responsable de zonne existe
+        //On se rassure que le la puce du responsable de zone existe
         if (!is_null(Puce::find($request->id_sim_rz))) {
 
             //On recupère la puce qui envoit
@@ -241,7 +241,7 @@ class Flottage_rzController extends Controller
 
             $flote_from = $puce_from->flote;
 
-            //On se rassure que la puce appartient au responsable de zonne
+            //On se rassure que la puce appartient au responsable de zone
             if (!($puce_from->id_rz == Auth::user()->id)) {
                 return response()->json([
                     'message' => "La puce n'appartient pas au responsable de zone",
@@ -275,7 +275,7 @@ class Flottage_rzController extends Controller
             ]);
         }
 
-        //on debite le solde du responsable de zonne
+        //on debite le solde du responsable de zone
         $puce_from->solde = $puce_from->solde - $request->montant;
 
         //on credite la flotte de l'agent s'il est de ETP

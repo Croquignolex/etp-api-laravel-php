@@ -24,13 +24,13 @@ class User extends Authenticatable
      * @var array
      */
     protected $fillable = [
-        'name','avatar', 'email','add_by', 'id_zone', 'poste', 'statut',
+        'name','avatar', 'email','add_by', 'id_zone', 'id_agency', 'poste', 'statut',
         'password', 'phone', 'adresse', 'description', 'dette'
     ];
 
 	protected $dates = ['deleted_at'];
     protected $visible = array(
-        'id','name','add_by','id_zone', 'created_at', 'poste',
+        'id','name','add_by','id_zone', 'id_agency', 'created_at', 'poste',
         'statut','avatar', 'password', 'phone', 'adresse', 'description', 'email', 'dette'
     );
 
@@ -63,7 +63,7 @@ class User extends Authenticatable
         return $this->hasMany('App\Operation', 'id_user');
     }
 
-    //les puce d'un responsable de zonne
+    //les puce d'un responsable de zone
     public function puces()
     {
         return $this->hasMany('App\Puce', 'id_rz');
@@ -85,6 +85,10 @@ class User extends Authenticatable
 
 	public function zone() {
         return $this->belongsTo('App\Zone', 'id_zone');
+    }
+
+    public function agency() {
+        return $this->belongsTo('App\Agency', 'id_agency');
     }
 
     public function AauthAcessToken(){

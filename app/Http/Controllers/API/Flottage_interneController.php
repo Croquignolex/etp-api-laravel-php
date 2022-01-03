@@ -551,7 +551,7 @@ class Flottage_interneController extends Controller
     }
 
     /**
-     * ////lister les flottages faits par un superviseur vers un responsable de zonne precis
+     * ////lister les flottages faits par un superviseur vers un responsable de zone precis
      */
     public function list_all_flottage_interne_by_rz($id)
     {
@@ -700,7 +700,7 @@ class Flottage_interneController extends Controller
         //On credite le solde de la puce qui recoit
         $puce_to->solde = $puce_to->solde + $request->montant;
 
-        //On credite la caisse du responsable de zonne, il rembourse sa dette
+        //On credite la caisse du responsable de zone, il rembourse sa dette
         $caisse_rz = $puce_from->rz->caisse->first();
         $caisse_rz->solde = $caisse_rz->solde + $request->montant;
 
@@ -712,7 +712,7 @@ class Flottage_interneController extends Controller
             $caisse_rz2->save();
         }
 
-        //Le responsable de zonne
+        //Le responsable de zone
         $rz = Auth::user();
 
         // Nouveau flottage

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Enums\Statut;
 use App\Zone;
 use App\User;
 use App\Agent;
@@ -126,7 +127,7 @@ class ZoneController extends Controller
     }
 
     /**
-     * //Attribuer une zonne à un utilisateur'
+     * //Attribuer une zone à un utilisateur'
      */
     public function give_zone(Request $request)
     {
@@ -443,18 +444,10 @@ class ZoneController extends Controller
                 'phone' => 'required|numeric|unique:users,phone',
                 'adresse' => 'nullable',
                 'description' => 'nullable',
-                //'poste' => ['nullable', 'string', 'max:255'],
                 'email' => 'nullable|email',
-                'password' => 'required|string|min:6',
-            //Agent informations
                 'base_64_image' => 'nullable|string',
                 'base_64_image_back' => 'nullable|string',
                 'document' => 'nullable|file|max:10000',
-                'reference' => ['nullable', 'string', 'max:255'],
-                //'taux_commission' => ['nullable', 'Numeric'],
-                'ville' => ['nullable', 'string', 'max:255'],
-                'pays' => ['nullable', 'string', 'max:255'],
-                //'point_de_vente' => ['nullable', 'string', 'max:255']
         ]);
         if ($validator->fails()) {
             return response()->json([
@@ -469,7 +462,6 @@ class ZoneController extends Controller
 		$adresse = $request->adresse;
 		$description = $request->description;
 		$email = $request->email;
-		$password = bcrypt($request->password);
 		$zone = Zone::find($id);
 		$role = Role::where('name', Roles::AGENT)->first();
 
@@ -502,7 +494,7 @@ class ZoneController extends Controller
 			'add_by' => $add_by_id,
 			'name' => $name,
 			'email' => $email,
-			'password' => $password,
+            'password' => bcrypt("000000"),
 			'phone' => $phone,
 			'adresse' => $adresse,
 			'id_zone' => $zone->id,
@@ -539,9 +531,9 @@ class ZoneController extends Controller
 				'img_cni' => $img_cni,
 				'dossier' => $dossier,
 				'img_cni_back' => $img_cni_back,
-				'reference' => $reference,
-				'ville' => $ville,
-				'pays' => $pays
+				'reference' => Statut::AGENT,
+                'ville' => "Douala",
+                'pays' => "CAMAEROUN"
 			]);
 
 			$agent->save();
@@ -704,7 +696,7 @@ class ZoneController extends Controller
         if (!$responsable->hasRole([Roles::RECOUVREUR])) {
             return response()->json(
                 [
-                    'message' => "Une zonne ne peut etre attribuée qu'à un responsable de zonne",
+                    'message' => "Une zone ne peut etre attribuée qu'à un responsable de zone",
                     'status' => false,
                     'data' => null
                 ]
@@ -714,7 +706,7 @@ class ZoneController extends Controller
         if (!$zone = Zone::find($id)) {
             return response()->json(
                 [
-                    'message' => "la zonne passée en paramettre n'existe pas",
+                    'message' => "la zone passée en paramettre n'existe pas",
                     'status' => false,
                     'data' => null
                 ]

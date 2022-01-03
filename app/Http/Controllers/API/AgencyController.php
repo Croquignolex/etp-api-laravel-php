@@ -159,7 +159,7 @@ class AgencyController extends Controller
             'message' => '',
             'status' => true,
             'data' => [
-                'vendors' => $this->agenciesResponse($agencies)
+                'agencies' => $this->agenciesResponse($agencies)
             ]
         ]);
     }
