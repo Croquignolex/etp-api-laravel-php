@@ -41,7 +41,7 @@ class PuceController extends Controller
             'reference' => ['nullable', 'string', 'max:255'],
             'id_flotte' => ['required', 'Numeric'],
             'id_agent' => ['nullable', 'Numeric'],
-            'id_ressource' => ['nullable', 'Numeric'],
+            'id_agency' => ['nullable', 'Numeric'],
             'id_corporate' => ['nullable', 'Numeric'],
             'id_recouvreur' => ['nullable', 'Numeric'],
             'nom' => ['required', 'string'],
@@ -71,7 +71,7 @@ class PuceController extends Controller
         $numero = $request->numero;
         $reference = $request->reference;
 
-        $id = $reference === Roles::AGENT ? $request->id_agent : $request->id_ressource;
+        $id = $request->id_agent;
         $user = is_null($id) ? $id : User::find($id);
         $agent = is_null($id) ? $id : $user->agent->first();
         $id_agent = is_null($id) ? $id : $agent->id;
@@ -79,20 +79,22 @@ class PuceController extends Controller
         $id_corporate = $request->id_corporate;
         $id_recouvreur = $request->id_recouvreur;
         $id_flotte = $request->id_flotte;
+        $id_agency = $request->id_agency;
         $description = $request->description;
 
         // Nouvelle puce
         $puce = new Puce([
+            'solde' => 0,
             'nom' => $nom,
 			'type' => $type,
             'numero' => $numero,
             'id_agent' => $id_agent,
+            'id_agency' => $id_agency,
             'reference' => $reference,
             'id_flotte' => $id_flotte,
+            'id_rz' => $id_recouvreur,
             'corporate' => $id_corporate,
             'description' => $description,
-            'id_rz' => $id_recouvreur,
-            'solde' => 0
         ]);
 
         // creation de La puce
@@ -109,6 +111,7 @@ class PuceController extends Controller
                     'user' => $user,
                     'corporate' => $puce->company,
                     'recouvreur' => $puce->rz,
+                    'agency' => $puce->agency,
                 ]
             ]);
         } else {
@@ -147,6 +150,7 @@ class PuceController extends Controller
                     'user' => $user,
                     'corporate' => $puce->company,
                     'recouvreur' => $puce->rz,
+                    'agency' => $puce->agency,
                 ]
             ]);
         } else {
@@ -168,10 +172,7 @@ class PuceController extends Controller
     {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
-            //'reference' => ['nullable', 'string', 'max:255', 'unique:puces,reference'],
             'reference' => ['nullable', 'string', 'max:255'],
-            //'id_flotte' => ['required', 'Numeric'],
-            //'id_agent' => ['required', 'Numeric'],
             'nom' => ['required', 'string'],
             'description' => ['nullable', 'string']
         ]);
@@ -190,19 +191,14 @@ class PuceController extends Controller
         //$numero = $request->numero;
         $nom = $request->nom;
         $reference = $request->reference;
-        //$id_flotte = $request->id_flotte;
-        //$id_agent = $request->id_agent;
         $description = $request->description;
 
         // rechercher la puce
         $puce = Puce::find($id);
 
         // Modifier la puce
-        //$puce->numero = $numero;
         $puce->nom = $nom;
         $puce->reference = $reference;
-        //$puce->id_flotte = $id_flotte;
-        //$puce->id_agent = $id_agent;
         $puce->description = $description;
 
         if ($puce->save()) {
@@ -222,6 +218,7 @@ class PuceController extends Controller
                         'user' => $user,
                         'corporate' => $puce->company,
                         'recouvreur' => $puce->rz,
+                        'agency' => $puce->agency,
                     ]
                 ]
             );
@@ -290,6 +287,7 @@ class PuceController extends Controller
                     'user' => $user,
                     'corporate' => $puce->company,
                     'recouvreur' => $puce->rz,
+                    'agency' => $puce->agency,
                 ]
             ]
         );
@@ -343,6 +341,7 @@ class PuceController extends Controller
                         'user' => $user,
                         'corporate' => $puce->company,
                         'recouvreur' => $puce->rz,
+                        'agency' => $puce->agency,
                     ]
                 ]
             );
@@ -406,6 +405,7 @@ class PuceController extends Controller
                         'user' => $user,
                         'corporate' => $puce->company,
                         'recouvreur' => $puce->rz,
+                        'agency' => $puce->agency,
                     ]
                 ]
             );
@@ -810,6 +810,7 @@ class PuceController extends Controller
                         'agent' => $agent,
                         'user' => $user,
                         'recouvreur' => $puce->rz,
+                        'agency' => $puce->agency,
                     ];
 				}
                 // Renvoyer un message de succès
@@ -909,6 +910,7 @@ class PuceController extends Controller
                 'corporate' => $puce->company,
                 'recouvreur' => $puce->rz,
                 'type' => $puce->type_puce,
+                'agency' => $puce->agency,
             ];
         }
 

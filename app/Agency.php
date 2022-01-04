@@ -20,5 +20,10 @@ class Agency extends Model
     {
         return $this->belongsTo('App\User', 'id_manager');
     }
+
+    public function puces()
+    {
+        return $this->hasMany('App\Puce', 'id_agency');
+    }
 }
 

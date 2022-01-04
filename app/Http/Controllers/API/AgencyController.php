@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Puce;
 use App\Agency;
+use App\Type_puce;
 use App\Enums\Roles;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
@@ -33,7 +35,8 @@ class AgencyController extends Controller
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
             'name' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string']
+            'description' => ['nullable', 'string'],
+            'manager' => ['nullable', 'Numeric'],
         ]);
 
         if ($validator->fails()) {
@@ -49,18 +52,20 @@ class AgencyController extends Controller
         $description = $request->description;
 
         // Nouvelle zone
-        $vendor = new Agency ([
+        $agency = new Agency ([
             'name' => $name,
             'description' => $description
         ]);
-        $vendor->save();
+        $agency->save();
 
         // Renvoyer un message de succès
         return response()->json([
             'message' => 'Agence créer avec succès',
             'status' => true,
             'data' => [
-                'agency' => $vendor
+                'agency' => $agency,
+                'puces' => $agency->puces,
+                'manager' => $agency->manager,
             ]
         ]);
     }
@@ -85,7 +90,9 @@ class AgencyController extends Controller
             'message' => '',
             'status' => true,
             'data' => [
-                'agency' => $agency
+                'agency' => $agency,
+                'puces' => $agency->puces,
+                'manager' => $agency->manager,
             ]
         ]);
     }
@@ -126,7 +133,11 @@ class AgencyController extends Controller
         return response()->json([
             'message' => 'Agence mise à jour avec succès',
             'status' => true,
-            'data' => ['agency' => $agency]
+            'data' => [
+                'agency' => $agency,
+                'puces' => $agency->puces,
+                'manager' => $agency->manager,
+            ]
         ]);
     }
 
@@ -164,6 +175,80 @@ class AgencyController extends Controller
         ]);
     }
 
+    /**
+     * ajouter une puce à une agence
+     */
+    public function ajouter_puce(Request $request, $id)
+    {
+        // Valider données envoyées
+        $validator = Validator::make($request->all(), [
+            'numero' => ['required', 'string', 'max:255', 'unique:puces,numero'],
+            'reference' => ['nullable', 'string', 'max:255'],
+            'id_flotte' => ['required', 'numeric'],
+            'nom' => ['required', 'string'],
+            'description' => ['nullable', 'string']
+        ]);
+
+        if(Puce::where('numero', $request->numero)->first()) {
+            return response()->json([
+                'message' => "Ce compte existe déjà dans le système",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => "Le formulaire contient des champs mal renseignés",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+
+        // Récupérer les données validées
+        $reference = $request->reference;
+
+        $nom = $request->nom;
+        $type = Type_puce::where('name', $reference)->first()->id;
+        $numero = $request->numero;
+        $id_flotte = $request->id_flotte;
+        $reference = $request->reference;
+        $description = $request->description;
+
+        // rechercher la flote
+        $agency = Agency::find($id);
+
+        // ajout de mla nouvelle puce
+        $puce = $agency->puces()->create([
+            'nom' => $nom,
+            'numero' => $numero,
+            'reference' => $reference,
+            'id_flotte' => $id_flotte,
+            'description' => $description,
+            'type' => $type,
+        ]);
+
+        if ($puce !== null) {
+            // Renvoyer un message de succès
+            return response()->json([
+                'message' => 'Puce ajoutée avec succès',
+                'status' => true,
+                'data' => [
+                    'agency' => $agency,
+                    'puces' => $agency->puces,
+                    'manager' => $agency->manager,
+                ]
+            ]);
+        } else {
+            // Renvoyer une erreur
+            return response()->json([
+                'message' => "Erreur l'ors de l'ajout de la nouvelle puce",
+                'status' => false,
+                'data' => null
+            ]);
+        }
+    }
+
     // Build agencies return data
     private function agenciesResponse($agencies)
     {
@@ -171,7 +256,10 @@ class AgencyController extends Controller
 
         foreach($agencies as $agency)
         {
-            $returnedAgencies[] = ['agency' => $agency];
+            $returnedAgencies[] = [
+                'agency' => $agency,
+                'manager' => $agency->manager
+            ];
         }
 
         return $returnedAgencies;

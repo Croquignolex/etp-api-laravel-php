@@ -166,13 +166,13 @@ class FloteController extends Controller
             'id_agent' => ['nullable', 'numeric'],
             'id_corporate' => ['nullable', 'numeric'],
             'id_rz' => ['nullable', 'numeric'],
-            'id_ressource' => ['nullable', 'numeric'],
+            'id_agency' => ['nullable', 'numeric'],
             'nom' => ['required', 'string'],
             'description' => ['nullable', 'string'],
             'type' => ['required', 'numeric'],
         ]);
 
-        if(Puce::where('numero', $request->numero)->get()) {
+        if(Puce::where('numero', $request->numero)->first()) {
             return response()->json([
                 'message' => "Ce compte existe déjà dans le système",
                 'status' => false,
@@ -193,13 +193,15 @@ class FloteController extends Controller
         $type = $request->type;
         $id_rz = $request->id_rz;
         $numero = $request->numero;
+        $id_agency = $request->id_agency;
         $reference = $request->reference;
         $corporate = $request->id_corporate;
         $description = $request->description;
 
-        $id_agent = $reference === Roles::AGENT ? $request->id_agent : $request->id_ressource;
-        $user = User::find($id_agent);
-        $agent = $user === null ? null : $user->agent->first()->id;
+        $_id = $request->id_agent;
+        $user = is_null($_id) ? $_id : User::find($_id);
+        $agent = is_null($_id) ? $_id : $user->agent->first();
+        $id_agent = is_null($_id) ? $_id : $agent->id;
 
         // rechercher la flote
         $flote = Flote::find($id);
@@ -210,8 +212,9 @@ class FloteController extends Controller
 			'type' => $type,
             'id_rz' => $id_rz,
             'numero' => $numero,
-            'id_agent' => $agent,
+            'id_agent' => $id_agent,
             'reference' => $reference,
+            'id_agency' => $id_agency,
             'corporate' => $corporate,
             'description' => $description,
         ]);

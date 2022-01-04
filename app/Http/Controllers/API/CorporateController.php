@@ -316,7 +316,7 @@ class CorporateController extends Controller
             'description' => ['nullable', 'string']
         ]);
 
-        if(Puce::where('numero', $request->numero)->get()) {
+        if(Puce::where('numero', $request->numero)->first()) {
             return response()->json([
                 'message' => "Ce compte existe déjà dans le système",
                 'status' => false,

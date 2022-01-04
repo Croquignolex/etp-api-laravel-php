@@ -1063,6 +1063,10 @@ Route::group(['middleware' => 'auth:api'], function(){
     Route::get('show_agency/{id}', 'API\AgencyController@show')
         ->where('id', '[0-9]+');
 
+    // ajouter une puce à une agence
+    Route::post('ajouter_puce_agence/{id}', 'API\AgencyController@ajouter_puce')
+        ->where('id', '[0-9]+');
+
     // ------------------------------ Other features
     // User factory reset
     Route::post('factory_reset', 'API\NotificationsController@factory_reset');
