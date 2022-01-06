@@ -118,13 +118,13 @@ class Retour_flotteController extends Controller
             ]);
         }
 
-        if ($agent->id != $puce_agent->id_agent) {
+       /* if ($agent->id != $puce_agent->id_agent) {
             return response()->json([
                 'message' => "Vous devez renvoyer la flotte avec une puce appartenant à l'agent qui a été flotté",
                 'status' => false,
                 'data' => null
             ]);
-        }
+        }*/
 
         //On verifi si les puce passée appartien à au meme oppérateur de flotte
         if ($puce_flottage->flote->id != $puce_agent->flote->id) {
@@ -363,6 +363,7 @@ class Retour_flotteController extends Controller
             'puce_agent' => ['required', 'numeric'],
             'puce_flottage' => ['required', 'numeric'],
             'montant' => ['required', 'numeric'],
+            'id_agent' => ['required', 'numeric'],
         ]);
 
         if ($validator->fails()) {
@@ -385,8 +386,11 @@ class Retour_flotteController extends Controller
 
         $puce_agent = Puce::find($request->puce_agent);
         $puce_flottage = Puce::find($request->puce_flottage);
-        $agent = $puce_agent->agent;
-        $user = $agent->user;
+
+        $user = User::find($request->id_agent);
+
+//        $agent = $puce_agent->agent;
+//        $user = $agent->user;
 
         //On verifi que le montant n'est pas supperieur au montant demandé
         if ($puce_agent == null || $puce_flottage == null) {
@@ -397,13 +401,13 @@ class Retour_flotteController extends Controller
             ]);
         }
 
-        if ($agent->id != $puce_agent->id_agent) {
+        /*if ($agent->id != $puce_agent->id_agent) {
             return response()->json([
                 'message' => "Vous devez renvoyer la flotte avec une puce appartenant à l'agent qui a été flotté",
                 'status' => false,
                 'data' => null
             ]);
-        }
+        }*/
 
         //On verifi si les puce passée appartien à au meme oppérateur de flotte
         if ($puce_flottage->flote->id != $puce_agent->flote->id) {
@@ -462,7 +466,7 @@ class Retour_flotteController extends Controller
             'data' => [
                 'recouvrement' => $retour_flotte,
                 'user' => $user,
-                'agent' => $agent,
+                'agent' => $user->agent->first(),
                 'recouvreur' => $retour_flotte->user,
                 'puce_agent' => $puce_agent,
                 'puce_flottage' => $puce_flottage,
@@ -865,8 +869,11 @@ class Retour_flotteController extends Controller
         foreach($recoveries as $recovery)
         {
             $puce_agent = $recovery->puce_source;
-            $agent = $puce_agent->agent;
-            $user = $agent->user;
+            $demande = $recovery->flotage->demande_flote;
+            $user = $demande->user;
+            $agent = $user->agent->first();
+//            $agent = $puce_agent->agent;
+//            $user = $agent->user;
             $recouvreur = $recovery->user;
             $puce_flottage = $recovery->puce_destination;
 
