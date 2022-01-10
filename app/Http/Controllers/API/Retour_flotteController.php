@@ -426,6 +426,7 @@ class Retour_flotteController extends Controller
             'id_user' => $connected_user->id,
             'montant' => $montant,
             'reste' => $montant,
+            'reference' => $user->id,
             'statut' => Statut::EFFECTUER,
             'user_destination' => $puce_flottage->id,
             'user_source' => $puce_agent->id
@@ -869,8 +870,8 @@ class Retour_flotteController extends Controller
         foreach($recoveries as $recovery)
         {
             $puce_agent = $recovery->puce_source;
-            $demande = $recovery->flotage->demande_flote;
-            $user = $demande->user;
+            $demande = is_null($recovery->flotage) ? null : $recovery->flotage->demande_flote;
+            $user = is_null($demande) ? $recovery->agent_user : $demande->user;
             $agent = $user->agent->first();
 //            $agent = $puce_agent->agent;
 //            $user = $agent->user;

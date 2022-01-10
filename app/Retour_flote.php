@@ -22,6 +22,11 @@ class Retour_flote extends Model
         return $this->belongsTo('App\User', 'id_user');
     }
 
+    public function agent_user()
+    {
+        return $this->belongsTo('App\User', 'reference');
+    }
+
     public function puce_source()
     {
         return $this->belongsTo('App\Puce', 'user_source');
