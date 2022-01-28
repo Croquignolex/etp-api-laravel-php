@@ -313,10 +313,10 @@ Route::group(['middleware' => 'auth:api'], function(){
         Route::get('puce_list_collector', 'API\PuceController@list_collector');
 
         //liste des puces ressource
-        Route::get('puce_list_all_resource', 'API\PuceController@list_all_resource');
+        Route::get('puce_list_all_resource', 'API\PuceController@list_all_resource_type');
 
         //liste des puces ressource
-        Route::get('puce_list_all_agent', 'API\PuceController@list_all_agent');
+        Route::get('puce_list_all_agent', 'API\PuceController@list_all_agent_type');
 
         //liste des puces d'un ressource
         Route::get('puce_list_resource', 'API\PuceController@list_agent');
@@ -339,24 +339,8 @@ Route::group(['middleware' => 'auth:api'], function(){
         Route::post('edit_puce_flote/{id}', 'API\PuceController@update_flote')
         ->where('id', '[0-9]+');
 
-		//modification de l'agent d'une puce
-        Route::post('edit_puce_agent/{id}', 'API\PuceController@update_agent')
-        ->where('id', '[0-9]+');
-
-        //modification de l'entreprise d'une puce
-        Route::post('edit_puce_corporate/{id}', 'API\PuceController@update_corporate')
-        ->where('id', '[0-9]+');
-
-        //supprimer une puce
-        Route::post('delete_puce/{id}', 'API\PuceController@destroy')
-        ->where('id', '[0-9]+');
-
         //lister les puces d'une flotte
         Route::post('list_puce_flotte/{id}', 'API\PuceController@list_puce_flotte')
-        ->where('id', '[0-9]+');
-
-        //lister les puces d'un Agent
-        Route::post('list_puce_agent/{id}', 'API\PuceController@list_puce_agent')
         ->where('id', '[0-9]+');
 
         //Search sim by needle
@@ -416,14 +400,6 @@ Route::group(['middleware' => 'auth:api'], function(){
     //////////////////////Demande de destockage/////////////////////
     */
         //par un Agent
-			//Details d'une demande de destockage
-            Route::get('detail_demandes_destockage/{id}', 'API\DemandedestockageController@show')
-            ->where('id', '[0-9]+');
-
-			//modifier une demande de destockage
-            Route::post('modifier_demandes_destockage/{id}', 'API\DemandedestockageController@modifier')
-            ->where('id', '[0-9]+');
-
 			Route::post('annuler_demandes_destockage/{id}', 'API\DemandedestockageController@annuler')
             ->where('id', '[0-9]+');
 
