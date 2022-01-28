@@ -15,7 +15,6 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
 use App\Notifications\Retour_flotte as Notif_retour_flotte;
-use App\Http\Resources\Retour_flote as Retour_floteResource;
 
 class Retour_flotteController extends Controller
 {
@@ -105,7 +104,6 @@ class Retour_flotteController extends Controller
         }
 
         $user = $flottage->demande_flote->user;
-        $agent = $user->agent->first();
         $puce_agent = Puce::find($request->puce_agent);
         $puce_flottage = Puce::find($request->puce_flottage);
 
@@ -117,14 +115,6 @@ class Retour_flotteController extends Controller
                 'data' => null
             ]);
         }
-
-       /* if ($agent->id != $puce_agent->id_agent) {
-            return response()->json([
-                'message' => "Vous devez renvoyer la flotte avec une puce appartenant à l'agent qui a été flotté",
-                'status' => false,
-                'data' => null
-            ]);
-        }*/
 
         //On verifi si les puce passée appartien à au meme oppérateur de flotte
         if ($puce_flottage->flote->id != $puce_agent->flote->id) {
@@ -145,6 +135,7 @@ class Retour_flotteController extends Controller
             'id_user' => $connected_user->id,
             'montant' => $montant,
             'reste' => $montant,
+            'reference' => $user->id,
             'id_approvisionnement' => $flottage->id,
             'statut' => $status,
             'user_destination' => $puce_flottage->id,
@@ -272,6 +263,7 @@ class Retour_flotteController extends Controller
         foreach ($request->ids_flottage as $id){
             //On verifi si le flottage passée existe réellement
             $flottage = Approvisionnement::find($id);
+            $user = $flottage->demande_flote->user;
 
             $montant_retour = $montant;
 
@@ -297,6 +289,7 @@ class Retour_flotteController extends Controller
                         'id_user' => $connected_user->id,
                         'montant' => $montant_retour,
                         'reste' => $montant_retour,
+                        'reference' => $user->id,
                         'id_approvisionnement' => $flottage->id,
                         'statut' => $status,
                         'user_destination' => $puce_flottage->id,
@@ -389,9 +382,6 @@ class Retour_flotteController extends Controller
 
         $user = User::find($request->id_agent);
 
-//        $agent = $puce_agent->agent;
-//        $user = $agent->user;
-
         //On verifi que le montant n'est pas supperieur au montant demandé
         if ($puce_agent == null || $puce_flottage == null) {
             return response()->json([
@@ -400,14 +390,6 @@ class Retour_flotteController extends Controller
                 'data' => null
             ]);
         }
-
-        /*if ($agent->id != $puce_agent->id_agent) {
-            return response()->json([
-                'message' => "Vous devez renvoyer la flotte avec une puce appartenant à l'agent qui a été flotté",
-                'status' => false,
-                'data' => null
-            ]);
-        }*/
 
         //On verifi si les puce passée appartien à au meme oppérateur de flotte
         if ($puce_flottage->flote->id != $puce_agent->flote->id) {
@@ -419,7 +401,6 @@ class Retour_flotteController extends Controller
         }
 
         $connected_user = Auth::user();
-        $type_puce = $puce_flottage->type_puce->name;
 
         //initier le retour flotte
         $retour_flotte = new Retour_flote([
@@ -474,25 +455,6 @@ class Retour_flotteController extends Controller
                 'operateur' => $puce_flottage->flote
             ]
         ]);
-    }
-
-    /**
-     * ////details d'un retour flotte
-     */
-    public function show($id)
-    {
-            //si le retour flotte n'existe pas
-            if (!($retour_flote = Retour_flote::find($id))) {
-                return response()->json(
-                    [
-                        'message' => "le retour flotte n'existe pas",
-                        'status' => false,
-                        'data' => null
-                    ]
-                );
-            }
-
-            return new Retour_floteResource($retour_flote);
     }
 
     /**
@@ -569,59 +531,19 @@ class Retour_flotteController extends Controller
     }
 
     /**
-     * ////lister les retour flotte d'une puce
-     */
-    public function list_retour_flotte_by_sim($id)
-    {
-        if (!Puce::Find($id)){
-
-            return response()->json(
-                [
-                    'message' => "la puce n'existe pas",
-                    'status' => true,
-                    'data' => []
-                ]
-            );
-        }
-
-        //On recupere les retour flotte
-        $retour_flotes = Retour_flote::where('user_destination', $id)
-        ->orWhere('user_source', $id)
-        ->get();
-
-
-        return response()->json(
-            [
-                'message' => '',
-                'status' => true,
-                'data' => ['retour_flotes' => $retour_flotes]
-            ]
-        );
-
-    }
-
-    /**
      * ////lister les retour flotte d'un Agent precis
      */
+    // AGENT
+    // RESSOURCE
     public function list_retour_flotte_by_agent()
     {
         $user = Auth::user();
 
-        if ($user->roles->first()->name !== Roles::AGENT && $user->roles->first()->name !== Roles::RESSOURCE){
-            return response()->json([
-                'message' => "Cet utilisateur n'est pas un agent/ressource",
-                'status' => false,
-                'data' => null
-            ]);
-        }
-
         // $id est le id du user directement
         $retour_flotes = Retour_flote::orderBy('created_at', 'desc')
             ->get()
-            ->filter(function(Retour_flote $retour_flote) use ($user) {
-                $demande_flote = $retour_flote->flotage->demande_flote;
-                $id_user = $demande_flote->id_user;
-                return $id_user == $user->id;
+            ->filter(function(Retour_flote $recovery) use ($user) {
+                return $recovery->agent_user->id == $user->id;
             });
 
         return response()->json([
@@ -870,11 +792,10 @@ class Retour_flotteController extends Controller
         foreach($recoveries as $recovery)
         {
             $puce_agent = $recovery->puce_source;
-            $demande = is_null($recovery->flotage) ? null : $recovery->flotage->demande_flote;
-            $user = is_null($demande) ? $recovery->agent_user : $demande->user;
+
+            $user = $recovery->agent_user;
             $agent = $user->agent->first();
-//            $agent = $puce_agent->agent;
-//            $user = $agent->user;
+
             $recouvreur = $recovery->user;
             $puce_flottage = $recovery->puce_destination;
 

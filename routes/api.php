@@ -366,14 +366,6 @@ Route::group(['middleware' => 'auth:api'], function(){
     //////////////////////Demande de Flotte/////////////////////
     */
           //par un Agent
-            //Details d'une demande de flote
-            Route::get('detail_demandes_flote/{id}', 'API\DemandeflotteController@show')
-            ->where('id', '[0-9]+');
-
-			//Details d'une demande de flote
-            Route::post('modifier_demandes_flote/{id}', 'API\DemandeflotteController@modifier')
-            ->where('id', '[0-9]+');
-
 			Route::post('annuler_demandes_flote/{id}', 'API\DemandeflotteController@annuler')
             ->where('id', '[0-9]+');
 
@@ -419,10 +411,6 @@ Route::group(['middleware' => 'auth:api'], function(){
 
             //lister toutes mes demandes de flotes (agent)
             Route::get('list_demandes_flote_agent_all', 'API\DemandeflotteController@list_demandes_flote_agent_all');
-
-            //modifier d'une demande de flote (gestionnaire de flotte ou les admin)
-            Route::post('modifier_demandes_flote_general/{id}', 'API\DemandeflotteController@modifier_general')
-            ->where('id', '[0-9]+');
         /*
 
     //////////////////////Demande de destockage/////////////////////
@@ -702,10 +690,6 @@ Route::group(['middleware' => 'auth:api'], function(){
         //Creer un Retour flotte sans flottage prélable
         Route::post('retour_flotte_sans_flottage', 'API\Retour_flotteController@retour_sans_flottage');
 
-        //Details d'un Retour flotte
-        Route::get('detail_retour_flotte/{id}', 'API\Retour_flotteController@show')
-        ->where('id', '[0-9]+');
-
         //lister les Retour flotte peu importe le statut
         Route::get('list_all_retour_flotte', 'API\Retour_flotteController@list_all');
 
@@ -717,10 +701,6 @@ Route::group(['middleware' => 'auth:api'], function(){
 
         //lister les Retour flotte relatifs à un flottage precis
         Route::get('list_retour_flotte/{id}', 'API\Retour_flotteController@list_retour_flotte')
-        ->where('id', '[0-9]+');
-
-        //lister les Retour flotte d'une puce precis
-        Route::get('list_retour_flotte_by_sim/{id}', 'API\Retour_flotteController@list_retour_flotte_by_sim')
         ->where('id', '[0-9]+');
 
         //lister les Recouvrements d'un responsable de zone precis
