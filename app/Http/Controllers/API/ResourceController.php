@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Agency;
 use App\User;
 use App\Agent;
 use App\Caisse;
+use App\Agency;
 use App\Enums\Roles;
 use App\Enums\Statut;
+use App\Zone;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Spatie\Permission\Models\Role;
@@ -33,7 +34,7 @@ class ResourceController extends Controller
             'adresse' => 'nullable',
             'description' => 'nullable',
             'email' => 'nullable|string',
-            'id_agency' => ['nullable', 'Numeric'],
+            'id_zone' => ['nullable', 'Numeric'],
 
             //Agent informations
             'base_64_image' => 'nullable',
@@ -62,9 +63,9 @@ class ResourceController extends Controller
             }
         }
 
-        if (isset($request->id_agency)) {
-            // on verifie si la agency est définie
-            if (!Agency::find($request->id_agency)) {
+        if (isset($request->id_zone)) {
+            // on verifie si la zone est définie
+            if (!Zone::find($request->id_zone)) {
                 return response()->json([
                     'message' => "La zone n'est pas definie",
                     'status' => false,
@@ -80,7 +81,7 @@ class ResourceController extends Controller
         $adresse = $request->adresse;
         $description = $request->description;
         $email = $request->email;
-        $id_agency = $request->id_agency;
+        $id_zone = $request->id_zone;
 
         $role = Role::where('name', Roles::AGENT)->first();
 
@@ -114,7 +115,7 @@ class ResourceController extends Controller
             'phone' => $phone,
             'statut' => Statut::APPROUVE,
             'adresse' => $adresse,
-            'id_agency' => $id_agency,
+            'id_zone' => $id_zone,
             'description' => $description
         ]);
 
@@ -159,8 +160,8 @@ class ResourceController extends Controller
                     'message' => 'Ressource crée avec succès',
                     'status' => true,
                     'data' => [
-                        'agency' => $user->agency,
-                        'user' => $user->setHidden(['deleted_at', 'add_by', 'id_agency']),
+                        'zone' => $user->zone,
+                        'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
                         'agent' => $agent,
                         'caisse' => Caisse::where('id_user', $user->id)->first(),
                         'createur' => User::find($user->add_by)
@@ -223,13 +224,12 @@ class ResourceController extends Controller
 
         //Envoie des information
         if($agent != null){
-            $puces = is_null($agent) ? [] : $agent->puces;
             return response()->json([
                 'message' => '',
                 'status' => true,
                 'data' => [
-                    'agency' => $user->agency,
-                    'user' => $user->setHidden(['deleted_at', 'add_by', 'id_agency']),
+                    'zone' => $user->zone,
+                    'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
                     'agent' => $agent,
                     'createur' => User::find($user->add_by),
                     'caisse' => Caisse::where('id_user', $user->id)->first()
@@ -328,8 +328,8 @@ class ResourceController extends Controller
             $user = User::find($agent->id_user);
 
             $returenedAgents[] = [
-                'agency' => $user->agency,
-                'user' => $user->setHidden(['deleted_at', 'add_by', 'id_agency']),
+                'zone' => $user->zone,
+                'user' => $user->setHidden(['deleted_at', 'add_by', 'id_zone']),
                 'agent' => $agent,
                 'caisse' => Caisse::where('id_user', $user->id)->first(),
                 'createur' => User::find($user->add_by)

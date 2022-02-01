@@ -790,47 +790,38 @@ class UserController extends Controller
         $user = User::create($input);
         $zone->id_responsable = $user->id;
         $zone->save();
-        //
 
-        if (isset($user)) {
-            //On crée la caisse de l'utilisateur
-            $caisse = new Caisse([
-                'nom' => 'Caisse ' . $request->name,
-                'description' => Null,
-                'id_user' => $user->id,
-                'reference' => Null,
-                'solde' => 0
-            ]);
-            $caisse->save();
+        //On crée la caisse de l'utilisateur
+        $caisse = new Caisse([
+            'nom' => 'Caisse ' . $request->name,
+            'description' => Null,
+            'id_user' => $user->id,
+            'reference' => Null,
+            'solde' => 0
+        ]);
+        $caisse->save();
 
-            //on lui donne un role
-            $user->assignRole($role);
+        //on lui donne un role
+        $user->assignRole($role);
 
-            //On lui crée un token
-            $success['token'] =  $user->createToken('MyApp')->accessToken;
-            $success['user'] =  $user;
+        //On lui crée un token
+        $success['token'] =  $user->createToken('MyApp')->accessToken;
+        $success['user'] =  $user;
 
-			$user->setting()->create([
-				'bars' => '[0,1,2,3,4,5,6,7,8,9]',
-				'charts' => '[0,1,2,3,4,5,6,7,8,9]',
-				'cards' => '[0,1,2,3,4,5,6,7,8,9]',
-			]);
-
-            return response()->json([
-                'message' => 'Responsable de zone crée avec succès',
-                'status' => true,
-                'data' => [
-                    'recouvreur' => $user->setHidden(['deleted_at', 'add_by', 'id_zone', 'password']),
-                    'zone' => $user->zone,
-                    'createur' => $user->creator
-                ]
-            ]);
-        }
+        $user->setting()->create([
+            'bars' => '[0,1,2,3,4,5,6,7,8,9]',
+            'charts' => '[0,1,2,3,4,5,6,7,8,9]',
+            'cards' => '[0,1,2,3,4,5,6,7,8,9]',
+        ]);
 
         return response()->json([
-            'message' => "Erreur lors de création du responsable de zone",
-            'status' => false,
-            'data' => null
+            'message' => 'Responsable de zone crée avec succès',
+            'status' => true,
+            'data' => [
+                'recouvreur' => $user->setHidden(['deleted_at', 'add_by', 'id_zone', 'password']),
+                'zone' => $user->zone,
+                'createur' => $user->creator
+            ]
         ]);
     }
 
@@ -844,7 +835,7 @@ class UserController extends Controller
             'phone' => 'required|numeric|unique:users,phone',
             'adresse' => 'nullable',
             'description' => 'nullable',
-            'email' => 'nullable|email'
+            'email' => 'nullable'
         ]);
         if ($validator->fails()) {
             return response()->json([
@@ -865,45 +856,37 @@ class UserController extends Controller
 
         $user = User::create($input);
 
-        if (isset($user)) {
-            //On crée la caisse de l'utilisateur
-            $caisse = new Caisse([
-                'nom' => 'Caisse ' . $request->name,
-                'description' => Null,
-                'id_user' => $user->id,
-                'reference' => Null,
-                'solde' => 0
-            ]);
-            $caisse->save();
+        //On crée la caisse de l'utilisateur
+        $caisse = new Caisse([
+            'nom' => 'Caisse ' . $request->name,
+            'description' => Null,
+            'id_user' => $user->id,
+            'reference' => Null,
+            'solde' => 0
+        ]);
+        $caisse->save();
 
-            //on lui donne un role
-            $user->assignRole($role);
+        //on lui donne un role
+        $user->assignRole($role);
 
-            //On lui crée un token
-            $success['token'] =  $user->createToken('MyApp')->accessToken;
-            $success['user'] =  $user;
+        //On lui crée un token
+        $success['token'] =  $user->createToken('MyApp')->accessToken;
+        $success['user'] =  $user;
 
-            $user->setting()->create([
-                'bars' => '[0,1,2,3,4,5,6,7,8,9]',
-                'charts' => '[0,1,2,3,4,5,6,7,8,9]',
-                'cards' => '[0,1,2,3,4,5,6,7,8,9]',
-            ]);
-
-            return response()->json([
-                'message' => 'Gestionnaire de flotte crée avec succès',
-                'status' => true,
-                'data' => [
-                    'gestionnaire' => $user->setHidden(['deleted_at', 'add_by']),
-                    'caisse' => Caisse::where('id_user', $user->id)->first(),
-                    'createur' => $user->creator
-                ]
-            ]);
-        }
+        $user->setting()->create([
+            'bars' => '[0,1,2,3,4,5,6,7,8,9]',
+            'charts' => '[0,1,2,3,4,5,6,7,8,9]',
+            'cards' => '[0,1,2,3,4,5,6,7,8,9]',
+        ]);
 
         return response()->json([
-            'message' => "Erreur lors de création de la gestionnaire de flotte",
-            'status' => false,
-            'data' => null
+            'message' => 'Gestionnaire de flotte crée avec succès',
+            'status' => true,
+            'data' => [
+                'gestionnaire' => $user->setHidden(['deleted_at', 'add_by']),
+                'caisse' => Caisse::where('id_user', $user->id)->first(),
+                'createur' => $user->creator
+            ]
         ]);
     }
 
@@ -939,45 +922,37 @@ class UserController extends Controller
 
         $user = User::create($input);
 
-        if (isset($user)) {
-            //On crée la caisse de l'utilisateur
-            $caisse = new Caisse([
-                'nom' => 'Caisse ' . $request->name,
-                'description' => Null,
-                'id_user' => $user->id,
-                'reference' => Null,
-                'solde' => 0
-            ]);
-            $caisse->save();
+        //On crée la caisse de l'utilisateur
+        $caisse = new Caisse([
+            'nom' => 'Caisse ' . $request->name,
+            'description' => Null,
+            'id_user' => $user->id,
+            'reference' => Null,
+            'solde' => 0
+        ]);
+        $caisse->save();
 
-            //on lui donne un role
-            $user->assignRole($role);
+        //on lui donne un role
+        $user->assignRole($role);
 
-            //On lui crée un token
-            $success['token'] =  $user->createToken('MyApp')->accessToken;
-            $success['user'] =  $user;
+        //On lui crée un token
+        $success['token'] =  $user->createToken('MyApp')->accessToken;
+        $success['user'] =  $user;
 
-            $user->setting()->create([
-                'bars' => '[0,1,2,3,4,5,6,7,8,9]',
-                'charts' => '[0,1,2,3,4,5,6,7,8,9]',
-                'cards' => '[0,1,2,3,4,5,6,7,8,9]',
-            ]);
-
-            return response()->json([
-                'message' => 'Superviseur crée avec succès',
-                'status' => true,
-                'data' => [
-                    'superviseur' => $user->setHidden(['deleted_at', 'add_by']),
-                    'caisse' => Caisse::where('id_user', $user->id)->first(),
-                    'createur' => $user->creator
-                ]
-            ]);
-        }
+        $user->setting()->create([
+            'bars' => '[0,1,2,3,4,5,6,7,8,9]',
+            'charts' => '[0,1,2,3,4,5,6,7,8,9]',
+            'cards' => '[0,1,2,3,4,5,6,7,8,9]',
+        ]);
 
         return response()->json([
-            'message' => "Erreur lors de création du superviseur",
-            'status' => false,
-            'data' => null
+            'message' => 'Superviseur crée avec succès',
+            'status' => true,
+            'data' => [
+                'superviseur' => $user->setHidden(['deleted_at', 'add_by']),
+                'caisse' => Caisse::where('id_user', $user->id)->first(),
+                'createur' => $user->creator
+            ]
         ]);
     }
 
@@ -1012,44 +987,36 @@ class UserController extends Controller
 
         $user = User::create($input);
 
-        if (isset($user)) {
-            //On crée la caisse de l'utilisateur
-            $caisse = new Caisse([
-                'nom' => 'Caisse ' . $request->name,
-                'description' => Null,
-                'id_user' => $user->id,
-                'reference' => Null,
-                'solde' => 0
-            ]);
-            $caisse->save();
+        //On crée la caisse de l'utilisateur
+        $caisse = new Caisse([
+            'nom' => 'Caisse ' . $request->name,
+            'description' => Null,
+            'id_user' => $user->id,
+            'reference' => Null,
+            'solde' => 0
+        ]);
+        $caisse->save();
 
-            //on lui donne un role
-            $user->assignRole($role);
+        //on lui donne un role
+        $user->assignRole($role);
 
-            //On lui crée un token
-            $success['token'] =  $user->createToken('MyApp')->accessToken;
-            $success['user'] =  $user;
+        //On lui crée un token
+        $success['token'] =  $user->createToken('MyApp')->accessToken;
+        $success['user'] =  $user;
 
-            $user->setting()->create([
-                'bars' => '[0,1,2,3,4,5,6,7,8,9,10]',
-                'charts' => '[0,1,2,3,4,5,6,7,8,9,10]',
-                'cards' => '[0,1,2,3,4,5,6,7,8,9,10]',
-            ]);
-
-            return response()->json([
-                'message' => 'Administrateur crée avec succès',
-                'status' => true,
-                'data' => [
-                    'administrateur' => $user->setHidden(['deleted_at', 'add_by']),
-                    'createur' => $user->creator
-                ]
-            ]);
-        }
+        $user->setting()->create([
+            'bars' => '[0,1,2,3,4,5,6,7,8,9,10]',
+            'charts' => '[0,1,2,3,4,5,6,7,8,9,10]',
+            'cards' => '[0,1,2,3,4,5,6,7,8,9,10]',
+        ]);
 
         return response()->json([
-            'message' => "Erreur lors de création de l'administrateur",
-            'status' => false,
-            'data' => null
+            'message' => 'Administrateur crée avec succès',
+            'status' => true,
+            'data' => [
+                'administrateur' => $user->setHidden(['deleted_at', 'add_by']),
+                'createur' => $user->creator
+            ]
         ]);
     }
 
@@ -1084,44 +1051,36 @@ class UserController extends Controller
 
         $user = User::create($input);
 
-        if (isset($user)) {
-            //On crée la caisse de l'utilisateur
-            $caisse = new Caisse([
-                'nom' => 'Caisse ' . $request->name,
-                'description' => Null,
-                'id_user' => $user->id,
-                'reference' => Null,
-                'solde' => 0
-            ]);
-            $caisse->save();
+        //On crée la caisse de l'utilisateur
+        $caisse = new Caisse([
+            'nom' => 'Caisse ' . $request->name,
+            'description' => Null,
+            'id_user' => $user->id,
+            'reference' => Null,
+            'solde' => 0
+        ]);
+        $caisse->save();
 
-            //on lui donne un role
-            $user->assignRole($role);
+        //on lui donne un role
+        $user->assignRole($role);
 
-            //On lui crée un token
-            $success['token'] =  $user->createToken('MyApp')->accessToken;
-            $success['user'] =  $user;
+        //On lui crée un token
+        $success['token'] =  $user->createToken('MyApp')->accessToken;
+        $success['user'] =  $user;
 
-            $user->setting()->create([
-                'bars' => '[0,1,2,3,4,5,6,7,8,9,10]',
-                'charts' => '[0,1,2,3,4,5,6,7,8,9,10]',
-                'cards' => '[0,1,2,3,4,5,6,7,8,9,10]',
-            ]);
-
-            return response()->json([
-                'message' => 'Comptable crée avec succès',
-                'status' => true,
-                'data' => [
-                    'comptable' => $user->setHidden(['deleted_at', 'add_by']),
-                    'createur' => $user->creator
-                ]
-            ]);
-        }
+        $user->setting()->create([
+            'bars' => '[0,1,2,3,4,5,6,7,8,9,10]',
+            'charts' => '[0,1,2,3,4,5,6,7,8,9,10]',
+            'cards' => '[0,1,2,3,4,5,6,7,8,9,10]',
+        ]);
 
         return response()->json([
-            'message' => "Erreur lors de création du comptable",
-            'status' => false,
-            'data' => null
+            'message' => 'Comptable crée avec succès',
+            'status' => true,
+            'data' => [
+                'comptable' => $user->setHidden(['deleted_at', 'add_by']),
+                'createur' => $user->creator
+            ]
         ]);
     }
 
@@ -1156,44 +1115,36 @@ class UserController extends Controller
 
         $user = User::create($input);
 
-        if (isset($user)) {
-            //On crée la caisse de l'utilisateur
-            $caisse = new Caisse([
-                'nom' => 'Caisse ' . $request->name,
-                'description' => Null,
-                'id_user' => $user->id,
-                'reference' => Null,
-                'solde' => 0
-            ]);
-            $caisse->save();
+        //On crée la caisse de l'utilisateur
+        $caisse = new Caisse([
+            'nom' => 'Caisse ' . $request->name,
+            'description' => Null,
+            'id_user' => $user->id,
+            'reference' => Null,
+            'solde' => 0
+        ]);
+        $caisse->save();
 
-            //on lui donne un role
-            $user->assignRole($role);
+        //on lui donne un role
+        $user->assignRole($role);
 
-            //On lui crée un token
-            $success['token'] =  $user->createToken('MyApp')->accessToken;
-            $success['user'] =  $user;
+        //On lui crée un token
+        $success['token'] =  $user->createToken('MyApp')->accessToken;
+        $success['user'] =  $user;
 
-            $user->setting()->create([
-                'bars' => '[0,1,2,3,4,5,6,7,8,9,10]',
-                'charts' => '[0,1,2,3,4,5,6,7,8,9,10]',
-                'cards' => '[0,1,2,3,4,5,6,7,8,9,10]',
-            ]);
-
-            return response()->json([
-                'message' => 'Contôleur crée avec succès',
-                'status' => true,
-                'data' => [
-                    'controlleur' => $user->setHidden(['deleted_at', 'add_by']),
-                    'createur' => $user->creator
-                ]
-            ]);
-        }
+        $user->setting()->create([
+            'bars' => '[0,1,2,3,4,5,6,7,8,9,10]',
+            'charts' => '[0,1,2,3,4,5,6,7,8,9,10]',
+            'cards' => '[0,1,2,3,4,5,6,7,8,9,10]',
+        ]);
 
         return response()->json([
-            'message' => "Erreur lors de création du contôleur",
-            'status' => false,
-            'data' => null
+            'message' => 'Contôleur crée avec succès',
+            'status' => true,
+            'data' => [
+                'controlleur' => $user->setHidden(['deleted_at', 'add_by']),
+                'createur' => $user->creator
+            ]
         ]);
     }
 
