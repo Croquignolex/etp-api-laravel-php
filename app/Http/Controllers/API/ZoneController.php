@@ -345,6 +345,7 @@ class ZoneController extends Controller
             'description' => 'nullable',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:6',
+            'reference' => 'required|string',
         ]);
         if ($validator->fails()) {
             return response()->json(
@@ -390,46 +391,27 @@ class ZoneController extends Controller
             $success['user'] =  $user;
         }
 
-        if ($user !== null) {
-			$agents = [];
-			$recouvreurs = [];
-			$users = $zone->users;
-			 foreach($users as $user)
-			 {
-				 $userRole = $user->roles->first()->name;
-				 $user_agent = Agent::where('id_user', $user->id)->first();
-				 if($userRole === Roles::AGENT)
-				 {
-					 $agents[] = ['user' => $user, 'agent' => $user_agent];
-					  //$user_zones = json_decode($user->id_zone);
-					  //if(array_search($zone->id, $user_zones)) $agents[] = $user;
-				 }
-				 else if($userRole === Roles::RECOUVREUR)
-				 {
-					 $recouvreurs[] = $user;
-					 //$user_zones = json_decode($user->id_zone);
-					 //if(array_search($zone->id, $user_zones)) $recouvreurs[] = $user;
-				 }
-			 }
 
-            // Renvoyer un message de succès
-            return response()->json(
-                [
-                    'message' => '',
-                    'status' => true,
-                    'data' => ['zone' => $zone, 'agents' => $agents, 'recouvreurs' => $recouvreurs]
-                ]
-            );
-        } else {
-            // Renvoyer une erreur
-            return response()->json(
-                [
-                    'message' => "Erreur l'ors de lsuppression d'un recouvreur",
-                    'status' => false,
-                    'data' => null
-                ]
-            );
-        }
+        $agents = [];
+        $users = $zone->users;
+         foreach($users as $user)
+         {
+             $userRole = $user->roles->first()->name;
+             $user_agent = Agent::where('id_user', $user->id)->first();
+             if($userRole === Roles::AGENT)
+             {
+                 $agents[] = ['user' => $user, 'agent' => $user_agent];
+             }
+         }
+
+        // Renvoyer un message de succès
+        return response()->json(
+            [
+                'message' => '',
+                'status' => true,
+                'data' => ['zone' => $zone, 'agents' => $agents]
+            ]
+        );
     }
 
 	/**
@@ -439,15 +421,15 @@ class ZoneController extends Controller
     {
         // Valider données envoyées
         $validator = Validator::make($request->all(), [
-			//user informations
-                'name' => 'required',
-                'phone' => 'required|numeric|unique:users,phone',
-                'adresse' => 'nullable',
-                'description' => 'nullable',
-                'email' => 'nullable|email',
-                'base_64_image' => 'nullable|string',
-                'base_64_image_back' => 'nullable|string',
-                'document' => 'nullable|file|max:10000',
+            'name' => 'required',
+            'phone' => 'required|numeric|unique:users,phone',
+            'adresse' => 'nullable',
+            'description' => 'nullable',
+            'email' => 'nullable',
+            'base_64_image' => 'nullable|string',
+            'base_64_image_back' => 'nullable|string',
+            'document' => 'nullable|file|max:10000',
+            'reference' => 'required|string',
         ]);
         if ($validator->fails()) {
             return response()->json([
@@ -466,8 +448,6 @@ class ZoneController extends Controller
 		$role = Role::where('name', Roles::AGENT)->first();
 
 		$reference = $request->reference;
-		$ville = $request->ville;
-		$pays = $request->pays;
 		$img_cni = null;
 		$img_cni_back = null;
 
@@ -531,7 +511,7 @@ class ZoneController extends Controller
 				'img_cni' => $img_cni,
 				'dossier' => $dossier,
 				'img_cni_back' => $img_cni_back,
-				'reference' => Statut::AGENT,
+				'reference' => $reference,
                 'ville' => "Douala",
                 'pays' => "CAMAEROUN"
 			]);
