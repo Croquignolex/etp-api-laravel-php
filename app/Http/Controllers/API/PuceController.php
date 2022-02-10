@@ -509,21 +509,21 @@ class PuceController extends Controller
     }
 
     /**
-     * //lister les puces de type ressource
+     * //lister toutes les puces de type ressource
      */
     public function list_all_resource_type()
     {
         $id_puce = Type_puce::where('name', Statut::RESOURCE)->first()->id;
-        $puces = Puce::where('type', $id_puce)->orderBy('created_at', 'desc')->paginate(6);
+        $puces = Puce::where('type', $id_puce)->orderBy('created_at', 'desc')->get();
 
-        $sims_response =  $this->simsResponse($puces->items());
+        $sims_response =  $this->simsResponse($puces);
 
         return response()->json([
             'message' => '',
             'status' => true,
             'data' => [
                 'puces' => $sims_response,
-                'hasMoreData' => $puces->hasMorePages(),
+                'hasMoreData' => false,
             ]
         ]);
     }

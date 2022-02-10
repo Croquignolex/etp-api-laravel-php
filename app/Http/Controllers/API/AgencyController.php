@@ -162,6 +162,8 @@ class AgencyController extends Controller
     /**
      * //lister toutes les agencies
      */
+    //...
+    // RESOURCE
     public function list_all()
     {
         $agencies = Agency::orderBy('created_at', 'desc')->get();
